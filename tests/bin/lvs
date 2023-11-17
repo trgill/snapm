@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+LVS_FIELD_OPTIONS = (
+    "vg_name,lv_name,lv_attr,origin,pool_lv,lv_size,data_percent,lv_role"
+)
+
+LVM_JSON = "json"
+LVM_BYTES = "b"
+
+fedora_pool0 = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"pool0", "lv_attr":"twi-aotz--", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":13.02, "lv_role":["private"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_pool1 = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"pool1", "lv_attr":"twi-a-tz--", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":0.00, "lv_role":["private"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_home = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"home", "lv_attr":"owi-aos---", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":null, "lv_role":["public","origin","thickorigin","multithickorigin"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_srv = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"srv", "lv_attr":"Vwi-aotz--", "origin":"", "pool_lv":"pool0", "lv_size":"524288000B", "data_percent":12.86, "lv_role":["public","origin","thinorigin","multithinorigin"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_data = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"data", "lv_attr":"Vwi-aotz--", "origin":"", "pool_lv":"pool0", "lv_size":"314572800B", "data_percent":21.46, "lv_role":["public","origin","thinorigin","multithinorigin"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_data_snapset_backup_1693921253_data = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"data-snapset_backup_1693921253_-data", "lv_attr":"Vwi---tz-k", "origin":"data", "pool_lv":"pool0", "lv_size":"314572800B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_home_snapset_backup_1693921253_home = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"home-snapset_backup_1693921253_-home", "lv_attr":"Vwi---tz-k", "origin":"home", "pool_lv":"", "lv_size":"314572800B", "data_percent":null, "lv_role":["public","snapshot","thicksnapshot"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_opt_snapset_backup_1693921253_opt = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"opt-snapset_backup_1693921253_-opt", "lv_attr":"swi-a-s---", "origin":"opt", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.09, "lv_role":["public","snapshot","thicksnapshot"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_root_snapset_backup_1693921253_root = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"root-snapset_backup_1693921253_-", "lv_attr":"swi-a-s---", "origin":"root", "pool_lv":"", "lv_size":"1438646272B", "data_percent":3.61, "lv_role":["public","snapshot","thicksnapshot"]}
+              ]
+          }
+      ]
+  }"""
+
+fedora_srv_snapset_backup_1693921253_srv = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"srv-snapset_backup_1693921253_-srv", "lv_attr":"Vwi---tz-k", "origin":"srv", "pool_lv":"pool0", "lv_size":"524288000B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]}
+              ]
+          }
+      ]
+  }"""
+
+default = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"appdata", "lv_name":"datavol0", "lv_attr":"owi-a-s---", "origin":"", "pool_lv":"", "lv_size":"314572800B", "data_percent":null, "lv_role":["public","origin","thickorigin"]},
+                  {"vg_name":"appdata", "lv_name":"datavol0-snapset_myset_1693921266_-data-appdata", "lv_attr":"swi-a-s---", "origin":"datavol0", "pool_lv":"", "lv_size":"104857600B", "data_percent":0.01, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"appdata", "lv_name":"datavol1-test", "lv_attr":"-wi-a-----", "origin":"", "pool_lv":"", "lv_size":"100663296B", "data_percent":null, "lv_role":["public"]},
+                  {"vg_name":"fedora", "lv_name":"data", "lv_attr":"Vwi-aotz--", "origin":"", "pool_lv":"pool0", "lv_size":"314572800B", "data_percent":21.46, "lv_role":["public","origin","thinorigin","multithinorigin"]},
+                  {"vg_name":"fedora", "lv_name":"data-snapset_backup_1693921253_-data", "lv_attr":"Vwi---tz-k", "origin":"data", "pool_lv":"pool0", "lv_size":"314572800B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"data-snapset_newset_1694704292_-data", "lv_attr":"Vwi---tz-k", "origin":"data", "pool_lv":"pool0", "lv_size":"314572800B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"home", "lv_attr":"owi-aos---", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":null, "lv_role":["public","origin","thickorigin","multithickorigin"]},
+                  {"vg_name":"fedora", "lv_name":"home-snapset_backup_1693921253_-home", "lv_attr":"swi-a-s---", "origin":"home", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.13, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"home-snapset_myset_1693921266_-home", "lv_attr":"swi-a-s---", "origin":"home", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.12, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"home-snapset_newset_1694704292_-home", "lv_attr":"swi-a-s---", "origin":"home", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.10, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"opt", "lv_attr":"owi-aos---", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":null, "lv_role":["public","origin","thickorigin","multithickorigin"]},
+                  {"vg_name":"fedora", "lv_name":"opt-snapset_backup_1693921253_-opt", "lv_attr":"swi-a-s---", "origin":"opt", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.09, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"opt-snapset_myset_1693921266_-opt", "lv_attr":"swi-a-s---", "origin":"opt", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.09, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"opt-snapset_newset_1694704292_-opt", "lv_attr":"swi-a-s---", "origin":"opt", "pool_lv":"", "lv_size":"41943040B", "data_percent":5.05, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"pool0", "lv_attr":"twi-aotz--", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":13.02, "lv_role":["private"]},
+                  {"vg_name":"fedora", "lv_name":"pool1", "lv_attr":"twi-a-tz--", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":0.00, "lv_role":["private"]},
+                  {"vg_name":"fedora", "lv_name":"root", "lv_attr":"owi-aos---", "origin":"", "pool_lv":"", "lv_size":"9437184000B", "data_percent":null, "lv_role":["public","origin","thickorigin","multithickorigin"]},
+                  {"vg_name":"fedora", "lv_name":"root-snapset_backup_1693921253_-", "lv_attr":"swi-a-s---", "origin":"root", "pool_lv":"", "lv_size":"1438646272B", "data_percent":3.61, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"root-snapset_myset_1693921266_-", "lv_attr":"swi-a-s---", "origin":"root", "pool_lv":"", "lv_size":"1438646272B", "data_percent":3.60, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"root-snapset_newset_1694704292_-", "lv_attr":"swi-a-s---", "origin":"root", "pool_lv":"", "lv_size":"1438646272B", "data_percent":3.23, "lv_role":["public","snapshot","thicksnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"srv", "lv_attr":"Vwi-aotz--", "origin":"", "pool_lv":"pool0", "lv_size":"524288000B", "data_percent":12.86, "lv_role":["public","origin","thinorigin","multithinorigin"]},
+                  {"vg_name":"fedora", "lv_name":"srv-snapset_backup_1693921253_-srv", "lv_attr":"Vwi---tz-k", "origin":"srv", "pool_lv":"pool0", "lv_size":"524288000B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"srv-snapset_myset_1693921266_-srv", "lv_attr":"Vwi---tz-k", "origin":"srv", "pool_lv":"pool0", "lv_size":"524288000B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"srv-snapset_newset_1694704292_-srv", "lv_attr":"Vwi---tz-k", "origin":"srv", "pool_lv":"pool0", "lv_size":"524288000B", "data_percent":null, "lv_role":["public","snapshot","thinsnapshot"]},
+                  {"vg_name":"fedora", "lv_name":"testlv1", "lv_attr":"-wi-a-----", "origin":"", "pool_lv":"", "lv_size":"1073741824B", "data_percent":null, "lv_role":["public"]},
+                  {"vg_name":"fedora", "lv_name":"var", "lv_attr":"owi-aos---", "origin":"", "pool_lv":"", "lv_size":"2147483648B", "data_percent":null, "lv_role":["public","origin","thickorigin"]},
+                  {"vg_name":"fedora", "lv_name":"var-snapset_myset_1693921266_-var", "lv_attr":"swi-a-s---", "origin":"var", "pool_lv":"", "lv_size":"524288000B", "data_percent":68.65, "lv_role":["public","snapshot","thicksnapshot"]}
+              ]
+          }
+      ]
+  }"""
+
+dev_map = {
+    "fedora/pool0": fedora_pool0,
+    "fedora/pool1": fedora_pool1,
+    "fedora/home": fedora_home,
+    "fedora/srv": fedora_srv,
+    "fedora/data": fedora_data,
+    "fedora/data-snapset_backup_1693921253_-data": fedora_data_snapset_backup_1693921253_data,
+    "fedora/home-snapset_backup_1693921253_-home": fedora_home_snapset_backup_1693921253_home,
+    "fedora/opt-snapset_backup_1693921253_-opt": fedora_opt_snapset_backup_1693921253_opt,
+    "fedora/root-snapset_backup_1693921253_-": fedora_root_snapset_backup_1693921253_root,
+    "fedora/srv-snapset_backup_1693921253_-srv": fedora_srv_snapset_backup_1693921253_srv,
+}
+
+def main(args):
+    parser = argparse.ArgumentParser(prog="lvs", description="Mock lvs command")
+
+    parser.add_argument("--reportformat", type=str, help="Report format")
+    parser.add_argument("-o", "--options", type=str, help="Report fields")
+    parser.add_argument("--units", type=str, help="Report units")
+    parser.add_argument("vg_lv", type=str, default="", nargs="?", help="Logical volume to report on")
+    
+    args = parser.parse_args()
+
+    if args.reportformat != LVM_JSON:
+        return 1
+    if args.options != LVS_FIELD_OPTIONS:
+        return 1
+    if args.units != LVM_BYTES:
+        return 1
+
+    if not args.vg_lv:
+        print(default)
+        return 0
+
+    if args.vg_lv in dev_map:
+        print(dev_map[args.vg_lv])
+        return 0
+    return 1
+
+if __name__ == "__main__":
+    ret = main(sys.argv)
+    sys.exit(ret)

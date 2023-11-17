@@ -1,0 +1,758 @@
+# Copyright (C) 2023 Red Hat, Inc., Bryn M. Reeves <bmr@redhat.com>
+#
+# tests/test_report.py - report API tests.
+#
+# This file is part of the snapm project.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+import unittest
+import logging
+import uuid
+from io import StringIO
+
+log = logging.getLogger()
+log.level = logging.DEBUG
+log.addHandler(logging.FileHandler("test.log"))
+
+from snapm.report import (
+    REP_NUM,
+    REP_STR,
+    REP_SHA,
+    REP_TIME,
+    REP_UUID,
+    REP_STR_LIST,
+    ALIGN_LEFT,
+    ALIGN_RIGHT,
+    ReportOpts,
+    ReportObjType,
+    FieldType,
+    Report,
+)
+
+_report_objs = [
+    (
+        1,
+        "foo",
+        "ffffffffffffffffffffffffffffffffffffffff",
+        "2023-09-05 14:40:53",
+        uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        ["foo", "bar", "baz"],
+    ),
+    (
+        2,
+        "bar",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "1978-01-10 09:13:12",
+        uuid.UUID("1d133bcc-6137-5267-b870-e469f7188dbe"),
+        ["one", "two", "three"],
+    ),
+    (
+        3,
+        "baz",
+        "1111111111111111111111111111111111111111",
+        "2022-08-01 16:43:32",
+        uuid.UUID("3576355e-e4d7-5a57-9f24-b3f4e0e326ef"),
+        ["baz", "quux"],
+    ),
+    (
+        4,
+        "qux",
+        "2222222222222222222222222222222222222222",
+        "2020-01-01 23:32:08",
+        uuid.UUID("046e4f15-1ddd-5724-b032-878248a71d4b"),
+        ["string", "list"],
+    ),
+]
+
+PR_NUM = 1
+PR_STR = 2
+PR_SHA = 4
+PR_TIME = 8
+PR_UUID = 16
+PR_STR_LIST = 32
+
+_test_obj_types = [
+    ReportObjType(PR_NUM, "Num", "num_", lambda o: o[0]),
+    ReportObjType(PR_STR, "Str", "str_", lambda o: o[1]),
+    ReportObjType(PR_SHA, "Sha", "sha_", lambda o: o[2]),
+    ReportObjType(PR_TIME, "Time", "time_", lambda o: o[3]),
+    ReportObjType(PR_UUID, "Uuid", "uuid_", lambda o: o[4]),
+    ReportObjType(PR_STR_LIST, "StrList", "strlist_", lambda o: o[5]),
+]
+
+
+class ReportTests(unittest.TestCase):
+    def test_FieldType_no_type(self):
+        with self.assertRaises(ValueError):
+            FieldType(0, None, "None", "Nothing", 0, REP_NUM, lambda x: x)
+
+    def test_FieldType_no_name(self):
+        with self.assertRaises(ValueError):
+            FieldType(PR_NUM, None, "None", "Nothing", 0, REP_NUM, lambda x: x)
+
+    def test_FieldType_bogus_dtype_raises(self):
+        with self.assertRaises(ValueError):
+            FieldType(PR_NUM, "none", "None", "Nothing", 0, "fzzrt", lambda x: x)
+
+    def test_FieldType_dtype_NUM(self):
+        pf = FieldType(PR_NUM, "none", "None", "Nothing", 0, REP_NUM, lambda x: x)
+        self.assertEqual(pf.dtype, REP_NUM)
+
+    def test_FieldType_dtype_STR(self):
+        pf = FieldType(PR_STR, "none", "None", "Nothing", 0, REP_STR, lambda x: x)
+        self.assertEqual(pf.dtype, REP_STR)
+
+    def test_FieldType_dtype_SHA(self):
+        pf = FieldType(PR_SHA, "none", "None", "Nothing", 0, REP_SHA, lambda x: x)
+        self.assertEqual(pf.dtype, REP_SHA)
+
+    def test_FieldType_dtype_TIME(self):
+        pf = FieldType(PR_TIME, "none", "None", "Nothing", 0, REP_TIME, lambda x: x)
+        self.assertEqual(pf.dtype, REP_TIME)
+
+    def test_FieldType_dtype_STR_LIST(self):
+        pf = FieldType(
+            PR_STR_LIST, "none", "non", "Nothing", 0, REP_STR_LIST, lambda x: x
+        )
+        self.assertEqual(pf.dtype, REP_STR_LIST)
+
+    def test_FieldType_bogus_align_raises(self):
+        with self.assertRaises(ValueError):
+            FieldType(
+                PR_NUM,
+                "none",
+                "None",
+                "Nothing",
+                0,
+                REP_NUM,
+                lambda x: x,
+                align="qux",
+            )
+
+    def test_FieldType_with_align_l(self):
+        FieldType(
+            PR_NUM,
+            "none",
+            "None",
+            "Nothing",
+            0,
+            REP_NUM,
+            lambda x: x,
+            align=ALIGN_LEFT,
+        )
+
+    def test_FieldType_with_align_r(self):
+        FieldType(
+            PR_NUM,
+            "none",
+            "None",
+            "Nothing",
+            0,
+            REP_NUM,
+            lambda x: x,
+            align=ALIGN_RIGHT,
+        )
+
+    def test_FieldType_negative_width_raises(self):
+        with self.assertRaises(ValueError) as cm:
+            FieldType(PR_NUM, "none", "None", "Nothing", -1, REP_NUM, lambda x: x)
+
+    def test_FieldType_simple_str_int_report(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "foo             1\n"
+            "bar             2\n"
+            "baz             3\n"
+            "qux             4\n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, None, None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_as_rows(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(columns_as_rows=True, report_file=output)
+
+        xoutput = (
+            "Name foo      bar      baz      qux      \n"
+            "Number        1        2        3        4 \n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, None, None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_noheadings(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(headings=False, report_file=output)
+
+        xoutput = (
+            "foo             1\n"
+            "bar             2\n"
+            "baz             3\n"
+            "qux             4\n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, None, None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_default_fields(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "foo             1\n"
+            "bar             2\n"
+            "baz             3\n"
+            "qux             4\n"
+        )
+
+        pr = Report(_test_obj_types, [pf_name, pf_num], None, opts, None, None)
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_with_sort(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "bar             2\n"
+            "baz             3\n"
+            "foo             1\n"
+            "qux             4\n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, "name", None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_with_sort_num(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "foo             1\n"
+            "bar             2\n"
+            "baz             3\n"
+            "qux             4\n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, "number", None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_with_sort_ascend(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "bar             2\n"
+            "baz             3\n"
+            "foo             1\n"
+            "qux             4\n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, "+name", None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_with_sort_descend(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "qux             4\n"
+            "foo             1\n"
+            "baz             3\n"
+            "bar             2\n"
+        )
+
+        pr = Report(
+            _test_obj_types, [pf_name, pf_num], "name,,number", opts, "-name", None
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_with_sort_two_fields(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number  \n"
+            "bar             2\n"
+            "baz             3\n"
+            "foo             1\n"
+            "qux             4\n"
+        )
+
+        pr = Report(
+            _test_obj_types,
+            [pf_name, pf_num],
+            "name,,number",
+            opts,
+            "name,,number",
+            None,
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_simple_str_int_report_with_bad_sort(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        with self.assertRaises(ValueError) as cm:
+            Report(
+                _test_obj_types, [pf_name, pf_num], "name,,number", opts, "nosuch", None
+            )
+
+    def test_FieldType_all_types_report(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+        pf_sha = FieldType(
+            PR_SHA,
+            "sha",
+            "Sha",
+            "Nothing",
+            8,
+            REP_SHA,
+            lambda f, d: f.report_sha(d),
+        )
+        pf_time = FieldType(
+            PR_TIME,
+            "time",
+            "Time",
+            "Nothing",
+            8,
+            REP_TIME,
+            lambda f, d: f.report_time(d),
+        )
+        pf_uuid = FieldType(
+            PR_UUID,
+            "uuid",
+            "Uuid",
+            "Nothing",
+            8,
+            REP_UUID,
+            lambda f, d: f.report_uuid(d),
+        )
+        pf_str_list = FieldType(
+            PR_STR_LIST,
+            "strlist",
+            "StrList",
+            "Nothing",
+            8,
+            REP_STR_LIST,
+            lambda f, d: f.report_str_list(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Name     Number   Sha     Time                Uuid                                 StrList        \n"
+            "foo             1 fffffff 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000 bar, baz, foo  \n"
+            "bar             2 FFFFFFF 1978-01-10 09:13:12 1d133bcc-6137-5267-b870-e469f7188dbe one, three, two\n"
+            "baz             3 1111111 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef baz, quux      \n"
+            "qux             4 2222222 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b list, string   \n"
+        )
+
+        pr = Report(
+            _test_obj_types,
+            [pf_name, pf_num, pf_sha, pf_time, pf_uuid, pf_str_list],
+            "name,number,sha,time,uuid,strlist",
+            opts,
+            None,
+            None,
+        )
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+        print(output.getvalue())
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_with_help(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        xoutput = (
+            "Str Fields\n"
+            "----------\n"
+            "  name        - Nothing [str]\n"
+            " \n"
+            "Num Fields\n"
+            "----------\n"
+            "  number      - Nothing [num]\n"
+        )
+
+        pr = Report(_test_obj_types, [pf_name, pf_num], "help", opts, None, None)
+
+        for obj in _report_objs:
+            pr.report_object(obj)
+        pr.report_output()
+
+        self.assertEqual(output.getvalue(), xoutput)
+
+    def test_FieldType_bad_field(self):
+        pf_name = FieldType(
+            PR_STR,
+            "name",
+            "Name",
+            "Nothing",
+            8,
+            REP_STR,
+            lambda f, d: f.report_str(d),
+        )
+        pf_num = FieldType(
+            PR_NUM,
+            "number",
+            "Number",
+            "Nothing",
+            8,
+            REP_NUM,
+            lambda f, d: f.report_num(d),
+        )
+
+        output = StringIO()
+        opts = ReportOpts(report_file=output)
+
+        with self.assertRaises(ValueError) as cm:
+            Report(_test_obj_types, [pf_name, pf_num], "nosuchfield", opts, None, None)
+
+    def test_ReportOpts_str(self):
+        opts = ReportOpts()
+        xstr = (
+            "columns=80\n"
+            "headings=True\n"
+            "buffered=True\n"
+            "separator= \n"
+            "field_name_prefix=\n"
+            "unquoted=True\n"
+            "aligned=True\n"
+            "columns_as_rows=False\n"
+        )
+        log.error(xstr)
+        self.assertTrue(str(opts).startswith(xstr))
+
+    def test_ReportOpts_eq_equal(self):
+        opts1 = ReportOpts()
+        opts2 = ReportOpts()
+        self.assertEqual(opts1, opts2)
+
+    def test_ReportOpts_eq_notequal(self):
+        opts1 = ReportOpts()
+        opts2 = ReportOpts(headings=False)
+        self.assertNotEqual(opts1, opts2)
+
+    def test_ReportOpts_eq_notsame(self):
+        opts = ReportOpts()
+        obj = object()
+        self.assertNotEqual(opts, obj)
+
+    def test_ReportObjType_no_objtype(self):
+        with self.assertRaises(ValueError) as cm:
+            ReportObjType(None, "description", "prefix_", lambda x: x)
+
+    def test_ReportObjType_bad_objtype(self):
+        with self.assertRaises(ValueError) as cm:
+            ReportObjType(-2, "description", "prefix_", lambda x: x)
+
+    def test_ReportObjType_no_desc(self):
+        with self.assertRaises(ValueError) as cm:
+            ReportObjType(2, None, "prefix_", lambda x: x)
+
+    def test_ReportObjType_no_data_fn(self):
+        with self.assertRaises(ValueError) as cm:
+            ReportObjType(2, "description", "prefix_", None)
+
+
+# vim: set et ts=4 sw=4 :

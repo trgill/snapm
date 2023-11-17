@@ -1,0 +1,810 @@
+.TH SNAPM 8 "Nov 21 2023" "Linux" "MAINTENANCE COMMANDS"
+
+.de ARG_GLOBAL
+.  RI [ global_args ]
+..
+.
+.de ARG_SNAPSET_TYPE
+.  RI snapset
+..
+.
+.de ARG_SNAPSET_COMMANDS
+.  RI [ create | delete | rename | activate | deactivate | autoactivate | list | show ]
+..
+.
+.de ARG_SNAPSHOT_TYPE
+.  RI snapshot
+..
+.
+.de ARG_SNAPSHOT_COMMANDS
+.  RI [ activate | deactivate | autoactivate | list | show ]
+..
+.
+..
+.SH NAME
+.
+Snapm \(em Linux snapshot manager
+.
+.SH SYNOPSIS
+.
+.PD 0
+.HP
+.B snapm
+.de CMD_SNAPSET_COMMAND
+.  ad l
+.  ARG_GLOBAL
+.  ARG_SNAPSET_TYPE
+.  ARG_SNAPSET_COMMANDS
+.  ad b
+..
+.CMD_SNAPSET_COMMAND
+
+.
+.HP
+.B snapm
+.de CMD_SNAPSHOT_COMMAND
+.  ad l
+.  ARG_GLOBAL
+.  ARG_SNAPSHOT_TYPE
+.  ARG_SNAPSHOT_COMMANDS
+.  ad b
+..
+.CMD_SNAPSHOT_COMMAND
+
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_CREATE
+.  ad l
+.  BR snapset
+.  BR \fBcreate
+.  IR \fIname\fP
+.  IR \fImount_point\fP ...
+.  ad b
+..
+.CMD_SNAPSET_CREATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_DELETE
+.  ad l
+.  BR snapset
+.  BR \fBdelete
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSET_DELETE
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_RENAME
+.  ad l
+.  BR snapset
+.  BR \fBrename
+.  IR old_name
+.  IR new_name
+.  ad b
+..
+.CMD_SNAPSET_RENAME
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_ACTIVATE
+.  ad l
+.  BR snapset
+.  BR \fBactivate
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSET_ACTIVATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_DEACTIVATE
+.  ad l
+.  BR snapset
+.  BR \fBdeactivate
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSET_DEACTIVATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_AUTOACTIVATE
+.  ad l
+.  BR snapset
+.  BR \fBautoactivate
+.  IR [ --yes | --no ]
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSET_AUTOACTIVATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_LIST
+.  ad l
+.  BR snapset
+.  BR \fBlist
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ --nameprefixes ]
+.  RB [ --noheadings ]
+.  RB [ --options
+.  IR fields ]
+.  RB [ --sort
+.  IR fields ]
+.  RB [ --rows ]
+.  RB [ --separator
+.  IR separator ]
+.  ad b
+..
+.CMD_SNAPSET_LIST
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_SHOW
+.  BR snapset
+.  BR \fBshow
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSET_SHOW
+
+.
+.HP
+.B snapm
+.de CMD_SNAPSHOT_ACTIVATE
+.  ad l
+.  BR snapshot
+.  BR \fBactivate
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ --snapshot-name
+.  IR name ]
+.  RB [ --snapshot-uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSHOT_ACTIVATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSHOT_DEACTIVATE
+.  ad l
+.  BR snapshot
+.  BR \fBdeactivate
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ --snapshot-name
+.  IR name ]
+.  RB [ --snapshot-uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSHOT_DEACTIVATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSHOT_AUTOACTIVATE
+.  ad l
+.  BR snapshot
+.  BR \fBautoactivate
+.  IR [ --yes | --no ]
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ --snapshot-name
+.  IR name ]
+.  RB [ --snapshot-uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSHOT_AUTOACTIVATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSHOT_LIST
+.  ad l
+.  BR snapshot
+.  BR \fBlist
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ --snapshot-name
+.  IR name ]
+.  RB [ --snapshot-uuid
+.  IR uuid ]
+.  RB [ --nameprefixes ]
+.  RB [ --noheadings ]
+.  RB [ --options
+.  IR fields ]
+.  RB [ --sort
+.  IR fields ]
+.  RB [ --rows ]
+.  RB [ --separator
+.  IR separator ]
+.  ad b
+..
+.CMD_SNAPSHOT_LIST
+.
+.HP
+.B snapm
+.de CMD_SNAPSHOT_SHOW
+.  BR snapshot
+.  BR \fBshow
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ --snapshot-name
+.  IR name ]
+.  RB [ --snapshot-uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSHOT_SHOW
+
+.
+.PD
+.ad b
+.
+.SH DESCRIPTION
+.
+Snapm is a \fIsnapshot manager\fP for Linux systems. It manages snapshots taken
+at a common moment in time as a \fIsnapshot set\fP ("snapset").
+
+.SH OPTIONS
+.
+.HP
+.BR -d | --debug
+.IR debug_flags
+.br
+A comma-separated list of subsystem names to enable debugging output
+for, or 'all' to enable all debugging. The available debug classes
+are: manager, command, plugins, report.
+.
+.HP
+.BR -h | --help
+.br
+Display usage information and exit.
+.
+.HP
+.BR -n | --name
+.IR name
+.br
+Specify a snapset name to operate on.
+.
+.HP
+.BR -N | --snapshot-name
+.IR name
+.br
+Specify a snapshot name to operate on.
+.
+.HP
+.BR --name-prefixes | --nameprefixes
+.br
+Add a prefix to report field names.
+.
+.HP
+.BR --no-headings | --noheadings
+.br
+Suppress output of report headings.
+.
+.HP
+.BR -o | --options
+.RI fields
+.br
+Specify which fields to display.
+.br
+.HP
+.BR -O | --sort
+.IR sort_fields
+.br
+Specify which fields to sort by.
+.
+.HP
+.BR --rows
+.br
+Output report columnes as rows
+.
+.HP
+.BR --separator
+.IR separator
+.br
+Report field separator
+.
+.HP
+.BR -u | --uuid
+.IR uuid
+.br
+Specify a snapset uuid to operate on.
+.
+.HP
+.BR -U | --snapshot-uuid
+.IR uuid
+.br
+Specify a snapshot uuid to operate on.
+.
+.HP
+.BR -v | --verbose
+.br
+Increase verbosity level. Specify multiple times, or set additional
+debug classes with \fB--debug\fP to enable more verbose messages.
+.
+.HP
+.BR -V | --version
+.IR version
+.br
+Display the version of \fBsnapm\fP and exit.
+.
+.SH SNAPSHOT SETS AND SNAPSHOTS
+.
+Snapm manages named collections of snapshots taken at a common point in time as
+\fIsnapshot sets\fP. A snapshot set is created from a list of mount points and
+allows the state of the system to be captured spanning over several volumes.
+Snapset names cannot include the forward slash ('/') or underscore ('_')
+characters. Snapshot sets and snapshots are also identified by a unique UUID
+value. The terms \fIsnapshot set\fP and \fIsnapset\fP are used interchangeable
+in this manual page.
+
+A plugin model is used to map mount points onto possible snapshot
+\fIproviders\fP. A provider plugin must exist for each mount point specified
+when creating a snapshot set. The current plugins support LVM2 copy-on-write and
+thinly provisioned snapshots.
+
+The \fIsnapset\fP subcommand allows snapsets to be created, deleted,
+enumerated, renamed and activated or deactivated.
+
+The \fIsnapshot\fP subcommand provides access to information describing
+individual snapshots that are part of a snapshot set, for example the device
+path and snapshot status.
+.
+.P
+.B Snapshot set and snapshot status
+.P
+Snapshots from different providers may exist in several possible states: some
+providers allow snapshots to be in an \fIactive\fP or \fIinactive\fP state and
+snapshots for some providers (for example LVM2 Copy-on-Write snapshots) have a
+specific size for the snapshot data store. If this space is completely consumed
+the snapshot becomes \fIinvalid\fP and can no longer be accessed.
+
+The status of a snapset is an aggregation of the status of the individual
+snapshots it contains: if any snapshots are \fIinactive\fP then the overall
+status of the snapset is also \fIinactive\fP. If any snapshots within the set
+are \fIinvalid\fP then the snapshot set status as a whole is also
+\fIinvalid\fP.
+.
+.P
+.B Snapshot Set Commands
+.P
+.
+.HP
+.B snapm
+.CMD_SNAPSET_CREATE
+.br
+Create a new snapshot set using the specified list of mount points.
+
+The newly created snapset is displayed on the terminal on success:
+.br
+#
+.B snapm snapset create backup / /home /data /opt /srv
+.br
+SnapsetName:  backup
+.br
+MountPoints:  /, /home, /data, /opt, /srv
+.br
+NrSnapshots:  5
+.br
+Time:         2023-11-17 18:10:06
+.br
+UUID:         f217177c-f35a-5b57-b33e-4c8ba0bb231a
+.br
+Status:       Inactive
+.br
+.
+.HP
+.B snapm
+.CMD_SNAPSET_DELETE
+.br
+Delete the specified snapset. The snapset to delete may be specified
+either by its \fBname\fP or \fBuuid\fP.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_RENAME
+.br
+Rename an existing snapset. The snapset to be renamed is specified as
+\fBold_name\fP and the new name is given as \fBnew_name\fP.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_ACTIVATE
+.br
+Attempt to activate snapshots making up snapsets. If no argument is given the
+command will attempt to activate all snapshots of all snapsets present on the
+system. If a \fBname\fP or \fBuuid\fP is specified then only that snapset will
+be activated.
+
+Not all snapshot providers support optional activation for snapshot volumes:
+for these providers activate and deactivate have no effect on volume
+availability.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_DEACTIVATE
+.br
+Attempt to deactivate snapshots making up snapsets. If no argument is given the
+command will attempt to deactivate all snapshots of all snapsets present on the
+system. If a \fBname\fP or \fBuuid\fP is specified then only that snapset will
+be deactivated.
+
+Not all snapshot providers support optional activation for snapshot volumes:
+for these providers activate and deactivate have no effect on volume
+availability.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_AUTOACTIVATE
+.br
+Enable or disable snapshot autoactivation for snapsets matching selection
+criteria. Some snapshot providers (lvm2-thin) support optional snapshot volume
+activation when activating resources for e.g. at boot time. The \fBsnapset
+autoactivate\fP subcommand allows control of this behaviour for snapshot sets
+managed by \fBsnapm\fP.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_LIST
+.br
+Output a tabular report of snapsets.
+
+Displays a report with one snapset per line, containing fields describing the
+properties of the configured snapshot sets.
+
+The list of fields to display is given with \fB--options\fP as a comma separated
+list of field names. To obtain a list of available fields run '\fBsnapm snapset
+list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
+specified fields are appended to the default field list. Otherwise the given
+list of fields replaces the default set of report fields.
+
+Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
+option. The option expects a comma separated list of keys, with optional
+\fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
+that field respectively.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_SHOW
+.br
+Display snapsets matching selection criteria on standard out.
+.
+.P
+.B Snapshot Commands
+.P
+.
+.HP
+.B snapm
+.CMD_SNAPSHOT_ACTIVATE
+.br
+Attempt to activate individual snapshots matching selection criteria. If no
+argument is given the command will attempt to activate all snapshots of all
+snapsets present on the system. If a snapshot or snapset \fBname\fP or
+\fBuuid\fP is specified then only matching volumes will be activated.
+
+Not all snapshot providers support optional activation for snapshot volumes:
+for these providers activate and deactivate have no effect on volume
+availability.
+.
+.HP
+.B snapm
+.CMD_SNAPSHOT_DEACTIVATE
+.br
+Attempt to deactivate individual snapshots matching selection criteria. If no
+argument is given the command will attempt to deactivate all snapshots of all
+snapsets present on the system. If a snapshot or snapset \fBname\fP or
+\fBuuid\fP is specified then only matching volumes will be deactivated.
+
+Not all snapshot providers support optional activation for snapshot volumes:
+for these providers activate and deactivate have no effect on volume
+availability.
+.
+.HP
+.B snapm
+.CMD_SNAPSHOT_AUTOACTIVATE
+.br
+Enable or disable snapshot autoactivation for individual snapshots matching
+selection criteria. Some snapshot providers (lvm2-thin) support optional
+snapshot volume activation when activating resources for e.g. at boot time. The
+\fBsnapshot autoactivate\fP subcommand allows control of this behaviour for
+individual snapshots managed by \fBsnapm\fP.
+.
+.HP
+.B snapm
+.CMD_SNAPSHOT_LIST
+.br
+Output a tabular report of snapshots.
+
+Displays a report with one snapshot per line, containing fields describing the
+properties of the configured snapshots.
+
+The list of fields to display is given with \fB--options\fP as a comma separated
+list of field names. To obtain a list of available fields run '\fBsnapm snapshot
+list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
+specified fields are appended to the default field list. Otherwise the given
+list of fields replaces the default set of report fields.
+
+Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
+option. The option expects a comma separated list of keys, with optional
+\fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
+that field respectively.
+.
+.HP
+.B snapm
+.CMD_SNAPSHOT_SHOW
+.br
+Display snapshots matching selection criteria on standard out.
+.
+.SH REPORTING COMMANDS
+.
+Both the \fBsnapset list\fP and \fBsnapshot list\fP commands use a common
+reporting system to display the results of the query. The selection of fields,
+and the order in which they are displayed may be controlled to produce custom
+report formats using the \fB\-o\fP/\fB\-\-options\fP argument. The report
+output can also be optionally sorted by one or more field values using the
+\fB\-O\fP/\fB\-\-sort\fP argument.
+.P
+To display the available fields for a given report type use the special field
+name \fIhelp\fP:
+.br
+#
+.B snapm snapset list -o help
+.br
+Snapshot set Fields
+.br
+-------------------
+.br
+  name         - Snapshot set name [str]
+.br
+  uuid         - Snapshot set UUID [uuid]
+.br
+  timestamp    - Snapshot set creation time as a UNIX epoch value [num]
+.br
+  time         - Snapshot set creation time [time]
+.br
+  nr_snapshots - Number of snapshots [num]
+.br
+  mountpoints  - Snapshot set mount points [strlist]
+.br
+  status       - Snapshot set status [str]
+.br
+.
+.SH REPORT FIELDS
+.
+The \fBsnapm\fP reports provide several types of field that may be added to the
+default field set for either snapset or snapshot reports, or used to create
+custom reports.
+.
+.SS Snapshot sets
+.
+Snapshot set fields provide information about snapsets as a whole, including
+the name, number of snapshots, mount points, status and UUID.
+.TP
+.B name
+The name of this snapshot set.
+.TP
+.B uuid
+The UUID of this snapshot set.
+.TP
+.B timestamp
+The snapshot set creation time as a UNIX epoch value.
+.TP
+.B time
+The snapshot set creation time as a human readable string.
+.TP
+.B nr_snapshots
+The number of snapshots contained in this snapshot set.
+.TP
+.B mountpoints
+The list of mount points contained in this snapshot set.
+.TP
+.B status
+The current status of this snapshot set. Possible values are \fIActive\fP,
+\fIInactive\fP, and \fIInvalid\fP.
+.
+.SS Snapshots
+.
+Snapshot fields provide information about the snapshots that make up snapsets,
+including the fields available in the snapset report as well as fields specific
+to individual snapshots.
+.TP
+.B snapshot_name
+The provider-specific name used to refer to the snapshot.
+.TP
+.B snapshot_uuid
+The snapshot UUID.
+.TP
+.B origin
+The origin volume that this snapshot refers to.
+.TP
+.B mountpoint
+The path to the mount point where this snapshot was taken from.
+.TP
+.B devpath
+The provider-specific path to the device used to mount this snapshot.
+.TP
+.B provider
+A string representing the snapshot provider plugin used to create this
+snapshot.
+.TP
+.B status
+The current status of this snapshot. Possible values are \fIActive\fP,
+\fIInactive\fP, and \fIInvalid\fP.
+.TP
+.B autoactivate
+Whether this snapshot is configured for autoactivation.
+.P
+.SH EXAMPLES
+List the available snapshot sets
+.br
+#
+.B snapm snapset list
+.br
+SnapsetName  Time                 NrSnapshots Status   MountPoints
+.br
+backup       2023-11-30 14:26:10            5 Inactive /, /data, /home, /opt, /srv
+.br
+userdata     2023-11-22 18:03:35            2 Active   /data, /home
+.P
+List the available snapshots
+.br
+#
+.B snapm snapshot list
+.br
+SnapsetName  Origin           MountPoint       Status   Autoactivate DevPath
+.br
+backup       fedora/home      /home            Active   yes          /dev/fedora/home-snapset_backup_1701354370_-home
+.br
+backup       fedora/opt       /opt             Active   yes          /dev/fedora/opt-snapset_backup_1701354370_-opt
+.br
+backup       fedora/root      /                Active   yes          /dev/fedora/root-snapset_backup_1701354370_-
+.br
+backup       fedora/data      /data            Inactive no
+.br
+backup       fedora/srv       /srv             Inactive no
+.br
+userdata     fedora/home      /home            Active   no           /dev/fedora/home-snapset_userdata_1700676215_-home
+.br
+userdata     fedora/data      /data            Active   yes          /dev/fedora/data-snapset_userdata_1700676215_-data
+.br
+.P
+Create a new snapset from the mount points /, /home, and /var
+.br
+#
+.B snapm snapset create backup / /home /var
+.br
+SnapsetName:  backup
+.br
+MountPoints:  /, /home, /var
+.br
+NrSnapshots:  3
+.br
+Time:         2023-11-21 16:01:31
+.br
+UUID:         fb76b84b-b615-5aa7-8b2c-713614794a12
+.br
+Status:       Active
+.P
+Delete the snapset named 'backup'
+.br
+#
+.B snapm snapset delete backup
+.br
+.P
+Activate all snapshot sets with verbose output
+.br
+#
+.B snapm -v snapset activate
+.br
+INFO - Activated 2 snapshot sets
+.br
+.P
+Rename the snapset 'backup' to 'oldbackup'
+.br
+#
+.B snapm snapset rename backup oldbackup
+.br
+.P
+Display the snapset named 'oldbackup'
+.br
+#
+.B snapm snapset show oldbackup
+.br
+SnapsetName:  oldbackup
+.br
+MountPoints:  /home, /, /var
+.br
+NrSnapshots:  3
+.br
+Time:         2023-11-21 16:01:31
+.br
+UUID:         f78f69a5-b589-5fbe-a801-3b48d90eec10
+.br
+Status:       Active
+.br
+.P
+Display the snapshot with UUID 7c473c4f-8380-5fa8-9ff8-b15f8b98bdd3
+.br
+#
+.B snapm snapshot show -U 7c473c4f-8380-5fa8-9ff8-b15f8b98bdd3
+.br
+Name:           fedora/data-snapset_backup_1701354370_-data
+.br
+SnapsetName:    backup
+.br
+Origin:         fedora/data
+.br
+Time:           2023-11-30 14:26:10
+.br
+MountPoint:     /data
+.br
+Provider:       lvm2-thin
+.br
+UUID:           7c473c4f-8380-5fa8-9ff8-b15f8b98bdd3
+.br
+Status:         Inactive
+.br
+Autoactivate:   no
+.br
+DevicePath:
+.br
+VolumeGroup:    fedora
+.br
+LogicalVolume:  data-snapset_backup_1701354370_-data
+.br
+.P
+.SH AUTHORS
+.
+Bryn M. Reeves <bmr@redhat.com>
+.
+.SH SEE ALSO
+.
+Snapm project page: https://github.com/snapshotmanager/snapm
+.br
+LVM2 resource page: https://www.sourceware.org/lvm2/
+.br

@@ -1,0 +1,38 @@
+---
+name: Snapshot Manager CI
+on: [push]
+jobs:
+  python-basic-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Run apt-get update
+        run: sudo apt-get -q update
+      - name: Install Ubuntu deps
+        run: >
+          DEBIAN_FRONTEND=noninteractive
+          sudo apt-get install -y
+          python3-pytest
+          python3-pycodestyle
+          python3-coverage
+          pycodestyle
+          bandit
+          lvm2
+      - name: Install Snapshot Manager
+        run: >
+          sudo pip install -v .
+      - name: Check PyCodestyle
+        run: >
+          pycodestyle snapm --ignore E501,E203,W503
+      - name: Run bandit
+        run: >
+          bandit --skip B303,B404,B603 -r snapm
+      - name: Run test suite
+        run: >
+          sudo pytest-3 -v
+      - name: Run coverage on test suite
+        run: |
+          sudo python3-coverage run -m unittest discover
+          python3-coverage report
+

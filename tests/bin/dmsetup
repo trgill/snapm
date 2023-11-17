@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+CMD_INFO = "info"
+CMD_SPLITNAME = "splitname"
+
+dmsetup_info_columns_noheadings_ouuid = {
+    "fedora-home": "LVM-7i2RV2ZSq41k4E8OmitVzPoFnWcAm6QM3ZfCVsqn897qmYIZPxbkUXmpfyPpvbNO",
+    "fedora-root": "LVM-7i2RV2ZSq41k4E8OmitVzPoFnWcAm6QMYF0I02SJnYT1dHTPUfJJ31Pc39Y51wh3",
+    "fedora-var": "LVM-7i2RV2ZSq41k4E8OmitVzPoFnWcAm6QMcfGMPRuiqtvo0XdSeYMrOD1ocysyoYDV",
+    "stratis-1-1c7c941a2dba4eb78d57d3fb01aacc61-thin-fs-202ea1667fa54123bd24f0c353b9914c": "stratis-1-1c7c941a2dba4eb78d57d3fb01aacc61-thin-fs-202ea1667fa54123bd24f0c353b9914c",
+    "mpatha": "mpath-333333330000007d1",
+}
+
+dmsetup_splitname_noheadings_ovgname_lvname = {
+    "fedora-home": "fedora:home",
+    "fedora-root": "fedora:root",
+    "fedora-var": "fedora:var",
+    "appdata-datavol1--test": "appdata:datavol1-test",
+    "vg_test0-lv_test0": "vg_test0:lv_test0",
+}
+
+
+def dmsetup_info(args):
+    if args.columns:
+        if args.noheadings:
+            if args.options == "uuid":
+                if args.device_name in dmsetup_info_columns_noheadings_ouuid:
+                    print(dmsetup_info_columns_noheadings_ouuid[args.device_name])
+                    return 0
+                else:
+                    return 1
+
+
+def dmsetup_splitname(args):
+    if args.noheadings:
+        if args.options == "vg_name,lv_name":
+            if args.device_name in dmsetup_splitname_noheadings_ovgname_lvname:
+                print(dmsetup_splitname_noheadings_ovgname_lvname[args.device_name])
+                return 0
+            else:
+                return 1
+
+
+def main(args):
+    parser = argparse.ArgumentParser(prog="dmsetup", description="Mock dmsetup command")
+    subparsers = parser.add_subparsers(dest="command", help="Sub-command help")
+
+    # info subparser
+    parser_info = subparsers.add_parser(CMD_INFO, help="info help")
+    parser_info.add_argument(
+        "-c", "--columns", action="store_true", help="columns output"
+    )
+    parser_info.add_argument(
+        "--noheadings", action="store_true", help="Suppress headings line"
+    )
+    parser_info.add_argument(
+        "-o", "--options", type=str, help="Specify fields to display"
+    )
+    parser_info.add_argument("device_name", type=str, help="Device to act on")
+
+    # splitname subparser
+    parser_splitname = subparsers.add_parser(CMD_SPLITNAME, help="info help")
+    parser_splitname.add_argument(
+        "--noheadings", action="store_true", help="Suppress headings line"
+    )
+    parser_splitname.add_argument(
+        "-o", "--options", type=str, help="Specify fields to display"
+    )
+    parser_splitname.add_argument("device_name", type=str, help="Device to act on")
+    parser_splitname.add_argument("subsys", type=str, help="Subsystem to act on")
+
+    args = parser.parse_args()
+    if args.command == CMD_INFO:
+        return dmsetup_info(args)
+    elif args.command == CMD_SPLITNAME:
+        return dmsetup_splitname(args)
+
+
+if __name__ == "__main__":
+    ret = main(sys.argv)
+    sys.exit(ret)

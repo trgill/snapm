@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+VGS_FIELD_OPTIONS = (
+    "vg_name,vg_free"
+)
+
+LVM_JSON = "json"
+LVM_BYTES = "b"
+
+fedora = """  {
+      "report": [
+          {
+              "vg": [
+                  {"vg_name":"fedora", "vg_free":"9097445376B"}
+              ]
+          }
+      ]
+  }"""
+
+vg_hex = """  {
+      "report": [
+          {
+              "vg": [
+                  {"vg_name":"vg_hex", "vg_free":"16903045120B"}
+              ]
+          }
+      ]
+  }"""
+
+appdata = """  {
+      "report": [
+          {
+              "vg": [
+                  {"vg_name":"appdata", "vg_free":"0B"}
+              ]
+          }
+      ]
+  }"""
+
+group_map = {
+    "fedora": fedora,
+    "vg_hex": vg_hex,
+    "appdata": appdata,
+}
+
+def main(args):
+    parser = argparse.ArgumentParser(prog="vgs", description="Mock vgs command")
+
+    parser.add_argument("--reportformat", type=str, help="Report format")
+    parser.add_argument("-o", "--options", type=str, help="Report fields")
+    parser.add_argument("--units", type=str, help="Report units")
+    parser.add_argument("vg", type=str, help="Volume group to report on")
+    
+    args = parser.parse_args()
+
+    if args.reportformat != LVM_JSON:
+        return 1
+    if args.options != VGS_FIELD_OPTIONS:
+        return 1
+    if args.units != LVM_BYTES:
+        return 1
+
+    if args.vg in group_map:
+        print(group_map[args.vg])
+        return 0
+    return 1
+
+if __name__ == "__main__":
+    ret = main(sys.argv)
+    sys.exit(ret)
