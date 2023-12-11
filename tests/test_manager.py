@@ -248,6 +248,10 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
             self.manager.create_snapshot_set("bad/name", self._lvm.mount_points())
 
+    def test_create_snapshot_set_bad_name_space(self):
+        with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
+            self.manager.create_snapshot_set("bad name", self._lvm.mount_points())
+
     def test_create_snapshot_set_name_too_long(self):
         name = "a" * 127
         with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:

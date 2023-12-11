@@ -478,7 +478,7 @@ class Manager:
         :raises: ``SnapmExistsError`` if the name is already in use, or
                  ``SnapmInvalidIdentifierError`` if the name fails validation.
         """
-        invalid_chars = ["/", "\\", "_"]
+        invalid_chars = ["/", "\\", "_", " "]
         if name in self.by_name:
             raise SnapmExistsError(f"Snapshot set named '{name}' already exists")
         for char in invalid_chars:
