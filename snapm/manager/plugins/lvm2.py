@@ -321,7 +321,17 @@ class Lvm2Snapshot(Snapshot):
 
     @property
     def origin(self):
-        return path_join(self.vg_name, self._origin)
+        return path_join(DEV_PREFIX, self.vg_name, self._origin)
+
+    @property
+    def origin_options(self):
+        """
+        File system options needed to specify the origin of this snapshot.
+
+        No file system options are requires for LVM2 block snapshots: always
+        return the empty string.
+        """
+        return ""
 
     @property
     def devpath(self):
@@ -477,7 +487,7 @@ class _Lvm2(Plugin):
         :param timestamp: The snapshot set timestamp.
         :param mount_point: The mount point of the snapshot.
         """
-        (vg_name, lv_name) = origin.split("/")
+        (_, _, vg_name, lv_name) = origin.split("/")
         new_name = format_snapshot_name(
             origin, snapset_name, timestamp, encode_mount_point(mount_point)
         )

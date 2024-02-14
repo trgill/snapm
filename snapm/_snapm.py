@@ -604,6 +604,13 @@ class Snapshot:
         raise NotImplementedError
 
     @property
+    def origin_options(self):
+        """
+        File system options needed to specify the origin of this snapshot.
+        """
+        raise NotImplementedError
+
+    @property
     def timestamp(self):
         """
         The numerical timestamp of this snapshot.
