@@ -619,11 +619,11 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number   Sha     Time                Uuid                                 StrList        \n"
-            "foo             1 fffffff 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000 bar, baz, foo  \n"
-            "bar             2 FFFFFFF 1978-01-10 09:13:12 1d133bcc-6137-5267-b870-e469f7188dbe one, three, two\n"
-            "baz             3 1111111 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef baz, quux      \n"
-            "qux             4 2222222 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b list, string   \n"
+            "Name     Number   Sha      Time                Uuid                                 StrList        \n"
+            "foo             1 ffffffff 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000 bar, baz, foo  \n"
+            "bar             2 FFFFFFFF 1978-01-10 09:13:12 1d133bcc-6137-5267-b870-e469f7188dbe one, three, two\n"
+            "baz             3 11111111 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef baz, quux      \n"
+            "qux             4 22222222 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b list, string   \n"
         )
 
         pr = Report(

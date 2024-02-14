@@ -32,12 +32,29 @@ import sys
 import uuid
 
 
-# FIXME boom integration will need to define this for boot_id values.
-def find_minimum_sha_prefix(_shas, _min_prefix):
+def find_minimum_sha_prefix(shas, min_prefix):
+    """Find the minimum SHA prefix length guaranteeing uniqueness.
+
+    Find the minimum unique prefix for the set of SHA IDs in the set
+    ``shas``.
+
+    :param shas: A set of SHA IDs
+    :param min_prefix: Initial minimum prefix value
+    :returns: The minimum unique prefix length for the set
+    :rtype: int
     """
-    Return the minimum SHA prefix for this report.
-    """
-    return 7
+    shas = list(shas)
+    shas.sort()
+    for sha in shas:
+        if shas.index(sha) == len(shas) - 1:
+            continue
+
+        def _next_sha(shas, sha):
+            return shas[shas.index(sha) + 1]
+
+        while sha[:min_prefix] == _next_sha(shas, sha)[:min_prefix]:
+            min_prefix += 1
+    return min_prefix
 
 
 _log = logging.getLogger(__name__)
