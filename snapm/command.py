@@ -342,18 +342,6 @@ def rename_snapset(manager, old_name, new_name):
     return manager.rename_snapshot_set(old_name, new_name)
 
 
-def _expand_fields(default_fields, output_fields):
-    """
-    Expand output fields list from command line arguments.
-    """
-
-    if not output_fields:
-        output_fields = default_fields
-    elif output_fields.startswith("+"):
-        output_fields = default_fields + "," + output_fields[1:]
-    return output_fields
-
-
 def show_snapshots(manager, selection=None):
     """
     Show snapshots matching selection criteria.
@@ -377,6 +365,18 @@ def show_snapsets(manager, selection=None, members=False):
                 print(_str_indent(str(snapshot), 4))
                 print()
         print()
+
+
+def _expand_fields(default_fields, output_fields):
+    """
+    Expand output fields list from command line arguments.
+    """
+
+    if not output_fields:
+        output_fields = default_fields
+    elif output_fields.startswith("+"):
+        output_fields = default_fields + "," + output_fields[1:]
+    return output_fields
 
 
 def print_snapshots(
