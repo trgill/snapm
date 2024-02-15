@@ -342,6 +342,18 @@ def rename_snapset(manager, old_name, new_name):
     return manager.rename_snapshot_set(old_name, new_name)
 
 
+def rollback_snapset(manager, selection):
+    """
+    Roll back snapshot set matching selection criteria.
+
+    :param manager: The manager context to use
+    :param selection: Selection criteria for the snapshot set to roll back.
+    """
+    if not selection.is_single():
+        raise SnapmInvalidIdentifierError("Roll back requires unique selection criteria")
+    return manager.rollback_snapshot_sets(selection)
+
+
 def show_snapshots(manager, selection=None):
     """
     Show snapshots matching selection criteria.
@@ -538,6 +550,22 @@ def _rename_cmd(cmd_args):
     manager = Manager()
     rename_snapset(manager, cmd_args.old_name, cmd_args.new_name)
     _log_info("Renamed snapshot set '%s' to '%s'", cmd_args.old_name, cmd_args.new_name)
+    return 0
+
+
+def _rollback_cmd(cmd_args):
+    """
+    Delete snapshot set command handler.
+
+    Attempt to roll back the specified snapshot set.
+
+    :param cmd_args: Command line arguments for the command
+    :returns: integer status code returned from ``main()``
+    """
+    manager = Manager()
+    select = Selection.from_cmd_args(cmd_args)
+    count = rollback_snapset(manager, select)
+    _log_info("Set %d snapshot sets for roll back", count)
     return 0
 
 
@@ -905,6 +933,7 @@ def _add_autoactivate_args(parser):
 CREATE_CMD = "create"
 DELETE_CMD = "delete"
 RENAME_CMD = "rename"
+ROLLBACK_CMD = "rollback"
 ACTIVATE_CMD = "activate"
 DEACTIVATE_CMD = "deactivate"
 AUTOACTIVATE_CMD = "autoactivate"
@@ -992,6 +1021,13 @@ def main(args):
         action="store",
         help="The new name of the snapshot set to be renamed",
     )
+
+    # snapset rollback command
+    snapset_rollback_parser = snapset_subparser.add_parser(
+        ROLLBACK_CMD, help="Roll back snapshot sets"
+    )
+    snapset_rollback_parser.set_defaults(func=_rollback_cmd)
+    _add_identifier_args(snapset_rollback_parser, snapset=True)
 
     # snapset activate subcommand
     snapset_activate_parser = snapset_subparser.add_parser(
