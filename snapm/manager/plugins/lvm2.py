@@ -122,6 +122,12 @@ LVCHANGE_SETACTIVATIONSKIP = "--setactivationskip"
 LVCHANGE_ACTIVATIONSKIP_YES = "y"
 LVCHANGE_ACTIVATIONSKIP_NO = "n"
 
+# lvconvert command
+LVCONVERT_CMD = "lvconvert"
+
+# lvconvert command options
+LVCONVERT_MERGE = "--merge"
+
 # dmsetup options
 DMSETUP_CMD = "dmsetup"
 DMSETUP_SPLITNAME = "splitname"
@@ -511,6 +517,25 @@ class _Lvm2(Plugin):
             vg_name,
             lv_name,
         )
+
+    def rollback_snapshot(self, name):
+        """
+        Roll back the state of the content of the origin to the content at the
+        time the snapshot was taken.
+
+        For LVM2 snapshots of in-use logical volumes this will take place at
+        the next activation (typically a reboot into the rollback boot entry
+        for the snapshot set).
+        """
+        lvconvert_cmd = [
+            LVCONVERT_CMD,
+            LVCONVERT_MERGE,
+            name,
+        ]
+        try:
+            run(lvconvert_cmd, capture_output=True, check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(f"{LVCONVERT_CMD} failed with: {err}") from err
 
     def _activate(self, active, name, silent=False):
         lvchange_cmd = [

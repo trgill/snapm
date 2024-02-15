@@ -133,6 +133,18 @@ class Plugin(metaclass=PluginRegistry):
         """
         raise NotImplementedError
 
+    def rollback_snapshot(self, name):
+        """
+        Request to roll back a snapshot and revert the content of the origin
+        volume to its state at the time of the snapshot.
+
+        This may be deferred until the next device activation or mount
+        operation for the respective volume.
+
+        :param name: The name of the snapshot to roll back.
+        """
+        raise NotImplementedError
+
     def delete_snapshot(self, name):
         """
         Delete the snapshot named ``name``
@@ -625,6 +637,34 @@ class Manager:
             self.by_uuid.pop(str(snapset.uuid))
             deleted += 1
         return deleted
+
+    def rollback_snapshot_sets(self, selection):
+        """
+        Roll back snapshot sets matching selection criteria ``selection``.
+
+        Request to roll back each snapshot origin within each snapshot set
+        to the state at the time the snapshot was taken.
+
+        :param selection: Selection criteria for snapshot sets to roll back.
+        """
+        sets = self.find_snapshot_sets(selection=selection)
+        rolled_back = 0
+        if not sets:
+            raise SnapmNotFoundError(
+                f"Could not find snapshot sets matching {selection}"
+            )
+        for snapset in sets:
+            for snapshot in snapset.snapshots:
+                try:
+                    snapshot.rollback()
+                except SnapmError as err:
+                    _log_error(
+                        "Failed to roll back snapshot set member %s: %s",
+                        snapshot.name,
+                        err,
+                    )
+            rolled_back += 1
+        return rolled_back
 
     def activate_snapshot_sets(self, selection):
         """

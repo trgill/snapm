@@ -691,6 +691,16 @@ class Snapshot:
             self.name, self.origin, new_name, self.timestamp, self.mount_point
         )
 
+    def rollback(self):
+        """
+        Request to roll back a snapshot and revert the content of the origin
+        volume to its state at the time of the snapshot.
+
+        This may be deferred until the next device activation or mount
+        operation for the respective volume.
+        """
+        self._provider.rollback_snapshot(self.name)
+
     def invalidate_cache(self):
         """
         Invalidate any cached data describing this snapshot.
