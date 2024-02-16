@@ -361,3 +361,31 @@ class ManagerTests(unittest.TestCase):
         s = snapm.Selection(name="nosuch")
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.set_autoactivate(s, True)
+
+    def test_rollback_snapshot_sets(self):
+        origin_file = "root/origin"
+        snapshot_file = "root/snapshot"
+        testset = "testset0"
+
+        # Create files in the origin volume and post-snapshot
+        self._lvm.touch_path(origin_file)
+        self.manager.create_snapshot_set(testset, self._lvm.mount_points())
+        self._lvm.touch_path(snapshot_file)
+
+        # Test that the origin and snapshot files both exist
+        self.assertEqual(self._lvm.test_path(origin_file), True)
+        self.assertEqual(self._lvm.test_path(snapshot_file), True)
+
+        # Start roll back the snapshot set
+        selection = snapm.Selection(name=testset)
+        self.manager.rollback_snapshot_sets(selection)
+
+        # Unmount the set, deactivate/reactivate and re-mount
+        self._lvm.umount_all()
+        self._lvm.deactivate()
+        self._lvm.activate()
+        self._lvm.mount_all()
+
+        # Test that only the origin file exists
+        self.assertEqual(self._lvm.test_path(origin_file), True)
+        self.assertEqual(self._lvm.test_path(snapshot_file), False)
