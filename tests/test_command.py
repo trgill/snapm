@@ -414,3 +414,31 @@ class CommandTests(unittest.TestCase):
             "--yes",
         ]
         self.assertEqual(command.main(args), 0)
+
+    def test_main_snapset_rollback(self):
+        origin_file = "root/origin"
+        snapshot_file = "root/snapshot"
+        testset = "testset0"
+
+        # Create files in the origin volume and post-snapshot
+        self._lvm.touch_path(origin_file)
+        self.manager.create_snapshot_set(testset, self._lvm.mount_points())
+        self._lvm.touch_path(snapshot_file)
+
+        # Test that the origin and snapshot files both exist
+        self.assertEqual(self._lvm.test_path(origin_file), True)
+        self.assertEqual(self._lvm.test_path(snapshot_file), True)
+
+        # Start roll back the snapshot set
+        args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "rollback", testset]
+        self.assertEqual(command.main(args), 0)
+
+        # Unmount the set, deactivate/reactivate and re-mount
+        self._lvm.umount_all()
+        self._lvm.deactivate()
+        self._lvm.activate()
+        self._lvm.mount_all()
+
+        # Test that only the origin file exists
+        self.assertEqual(self._lvm.test_path(origin_file), True)
+        self.assertEqual(self._lvm.test_path(snapshot_file), False)
