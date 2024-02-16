@@ -93,6 +93,21 @@ Snapm \(em Linux snapshot manager
 .
 .HP
 .B snapm
+.de CMD_SNAPSET_ROLLBACK
+.  ad l
+.  BR snapset
+.  BR \fBrollback
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  ad b
+..
+.CMD_SNAPSET_ROLLBACK
+.
+.HP
+.B snapm
 .de CMD_SNAPSET_ACTIVATE
 .  ad l
 .  BR snapset
@@ -451,6 +466,19 @@ either by its \fBname\fP or \fBuuid\fP.
 .br
 Rename an existing snapset. The snapset to be renamed is specified as
 \fBold_name\fP and the new name is given as \fBnew_name\fP.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_ROLLBACK
+.br
+Roll back an existing snapset, re-setting the content of the origin volumes
+to the state they were in at the time the snapset was created. The snapset
+to be rolled back may be specified either by its \fBname\fP or \fBuuid\fP.
+
+Rolling back a snapshot set with mounted and in-use origin volumes will
+schedule the roll back to take place the next time that the volumes are
+activated, for example by booting into a configured rollback boot entry for
+the snapshot set.
 .
 .HP
 .B snapm

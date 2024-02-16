@@ -20,6 +20,7 @@ provisioned snapshots are supported.
                 * [create](#create)
                 * [delete](#delete)
                 * [rename](#rename)
+                * [rollback](#rollback)
                 * [activate](#activate)
                 * [deactivate](#deactivate)
                 * [autoactivate](#autoactivate)
@@ -112,6 +113,19 @@ Delete an existing snapset by name or uuid.
 Rename an existing snapset.
 ```
 # snapm snapset rename <old_name> <new_name>
+```
+
+##### rollback
+Roll back an existing snapset, re-setting the content of the origin volumes
+to the state they were in at the time the snapset was created. The snapset
+to be rolled back may be specified either by its name or uuid.
+
+Rolling back a snapshot set with mounted and in-use origin volumes will
+schedule the roll back to take place the next time that the volumes are
+activated, for example by booting into a configured rollback boot entry for
+the snapshot set.
+```
+# snapm snapset rollback <name|uuid>
 ```
 
 ##### activate
