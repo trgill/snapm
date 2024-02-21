@@ -25,7 +25,7 @@ _THIN_POOL_NAME = "pool0"
 
 _VAR_TMP = "/var/tmp"
 
-# 20GiB
+# 12GiB
 _LOOP_DEVICE_SIZE = 12 * 1024**3
 
 # 1GiB
