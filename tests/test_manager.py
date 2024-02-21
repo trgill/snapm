@@ -257,6 +257,12 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
             self.manager.create_snapshot_set(name, self._lvm.mount_points())
 
+    def test_create_snapshot_set_no_space_raises(self):
+        self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+        self.manager.create_snapshot_set("testset1", self._lvm.mount_points())
+        with self.assertRaises(snapm.SnapmNoSpaceError) as cm:
+            self.manager.create_snapshot_set("testset2", self._lvm.mount_points())
+
     def test_create_delete_snapshot_set(self):
         self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
         s = snapm.Selection(name="testset0")
