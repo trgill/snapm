@@ -543,6 +543,7 @@ class Manager:
                 _log_error("Error creating snapshot set member %s: %s", name, err)
                 for snapshot in snapshots:
                     snapshot.delete()
+                raise err
         snapset = SnapshotSet(name, timestamp, snapshots)
         for snapshot in snapset.snapshots:
             snapshot.snapshot_set = snapset
