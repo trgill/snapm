@@ -36,7 +36,9 @@ jobs:
           sudo mkdir /boot/boom/profiles
           sudo mkdir -p /boot/loader/entries
           sudo cp /var/tmp/boom/examples/boom.conf /boot/boom
+          # Create profiles for kernel variants seen in CI
           sudo boom profile create --from-host --uname-pattern generic
+          sudo boom profile create --from-host --uname-pattern azure
       - name: Check PyCodestyle
         run: >
           pycodestyle snapm --ignore E501,E203,W503
