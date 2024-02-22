@@ -45,12 +45,9 @@ jobs:
       - name: Run bandit
         run: >
           bandit --skip B303,B404,B603 -r snapm
-      - name: Run test suite
+      - name: Run test suite with coverage
         run: >
-          sudo pytest-3 -v
-      - name: Run coverage on test suite
-        run: |
-          sudo python3-coverage run -m unittest discover
+          sudo python3-coverage run /usr/bin/pytest-3 --log-level=debug -v
       - name: Report coverage
         run: >
           python3-coverage report --include "./snapm/*"
