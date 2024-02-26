@@ -50,5 +50,5 @@ jobs:
           sudo python3-coverage run /usr/bin/pytest-3 --log-level=debug -v
       - name: Report coverage
         run: >
-          python3-coverage report --include "./snapm/*"
+          python3-coverage report -m --include "./snapm/*"
 
