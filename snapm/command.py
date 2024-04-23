@@ -351,14 +351,14 @@ def create_snapset(manager, name, mount_points, boot=False, rollback=False):
     if boot:
         try:
             manager.create_snapshot_set_boot_entry(name=snapset.name)
-        except (OSError, ValueError) as err:
+        except (OSError, ValueError, TypeError) as err:
             _log_error("Failed to create snapshot set boot entry: %s", err)
             manager.delete_snapshot_sets(select)
             return None
     if rollback:
         try:
             manager.create_snapshot_set_rollback_entry(name=snapset.name)
-        except (OSError, ValueError) as err:
+        except (OSError, ValueError, TypeError) as err:
             _log_error("Failed to create snapshot set rollback boot entry: %s", err)
             manager.delete_snapshot_sets(select)
             return None
