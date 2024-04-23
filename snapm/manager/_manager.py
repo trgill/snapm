@@ -784,6 +784,12 @@ class Manager:
         else:
             raise SnapmNotFoundError("A snapshot set name or UUID is required")
 
+        snapset.autoactivate = True
+        if not snapset.autoactivate:
+            raise SnapmError(
+                "Could not enable autoactivation for all snapshots in snapshot "
+                f"set {snapset.name}"
+            )
         if snapset.boot_entry is not None:
             raise SnapmExistsError(
                 f"Boot entry already associated with snapshot set {snapset.name}"
