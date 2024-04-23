@@ -531,6 +531,21 @@ class SnapshotSet:
         """
         return all(s.autoactivate for s in self.snapshots)
 
+    @autoactivate.setter
+    def autoactivate(self, value):
+        """
+        Set the autoactivation status for all snapshots in this snapshot set.
+        """
+        for snapshot in self.snapshots:
+            try:
+                snapshot.set_autoactivate(auto=value)
+            except SnapmError as err:
+                _log_error(
+                    "Failed to set autoactivation for snapshot set member %s: %s",
+                    snapshot.name,
+                    err,
+                )
+
     def snapshot_by_mount_point(self, mount_point):
         """
         Return the snapshot corresponding to ``mount_point``.

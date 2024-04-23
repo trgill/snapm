@@ -766,15 +766,7 @@ class Manager:
                 f"Could not find snapshot sets matching {selection}"
             )
         for snapset in sets:
-            for snapshot in snapset.snapshots:
-                try:
-                    snapshot.set_autoactivate(auto=auto)
-                except SnapmError as err:
-                    _log_error(
-                        "Failed to set autoactivation for snapshot set member %s: %s",
-                        snapshot.name,
-                        err,
-                    )
+            snapset.autoactivate = auto
             changed += 1
         return changed
 
