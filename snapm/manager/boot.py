@@ -49,6 +49,9 @@ SNAPSET_ARG = "snapm.snapset"
 #: Snapshot set rollback kernel command line argument
 ROLLBACK_ARG = "snapm.rollback"
 
+#: /dev path prefix
+_DEV_PREFIX = "/dev/"
+
 
 def _get_uts_release():
     """
@@ -137,7 +140,7 @@ def _build_snapset_mount_list(snapset):
 
 
 def _create_boom_boot_entry(
-    snapset, title=None, tag_arg=None, root_device=None, mounts=None
+    snapset, title=None, tag_arg=None, root_device=None, lvm_root_lv=None, mounts=None
 ):
     """
     Create a boom boot entry to boot into the snapshot set represented by
@@ -169,6 +172,7 @@ def _create_boom_boot_entry(
         version,
         machine_id,
         root_device,
+        lvm_root_lv=lvm_root_lv,
         profile=osp,
         no_fstab=True,
         mounts=mounts,
@@ -187,13 +191,19 @@ def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
                   "Snapshot snapset_name snapset_time".
     """
     title = title or f"Snapshot {snapset.name} {snapset.time}"
-    root_device = _find_snapset_root(snapset).devpath
+    root_snapshot = _find_snapset_root(snapset)
+    root_device = root_snapshot.devpath
+    if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
+        lvm_root_lv = root_snapshot.name
+    else:
+        lvm_root_lv = None
     mounts = _build_snapset_mount_list(snapset)
     snapset.boot_entry = _create_boom_boot_entry(
         snapset,
         title=title,
         tag_arg=f"{SNAPSET_ARG}={snapset.uuid}",
         root_device=root_device,
+        lvm_root_lv=lvm_root_lv,
         mounts=mounts,
     )
     _log_debug(
@@ -214,11 +224,16 @@ def create_snapset_rollback_entry(snapset, title=None):
     title = title or f"Rollback {snapset.name} {snapset.time}"
     root_snapshot = _find_snapset_root(snapset)
     root_device = root_snapshot.origin
+    if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
+        lvm_root_lv = root_device.removeprefix(_DEV_PREFIX)
+    else:
+        lvm_root_lv = None
     snapset.rollback_entry = _create_boom_boot_entry(
         snapset,
         title=title,
         tag_arg=f"{ROLLBACK_ARG}={snapset.uuid}",
         root_device=root_device,
+        lvm_root_lv=lvm_root_lv,
     )
     _log_debug(
         "Created rollback entry '%s' for snapshot set with UUID=%s", title, snapset.uuid
