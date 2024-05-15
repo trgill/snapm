@@ -174,7 +174,7 @@ def _create_boom_boot_entry(
         root_device,
         lvm_root_lv=lvm_root_lv,
         profile=osp,
-        no_fstab=True,
+        no_fstab=True if mounts else False,
         mounts=mounts,
         add_opts=tag_arg,
     )
