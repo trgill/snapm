@@ -8,6 +8,8 @@ files_to_sync:
     - snapm.spec
     - .packit.yaml
 
+# format for upstream version tags
+upstream_tag_template: v{version}
 # name in upstream package repository or registry (e.g. in PyPI)
 upstream_package_name: snapm
 # downstream (Fedora) RPM package name
