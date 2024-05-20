@@ -110,8 +110,13 @@ def _create_default_os_profile():
     This uses the boom API to run the equivalent of:
       `boom profile create --from-host`.
     """
-    _log_info("Creating default boot profile from %s", _OS_RELEASE)
-    return boom.command.create_profile(None, None, None, None, profile_file=_OS_RELEASE)
+    options = boom.command.os_options_from_cmdline()
+    _log_info(
+        "Creating default boot profile from %s with options %s", _OS_RELEASE, options
+    )
+    return boom.command.create_profile(
+        None, None, None, None, profile_file=_OS_RELEASE, options=options
+    )
 
 
 def _build_snapset_mount_list(snapset):
