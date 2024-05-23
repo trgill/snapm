@@ -81,6 +81,7 @@ rm doc/conf.py
 
 %changelog
 * Thu May 23 2024 Bryn M. Reeves <bmr@redhat.com>
+- Change interpreter to /usr/bin/python3
 - Use _smp_mflags make flags in snapm.spec docs build
 - Fix use of python3_sitelib wildcard in snapm.spec
 - Fix license and classifiers in setup.cfg
