@@ -20,6 +20,11 @@ import logging
 
 import boom
 import boom.command
+from boom.bootloader import (
+    OPTIONAL_KEYS,
+    optional_key_default,
+    key_to_bls_name,
+)
 from boom.osprofile import match_os_profile_by_version
 
 from snapm import (
@@ -172,17 +177,29 @@ def _create_boom_boot_entry(
                 f"Error calling boom to create default OsProfile: {err}"
             )
 
-    return boom.command.create_entry(
+    entry = boom.command.create_entry(
         title,
         version,
         machine_id,
         root_device,
         lvm_root_lv=lvm_root_lv,
         profile=osp,
+        write=False,
         no_fstab=True if mounts else False,
         mounts=mounts,
         add_opts=tag_arg,
     )
+
+    # Apply defaults for optional keys enabled in profile
+    for opt_key in OPTIONAL_KEYS:
+        bls_key = key_to_bls_name(opt_key)
+        if bls_key in osp.optional_keys:
+            setattr(entry, bls_key, optional_key_default(opt_key))
+
+    # Write BLS snippet for entry
+    entry.write_entry()
+
+    return entry
 
 
 def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
