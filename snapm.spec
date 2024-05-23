@@ -74,11 +74,18 @@ rm doc/conf.py
 %files -n python3-snapm
 %license COPYING
 %doc README.md
-%{python3_sitelib}/*
+%{python3_sitelib}/%{name}/*
+%{python3_sitelib}/%{name}-*.egg-info/
 %doc doc
 %doc tests
 
 %changelog
+* Thu May 23 2024 Bryn M. Reeves <bmr@redhat.com>
+- Fix use of python3_sitelib wildcard in snapm.spec
+- Fix license and classifiers in setup.cfg
+- Set boom optional keys defaults if enabled in profile
+- Use v4 of checkout action in GitHub workflow
+
 * Mon May 20 2024 Bryn M. Reeves <bmr@redhat.com> - 0.2.0
 - Bump release and update .packit.yaml
 - Require python3-boom
