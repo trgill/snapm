@@ -44,7 +44,7 @@ This package provides the python3 snapm module.
 
 %build
 %if 0%{?sphinx_docs}
-make -C doc html
+make %{?_smp_mflags} -C doc html
 rm doc/_build/html/.buildinfo
 mv doc/_build/html doc/html
 rm -r doc/_build
@@ -81,6 +81,7 @@ rm doc/conf.py
 
 %changelog
 * Thu May 23 2024 Bryn M. Reeves <bmr@redhat.com>
+- Use _smp_mflags make flags in snapm.spec docs build
 - Fix use of python3_sitelib wildcard in snapm.spec
 - Fix license and classifiers in setup.cfg
 - Set boom optional keys defaults if enabled in profile
