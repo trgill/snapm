@@ -28,6 +28,7 @@ import snapm.manager
 from snapm.manager.plugins import format_snapshot_name, encode_mount_point
 import boom
 
+from tests import have_root
 from ._util import LvmLoopBacked
 
 ETC_FSTAB = "/etc/fstab"
@@ -57,6 +58,7 @@ class BootTestsSimple(unittest.TestCase):
         self.assertEqual(sys_machine_id, boot._get_machine_id())
 
 
+@unittest.skipIf(not have_root(), "requires root privileges")
 class BootTests(unittest.TestCase):
     """
     Test boot integration with devices

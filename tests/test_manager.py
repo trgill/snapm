@@ -28,7 +28,7 @@ import snapm
 import snapm.manager as manager
 import boom
 
-from tests import BOOT_ROOT_TEST
+from tests import have_root, BOOT_ROOT_TEST
 from ._util import LvmLoopBacked
 
 
@@ -201,6 +201,7 @@ class ManagerTestsSimple(unittest.TestCase):
         self.assertEqual(sorted(paths), sorted(xpaths))
 
 
+@unittest.skipIf(not have_root(), "requires root privileges")
 class ManagerTests(unittest.TestCase):
     volumes = ["root", "home", "var", "data_vol"]
     thin_volumes = ["opt", "srv", "thin-vol"]

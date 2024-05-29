@@ -25,7 +25,7 @@ from snapm.report import ReportOpts
 import snapm.manager
 import boom
 
-from tests import MockArgs, BOOT_ROOT_TEST
+from tests import MockArgs, have_root, BOOT_ROOT_TEST
 
 from ._util import LvmLoopBacked
 
@@ -189,6 +189,7 @@ class CommandTestsSimple(unittest.TestCase):
             command.set_debug(args.debug)
 
 
+@unittest.skipIf(not have_root(), "requires root privileges")
 class CommandTests(unittest.TestCase):
     """
     Test command interfaces with devices

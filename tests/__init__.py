@@ -34,3 +34,10 @@ class MockArgs(object):
     uuid = None
     verbose = 0
     version = False
+
+
+def have_root():
+    """Return ``True`` if the test suite is running as the root user,
+    and ``False`` otherwise.
+    """
+    return os.geteuid() == 0 and os.getegid() == 0
