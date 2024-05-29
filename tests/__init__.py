@@ -12,10 +12,13 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 import os
+from os.path import abspath, join
 import time
 
 os.environ["TZ"] = "UTC"
 time.tzset()
+
+BOOT_ROOT_TEST = join(os.getcwd(), "tests/boot")
 
 
 class MockArgs(object):

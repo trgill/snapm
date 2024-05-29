@@ -23,10 +23,14 @@ import snapm
 import snapm.command as command
 from snapm.report import ReportOpts
 import snapm.manager
+import boom
 
-from tests import MockArgs
+from tests import MockArgs, BOOT_ROOT_TEST
 
 from ._util import LvmLoopBacked
+
+
+boom.set_boot_path(BOOT_ROOT_TEST)
 
 
 class CommandTestsSimple(unittest.TestCase):

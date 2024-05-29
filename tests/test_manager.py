@@ -26,8 +26,13 @@ _log_error = _log.error
 
 import snapm
 import snapm.manager as manager
+import boom
 
+from tests import BOOT_ROOT_TEST
 from ._util import LvmLoopBacked
+
+
+boom.set_boot_path(BOOT_ROOT_TEST)
 
 
 class ManagerTestsSimple(unittest.TestCase):
