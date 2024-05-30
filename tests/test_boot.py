@@ -28,7 +28,7 @@ import snapm.manager
 from snapm.manager.plugins import format_snapshot_name, encode_mount_point
 import boom
 
-from tests import have_root
+from tests import have_root, BOOT_ROOT_TEST
 from ._util import LvmLoopBacked
 
 ETC_FSTAB = "/etc/fstab"
@@ -109,12 +109,13 @@ class BootTests(unittest.TestCase):
         return boot_dir
 
     def _cleanup_boom_root_path(self, boot_path):
-        boom.set_boot_path("/boot")
+        boom.set_boot_path(BOOT_ROOT_TEST)
         boom.osprofile.load_profiles()
         boom.bootloader.load_entries()
         rmtree(boot_path)
 
     def setUp(self):
+        boom.set_boot_path("/boot")
         self._lvm = LvmLoopBacked(self.volumes, thin_volumes=self.thin_volumes)
         snapset_name = "bootset0"
         snapset_time = 1707923080
@@ -129,6 +130,7 @@ class BootTests(unittest.TestCase):
         self._set_fstab()
 
     def tearDown(self):
+        boom.set_boot_path(BOOT_ROOT_TEST)
         self._clear_fstab()
         self._lvm.destroy()
 
