@@ -2,7 +2,7 @@
 %global sphinx_docs 1
 
 Name:		snapm
-Version:	0.2.0
+Version:	0.2.1
 Release:	1%{?dist}
 Summary:	%{summary}
 
@@ -80,7 +80,11 @@ rm doc/conf.py
 %doc tests
 
 %changelog
-* Thu May 23 2024 Bryn M. Reeves <bmr@redhat.com>
+* Thu May 30 2024 Bryn M. Reeves <bmr@redhat.com> - 0.2.1
+- tests: set boom /boot path explicitly in test_boot
+- tests: skip privileged tests if running as non-root user
+- tests: use mock /boot directory for command and manager tests
+- tests: replace zero-length find targets with dummy files
 - Update snapm.spec source to use URL with name and version macros
 - Change interpreter to /usr/bin/python3
 - Use _smp_mflags make flags in snapm.spec docs build
