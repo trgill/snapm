@@ -484,9 +484,13 @@ class SizePolicy:
             self._percent = float(percent)
             for ptype in SizePolicyType:
                 if ptype.value == policy_type:
-                    if ptype == SizePolicyType.PERCENT_SIZE and self._percent > 100.0:
+                    if (
+                        ptype
+                        in (SizePolicyType.PERCENT_SIZE, SizePolicyType.PERCENT_FREE)
+                        and self._percent > 100.0
+                    ):
                         raise SnapmNoSpaceError(
-                            f"Size {self._mount}:{self._percent}%SIZE cannot be greater than 100"
+                            f"Size {self._mount}:{self._percent}%{ptype.value} cannot be greater than 100%"
                         )
                     return ptype
         raise SnapmParseError(f"Could not parse size policy: {policy}")
