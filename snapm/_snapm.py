@@ -17,7 +17,9 @@ Global definitions for the top-level snapm package.
 from uuid import UUID, uuid5
 from datetime import datetime
 from enum import Enum
+from math import ceil
 import logging
+import re
 
 _log = logging.getLogger(__name__)
 
@@ -41,7 +43,24 @@ __DEBUG_MASK = 0
 NAMESPACE_SNAPSHOT_SET = UUID("{952f0e38-24a1-406d-adf6-0e9fb3c707d8}")
 NAMESPACE_SNAPSHOT = UUID("{c17d07c7-1482-43b7-9b3c-12d490622d93}")
 
+_SIZE_RE = re.compile(r"^(?P<size>[0-9]+)(?P<units>([KMGTPEZkmgtpez]i{,1})?[Bb]{,1})$")
+
+#: All suffixes are expressed in powers of two.
+_SIZE_SUFFIXES = {
+    "B": 1,
+    "K": 2**10,
+    "M": 2**20,
+    "G": 2**30,
+    "T": 2**40,
+    "P": 2**50,
+    "E": 2**60,
+    "Z": 2**70,
+}
+
 ETC_FSTAB = "/etc/fstab"
+
+#: Default snapshot size if 2GiB
+DEFAULT_SNAPSHOT_SIZE = 2 * 2**30
 
 
 class SnapmLogger(logging.Logger):
@@ -163,6 +182,12 @@ class SnapmNotFoundError(SnapmError):
 class SnapmInvalidIdentifierError(SnapmError):
     """
     An invalid identifier was given.
+    """
+
+
+class SnapmParseError(SnapmError):
+    """
+    An error parsing user input.
     """
 
 
@@ -386,6 +411,123 @@ class Selection:
         :rtype: bool
         """
         return self.name is not None or self.uuid is not None
+
+
+def parse_size_with_units(value):
+    """
+    Parse a size string with optional unit suffix and return a value in bytes,
+
+    :param size: The size string to parse.
+    :returns: an integer size in bytes.
+    :raises: ``ValueError`` if the string could not  be parsed as a valid size
+             vale.
+    """
+    match = _SIZE_RE.search(value)
+    if match is None:
+        raise SnapmParseError(f"Malformed size expression: {value}")
+    (size, unit) = (match.group("size"), match.group("units").upper())
+    size_bytes = int(size) * _SIZE_SUFFIXES[unit[0]]
+    return size_bytes
+
+
+def is_size_policy(policy):
+    """
+    Test whether a string is a valid size policy
+
+    :param policy: A possible policy string to test.
+    :returns: ``True`` if ``policy`` is a valid size policy string or
+              ``False`` otherwise.
+    """
+    if policy is None:
+        return False
+    if "%" not in policy:
+        try:
+            value = parse_size_with_units(policy)
+        except SnapmParseError:
+            return False
+        return True
+    else:
+        (percent, policy_type) = policy.rsplit("%", maxsplit=1)
+        for ptype in SizePolicyType:
+            if ptype.value == policy_type:
+                return True
+    return False
+
+
+class SizePolicyType(Enum):
+    """
+    Enum class representing the possible snapshot size policies.
+    """
+
+    DEFAULT = "DEFAULT"
+    FIXED = "FIXED"
+    PERCENT_FREE = "FREE"
+    PERCENT_USED = "USED"
+    PERCENT_SIZE = "SIZE"
+
+
+class SizePolicy:
+    """
+    Class representing a configured instance of a size policy.
+    """
+
+    def _parse_size_policy(self, policy):
+        """
+        Parse a string representation of a size policy.
+        """
+        if policy is None:
+            return SizePolicyType.DEFAULT
+        if "%" not in policy:
+            self._size = parse_size_with_units(policy)
+            return SizePolicyType.FIXED
+        else:
+            (percent, policy_type) = policy.rsplit("%", maxsplit=1)
+            self._percent = float(percent)
+            for ptype in SizePolicyType:
+                if ptype.value == policy_type:
+                    return ptype
+        raise SnapmParseError(f"Could not parse size policy: {policy}")
+
+    def __init__(self, free_space, fs_used, dev_size, policy):
+        """
+        Initialise a new `SizePolicy` object using the supplied parameters.
+
+        :param free_space: The free space available to provision the snapshot
+                           in bytes.
+        :param fs_used: The current file system occupancy in bytes.
+        :param dev_size: The origin device size in bytes.
+        :returns: A `SizePolicy` object configured for the specified size.
+        """
+        self._free_space = free_space
+        self._fs_used = fs_used
+        self._dev_size = dev_size
+        self._percent = 0
+        self._size = 0
+        self.type = self._parse_size_policy(policy)
+
+    @property
+    def size(self):
+        """
+        Return the backing store size for a snapshot based on the policy
+        configuration.
+        """
+
+        def percent_of(percent, value):
+            return int(ceil((percent * value) / 100))
+
+        match self.type:
+            case SizePolicyType.DEFAULT:
+                return DEFAULT_SNAPSHOT_SIZE
+            case SizePolicyType.FIXED:
+                return self._size
+            case SizePolicyType.PERCENT_FREE:
+                return percent_of(self._percent, self._free_space)
+            case SizePolicyType.PERCENT_USED:
+                return percent_of(self._percent, self._fs_used)
+            case SizePolicyType.PERCENT_SIZE:
+                return percent_of(self._percent, self._dev_size)
+            case _:
+                raise SnapmParseError(f"Invalid size policy type: {self.type}")
 
 
 class SnapStatus(Enum):
@@ -791,7 +933,12 @@ __all__ = [
     "SnapmPathError",
     "SnapmNotFoundError",
     "SnapmInvalidIdentifierError",
+    "SnapmParseError",
     "Selection",
+    "is_size_policy",
+    "parse_size_with_units",
+    "SizePolicyType",
+    "SizePolicy",
     "SnapStatus",
     "SnapshotSet",
     "Snapshot",
