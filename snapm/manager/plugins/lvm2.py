@@ -712,7 +712,7 @@ class Lvm2Cow(_Lvm2):
         lv_size = lv_dev_size(vg_name, lv_name)
         policy = SizePolicy(mount_point, vg_free, fs_used, lv_size, size_policy)
         snapshot_min_size = self._snapshot_min_size(policy.size)
-        if vg_free < (sum(self.size_map.values()) + snapshot_min_size):
+        if vg_free < (sum(self.size_map[vg_name].values()) + snapshot_min_size):
             raise SnapmNoSpaceError(
                 f"Volume group {vg_name} has insufficient free space to snapshot {mount_point}"
             )
@@ -726,7 +726,9 @@ class Lvm2Cow(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        self.size_map[mount_point] = self._check_free_space(
+        if vg_name not in self.size_map:
+            self.size_map[vg_name] = {}
+        self.size_map[vg_name][mount_point] = self._check_free_space(
             vg_name, lv_name, mount_point, size_policy
         )
 
@@ -744,7 +746,7 @@ class Lvm2Cow(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        snapshot_size = self.size_map[mount_point]
+        snapshot_size = self.size_map[vg_name][mount_point]
         lvcreate_cmd = [
             LVCREATE_CMD,
             LVCREATE_SNAPSHOT,
