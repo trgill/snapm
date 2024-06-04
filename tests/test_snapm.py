@@ -185,3 +185,15 @@ class SnapmTests(unittest.TestCase):
     def test_size_policy_invalid_policy_raises(self):
         with self.assertRaises(snapm.SnapmParseError) as cm:
             policy = snapm.SizePolicy("/", TEN_GIB, FOUR_GIB, TEN_GIB, "100%QUX")
+
+    def test_is_size_policy_valid(self):
+        self.assertEqual(True, snapm.is_size_policy("2G"))
+        self.assertEqual(True, snapm.is_size_policy("100%FREE"))
+        self.assertEqual(True, snapm.is_size_policy("50%USED"))
+        self.assertEqual(True, snapm.is_size_policy("100%SIZE"))
+
+    def test_is_size_policy_invalid(self):
+        self.assertEqual(False, snapm.is_size_policy("2A"))
+        self.assertEqual(False, snapm.is_size_policy("100%QUUX"))
+        self.assertEqual(False, snapm.is_size_policy("foo"))
+        self.assertEqual(False, snapm.is_size_policy("100%"))
