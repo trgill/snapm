@@ -484,10 +484,14 @@ class SizePolicy:
             self._percent = float(percent)
             for ptype in SizePolicyType:
                 if ptype.value == policy_type:
+                    if ptype == SizePolicyType.PERCENT_SIZE and self._percent > 100.0:
+                        raise SnapmNoSpaceError(
+                            f"Size {self._mount}:{self._percent}%SIZE cannot be greater than 100"
+                        )
                     return ptype
         raise SnapmParseError(f"Could not parse size policy: {policy}")
 
-    def __init__(self, free_space, fs_used, dev_size, policy):
+    def __init__(self, mount, free_space, fs_used, dev_size, policy):
         """
         Initialise a new `SizePolicy` object using the supplied parameters.
 
@@ -497,6 +501,7 @@ class SizePolicy:
         :param dev_size: The origin device size in bytes.
         :returns: A `SizePolicy` object configured for the specified size.
         """
+        self._mount = mount
         self._free_space = free_space
         self._fs_used = fs_used
         self._dev_size = dev_size
