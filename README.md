@@ -102,6 +102,50 @@ Create a new snapset with the provided name and list of mount points.
 ```
 # snapm snapset create [-b|--bootable] [-r|--rollback] <name> mount_point...
 ```
+###### Size Policies
+Some snapshot implementations (Lvm2CoW) require a fixed size to be specified
+for the snapshot backstore when the snapshot is created. The default size
+allocated by snapshot manager is 2x the current file system usage, allowing the
+existing content of the volume to be overwritten twice before exhausting the
+snapshot space.
+
+Plugins for snapshot providers that do not require a fixed snapshot size will
+ignore any size policy hints.
+
+Size policy hints can be manually given on the command line to override the
+default behavior on a per-mount point basis. Four policies are available:
+
+ * FIXED - a fixed size given on the command line
+ * FREE - a percentage fraction of the free space available
+ * USED - a percentage fraction of the space currently used on the mount point
+   (may be greater than 100%)
+ * SIZE - a percentage fraction of the origin device size from 0 to 100%
+
+The FIXED size policy accepts optional units of KiB, MiB, GiB, TiB, PiB, EiB
+and ZiB. Units may be abbreviated to the first character.
+
+Size policies are specified by adding a ':' and the required policy to the
+corresponding mount point path, for example:
+
+```
+# snapm snapset create backup /:2G /var:1G /home
+```
+
+```
+# snapm snapset create backup /:25%FREE /var:25%FREE /home
+```
+
+```
+# snapm snapset create backup /:100%USED /var:100%USED /home
+```
+
+```
+# snapm snapset create backup /:100%SIZE /var:100%SIZE /home
+```
+
+If no size policy is specified the default `200%USED` is applied. To ensure a
+volume can be completely overwritten specify `100%SIZE`. This requires more
+storage capacity but avoids the snapshot running out of space.
 
 ##### delete
 Delete an existing snapset by name or uuid.
