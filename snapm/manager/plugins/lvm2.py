@@ -734,7 +734,9 @@ class Lvm2Cow(_Lvm2):
         try:
             run(lvcreate_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
-            raise SnapmCalloutError(f"{LVCREATE_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVCREATE_CMD} failed with: {err.stderr.decode('utf8')}"
+            ) from err
         return Lvm2Snapshot(
             f"{vg_name}/{snapshot_name}",
             snapset_name,
