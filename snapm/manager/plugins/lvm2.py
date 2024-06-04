@@ -26,6 +26,7 @@ from snapm import (
     SnapmInvalidIdentifierError,
     SnapmCalloutError,
     SnapmNoSpaceError,
+    SizePolicy,
     SnapStatus,
     Snapshot,
 )
@@ -276,6 +277,17 @@ def vg_free_space(vg_name):
     raise ValueError(f"Volume group {vg_name} not found")
 
 
+def lv_dev_size(vg_name, lv_name):
+    """
+    Return the size of the specified logical volume in bytes.
+    """
+    lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
+    for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
+        if lv_dict["vg_name"] == vg_name and lv_dict["lv_name"] == lv_name:
+            return int(lv_dict["lv_size"].rstrip("B"))
+    raise ValueError(f"Logical volume {vg_name}/{lv_name} not found")
+
+
 def pool_free_space(vg_name, pool_name):
     """
     Return the free space available as bytes for the thin pool identified
@@ -436,7 +448,9 @@ class _Lvm2(Plugin):
         """
         raise NotImplementedError
 
-    def check_create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def check_create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         """
         Perform pre-creation checks before creating a snapshot.
 
@@ -449,7 +463,9 @@ class _Lvm2(Plugin):
         """
         raise NotImplementedError
 
-    def create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         """
         Create a snapshot of ``origin`` in the snapset named ``snapset_name``.
 
@@ -680,7 +696,7 @@ class Lvm2Cow(_Lvm2):
         """
         return max(MIN_LVM2_COW_SNAPSHOT_SIZE, space_used)
 
-    def _check_free_space(self, vg_name, mount_point):
+    def _check_free_space(self, vg_name, lv_name, mount_point, size_policy):
         """
         Check for available space in volume group ``vg_name`` for the specified
         mount point.
@@ -691,24 +707,30 @@ class Lvm2Cow(_Lvm2):
         :raises: ``SnapmNoSpaceError`` if the minimum snapshot size exceeds the
                  available space.
         """
-        space_used = mount_point_space_used(mount_point)
+        fs_used = mount_point_space_used(mount_point)
         vg_free = vg_free_space(vg_name)
-        snapshot_min_size = self._snapshot_min_size(space_used)
+        lv_size = lv_dev_size(vg_name, lv_name)
+        policy = SizePolicy(vg_free, fs_used, lv_size, size_policy)
+        snapshot_min_size = self._snapshot_min_size(policy.size)
         if vg_free < snapshot_min_size:
             raise SnapmNoSpaceError(
                 f"Volume group {vg_name} has insufficient free space to snapshot {mount_point}"
             )
-        return space_used
+        return snapshot_min_size
 
-    def check_create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def check_create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         (vg_name, lv_name) = origin.split("/")
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        self._check_free_space(vg_name, mount_point)
+        self._check_free_space(vg_name, lv_name, mount_point, size_policy)
 
-    def create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         (vg_name, lv_name) = origin.split("/")
         _log_debug(
             "Creating CoW snapshot for %s/%s mounted at %s",
@@ -720,8 +742,9 @@ class Lvm2Cow(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        space_used = self._check_free_space(vg_name, mount_point)
-        snapshot_size = self._snapshot_min_size(space_used)
+        snapshot_size = self._check_free_space(
+            vg_name, lv_name, mount_point, size_policy
+        )
         lvcreate_cmd = [
             LVCREATE_CMD,
             LVCREATE_SNAPSHOT,
@@ -809,11 +832,15 @@ class Lvm2Thin(_Lvm2):
                 f"has insufficient free space to snapshot {mount_point}"
             )
 
-    def check_create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def check_create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, _size_policy
+    ):
         (vg_name, _) = origin.split("/")
         self._check_free_space(vg_name, origin, mount_point)
 
-    def create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         (vg_name, lv_name) = origin.split("/")
         _log_debug(
             "Creating thin snapshot for %s/%s mounted at %s",

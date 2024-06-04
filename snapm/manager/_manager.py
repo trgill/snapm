@@ -41,6 +41,7 @@ from snapm import (
     SnapmNotFoundError,
     SnapmInvalidIdentifierError,
     Selection,
+    is_size_policy,
     SnapshotSet,
 )
 
@@ -101,7 +102,9 @@ class Plugin(metaclass=PluginRegistry):
         """
         raise NotImplementedError
 
-    def check_create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def check_create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         """
         Perform pre-creation checks before creating a snapshot.
 
@@ -114,7 +117,9 @@ class Plugin(metaclass=PluginRegistry):
         """
         raise NotImplementedError
 
-    def create_snapshot(self, origin, snapset_name, timestamp, mount_point):
+    def create_snapshot(
+        self, origin, snapset_name, timestamp, mount_point, size_policy
+    ):
         """
         Create a snapshot of ``origin`` in the snapset named ``snapset_name``.
 
@@ -527,7 +532,7 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
-    def create_snapshot_set(self, name, mount_points):
+    def create_snapshot_set(self, name, mount_point_specs):
         """
         Create a snapshot set of the supplied mount points with the name
         ``name``.
@@ -539,35 +544,57 @@ class Manager:
         """
         self._validate_snapset_name(name)
 
-        # Normalise mount point paths and initialise provider mapping.
+        mount_points = []
+        size_policies = {}
+
+        for mp_spec in mount_point_specs:
+            if ":" in mp_spec:
+                (mount, policy) = mp_spec.split(":", maxsplit=1)
+                if not is_size_policy(policy):
+                    mount = f"{mount}:{policy}"
+                    policy = None
+            else:
+                (mount, policy) = (mp_spec, None)
+            mount = normpath(mount)
+            mount_points.append(mount)
+            size_policies[mount] = policy
+
+        # Initialise provider mapping.
         mount_points = [normpath(path) for path in mount_points]
         provider_map = {k: None for k in mount_points}
 
-        for mnt_pt in mount_points:
-            if not ismount(mnt_pt):
-                raise SnapmPathError(f"Path '{mnt_pt}' is not a mount point")
-            for plugin in self.plugins:
-                if plugin.can_snapshot(mnt_pt):
-                    provider_map[mnt_pt] = plugin
+        for mount in mount_points:
+            _log_debug(
+                f"Probing plugins for {mount} with size policy {size_policies[mount]}"
+            )
 
-        for mnt_pt in provider_map:
-            if provider_map[mnt_pt] is None:
+            if not ismount(mount):
+                raise SnapmPathError(f"Path '{mount}' is not a mount point")
+
+            for plugin in self.plugins:
+                if plugin.can_snapshot(mount):
+                    provider_map[mount] = plugin
+
+        for mount in provider_map:
+            if provider_map[mount] is None:
                 raise SnapmNoProviderError(
-                    f"Could not find snapshot provider for {mnt_pt}"
+                    f"Could not find snapshot provider for {mount}"
                 )
 
         timestamp = floor(time())
-        for mnt_pt in provider_map:
-            origin = provider_map[mnt_pt].origin_from_mount_point(mnt_pt)
-            provider_map[mnt_pt].check_create_snapshot(origin, name, timestamp, mnt_pt)
+        for mount in provider_map:
+            origin = provider_map[mount].origin_from_mount_point(mount)
+            provider_map[mount].check_create_snapshot(
+                origin, name, timestamp, mount, size_policies[mount]
+            )
 
         snapshots = []
-        for mnt_pt in provider_map:
-            origin = provider_map[mnt_pt].origin_from_mount_point(mnt_pt)
+        for mount in provider_map:
+            origin = provider_map[mount].origin_from_mount_point(mount)
             try:
                 snapshots.append(
-                    provider_map[mnt_pt].create_snapshot(
-                        origin, name, timestamp, mnt_pt
+                    provider_map[mount].create_snapshot(
+                        origin, name, timestamp, mount, size_policies[mount]
                     )
                 )
             except SnapmError as err:
