@@ -77,11 +77,26 @@ class Plugin(metaclass=PluginRegistry):
     name = "plugin"
     version = "0.1.0"
 
+    def __init__(self):
+        self.size_map = None
+
     def info(self):
         """
         Return plugin name and version.
         """
         return {"name": self.name, "version": self.version}
+
+    def start_transaction(self):
+        """
+        Begin a snapshot set creation transaction in this plugin.
+        """
+        self.size_map = {}
+
+    def end_transaction(self):
+        """
+        End a snapshot set creation transaction in this plugin.
+        """
+        self.size_map = None
 
     def discover_snapshots(self):
         """
@@ -581,6 +596,9 @@ class Manager:
                     f"Could not find snapshot provider for {mount}"
                 )
 
+        for provider in set(provider_map.values()):
+            provider.start_transaction()
+
         timestamp = floor(time())
         for mount in provider_map:
             origin = provider_map[mount].origin_from_mount_point(mount)
@@ -602,6 +620,10 @@ class Manager:
                 for snapshot in snapshots:
                     snapshot.delete()
                 raise err
+
+        for provider in set(provider_map.values()):
+            provider.end_transaction()
+
         snapset = SnapshotSet(name, timestamp, snapshots)
         for snapshot in snapset.snapshots:
             snapshot.snapshot_set = snapset
