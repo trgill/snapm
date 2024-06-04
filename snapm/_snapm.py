@@ -59,8 +59,7 @@ _SIZE_SUFFIXES = {
 
 ETC_FSTAB = "/etc/fstab"
 
-#: Default snapshot size if 2GiB
-DEFAULT_SNAPSHOT_SIZE = 2 * 2**30
+DEFAULT_PERCENT_USED = 200.0
 
 
 class SnapmLogger(logging.Logger):
@@ -459,7 +458,6 @@ class SizePolicyType(Enum):
     Enum class representing the possible snapshot size policies.
     """
 
-    DEFAULT = "DEFAULT"
     FIXED = "FIXED"
     PERCENT_FREE = "FREE"
     PERCENT_USED = "USED"
@@ -476,7 +474,8 @@ class SizePolicy:
         Parse a string representation of a size policy.
         """
         if policy is None:
-            return SizePolicyType.DEFAULT
+            self._percent = DEFAULT_PERCENT_USED
+            return SizePolicyType.PERCENT_USED
         if "%" not in policy:
             self._size = parse_size_with_units(policy)
             return SizePolicyType.FIXED
@@ -516,8 +515,6 @@ class SizePolicy:
             return int(ceil((percent * value) / 100))
 
         match self.type:
-            case SizePolicyType.DEFAULT:
-                return DEFAULT_SNAPSHOT_SIZE
             case SizePolicyType.FIXED:
                 return self._size
             case SizePolicyType.PERCENT_FREE:
