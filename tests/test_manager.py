@@ -266,14 +266,12 @@ class ManagerTests(unittest.TestCase):
             self.manager.create_snapshot_set(name, self._lvm.mount_points())
 
     def test_create_snapshot_set_no_space_raises(self):
-        # FIXME: when create_snapshot_set() allows passing in a default size
-        # policy use this to request a size that is definitively too big for
-        # the available space.
-        self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
-        self.manager.create_snapshot_set("testset1", self._lvm.mount_points())
-        self.manager.create_snapshot_set("testset2", self._lvm.mount_points())
         with self.assertRaises(snapm.SnapmNoSpaceError) as cm:
-            self.manager.create_snapshot_set("testset3", self._lvm.mount_points())
+            for i in range(0, 10):
+                self.manager.create_snapshot_set(
+                    f"testset{i}", self._lvm.mount_points()
+                )
+                self._lvm.dump_lvs()
 
     def test_create_delete_snapshot_set(self):
         self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
