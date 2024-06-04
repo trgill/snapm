@@ -726,7 +726,9 @@ class Lvm2Cow(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        self._check_free_space(vg_name, lv_name, mount_point, size_policy)
+        self.size_map[mount_point] = self._check_free_space(
+            vg_name, lv_name, mount_point, size_policy
+        )
 
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
@@ -742,9 +744,7 @@ class Lvm2Cow(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        snapshot_size = self._check_free_space(
-            vg_name, lv_name, mount_point, size_policy
-        )
+        snapshot_size = self.size_map[mount_point]
         lvcreate_cmd = [
             LVCREATE_CMD,
             LVCREATE_SNAPSHOT,
