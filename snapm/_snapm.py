@@ -17,7 +17,7 @@ Global definitions for the top-level snapm package.
 from uuid import UUID, uuid5
 from datetime import datetime
 from enum import Enum
-from math import ceil
+import math
 import logging
 import re
 
@@ -414,6 +414,21 @@ class Selection:
         return self.name is not None or self.uuid is not None
 
 
+def size_fmt(value):
+    """
+    Format a size in bytes as a human readable string.
+
+    :param value: The integer value to format.
+    :returns: A human readable string reflecting value.
+    """
+    suffixes = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"]
+    magnitude = int(math.floor(math.log(value, 1024)))
+    val = value / math.pow(1024, magnitude)
+    if magnitude > 7:
+        return f"{val:.1f}YiB"
+    return f"{val:3.1f}{suffixes[magnitude]}"
+
+
 def parse_size_with_units(value):
     """
     Parse a size string with optional unit suffix and return a value in bytes,
@@ -520,8 +535,8 @@ class SizePolicy:
         """
 
         def percent_of_sectors(percent, value):
-            size = int(ceil((percent * value) / 100))
-            return SECTOR_SIZE * ceil(size / SECTOR_SIZE)
+            size = int(math.ceil((percent * value) / 100))
+            return SECTOR_SIZE * math.ceil(size / SECTOR_SIZE)
 
         match self.type:
             case SizePolicyType.FIXED:
@@ -948,6 +963,7 @@ __all__ = [
     "SnapmInvalidIdentifierError",
     "SnapmParseError",
     "Selection",
+    "size_fmt",
     "is_size_policy",
     "parse_size_with_units",
     "SizePolicyType",

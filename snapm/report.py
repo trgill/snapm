@@ -32,6 +32,8 @@ import sys
 import uuid
 import math
 
+from snapm import size_fmt
+
 
 def find_minimum_sha_prefix(shas, min_prefix):
     """Find the minimum SHA prefix length guaranteeing uniqueness.
@@ -97,15 +99,6 @@ MIN_SHA_WIDTH = 7
 
 string_types = (str,)
 num_types = (int, float)
-
-
-def size_fmt(value):
-    suffixes = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"]
-    magnitude = int(math.floor(math.log(value, 1024)))
-    val = value / math.pow(1024, magnitude)
-    if magnitude > 7:
-        return f"{val:.1f}YiB"
-    return f"{val:3.1f}{suffixes[magnitude]}"
 
 
 # pylint: disable=too-many-instance-attributes
