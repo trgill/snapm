@@ -38,6 +38,77 @@ PROC_MOUNTS = "/proc/self/mounts"
 # Fields: origin_name-snapset_snapset-name_timestamp_mount-point
 SNAPSHOT_NAME_FORMAT = "%s-snapset_%s_%d_%s"
 
+_bad_chars = [
+    ":",
+    "?",
+    "@",
+    "[",
+    "]",
+    "#",
+    "<",
+    ">",
+    "{",
+    "}",
+    "~",
+    ";",
+    "%",
+    "$",
+    "£",
+    '"',
+    "!",
+    "*",
+    "&",
+    "^",
+    "`",
+    "'",
+]
+
+
+def _escape_bad_chars(path):
+    """
+    Encode illegal characters in mount point path.
+
+    :param path: The path to escape.
+    :returns: The escaped path.
+    """
+    escaped = ""
+    for char in path:
+        if char in _bad_chars:
+            escaped = escaped + "." + char.encode("utf8").hex()
+        else:
+            if char == ".":
+                escaped = escaped + ".."
+            else:
+                escaped = escaped + char
+    return escaped
+
+
+def _unescape_bad_chars(path):
+    """
+    Decode illegal characters in mount point path.
+
+    :param path: The path to unescape.
+    :returns: The unescaped path.
+    """
+
+    def decode_byte(byte):
+        return bytearray.fromhex(byte).decode("utf8")
+
+    unescaped = ""
+    i = 0
+    while i < len(path):
+        if path[i] == ".":
+            if path[i + 1] == ".":
+                unescaped = unescaped + "."
+                i += 1
+            else:
+                unescaped = unescaped + decode_byte(path[i + 1 : i + 3])
+                i += 2
+        else:
+            unescaped = unescaped + path[i]
+        i += 1
+    return unescaped
+
 
 def encode_mount_point(mount_point):
     """
@@ -48,6 +119,7 @@ def encode_mount_point(mount_point):
     """
     if mount_point == "/":
         return MOUNT_SEPARATOR
+    mount_point = _escape_bad_chars(mount_point)
     parts = [
         part.replace(MOUNT_SEPARATOR, ESCAPED_MOUNT_SEPARATOR)
         for part in mount_point.split(path_sep)
@@ -85,6 +157,7 @@ def decode_mount_point(mount_str):
     """
     Parse the mount point component of a snapshot name.
     """
+    mount_str = _unescape_bad_chars(mount_str)
     mount_parts = _split_mount_separators(mount_str)
     unescaped_parts = [
         part.replace(ESCAPED_MOUNT_SEPARATOR, MOUNT_SEPARATOR) for part in mount_parts
