@@ -371,6 +371,11 @@ class Lvm2Snapshot(Snapshot):
         return SnapStatus.INACTIVE
 
     @property
+    def size(self):
+        lv_dict = self._get_lv_dict_cache()
+        return int(lv_dict[LVS_LV_SIZE].rstrip("B"))
+
+    @property
     def autoactivate(self):
         lv_dict = self._get_lv_dict_cache()
         lv_attr = lv_dict[LVS_LV_ATTR]
