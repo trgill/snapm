@@ -444,9 +444,11 @@ def show_snapshots(manager, selection=None):
     Show snapshots matching selection criteria.
     """
     snapshots = manager.find_snapshots(selection=selection)
+    first = True
     for snapshot in snapshots:
-        print(snapshot)
-        print()
+        ws = "" if first else "\n"
+        print(f"{ws}{snapshot}")
+        first = False
 
 
 def show_snapsets(manager, selection=None, members=False):
@@ -454,14 +456,18 @@ def show_snapsets(manager, selection=None, members=False):
     Show snapshot sets matching selection criteria.
     """
     snapsets = manager.find_snapshot_sets(selection=selection)
+    first = True
     for snapset in snapsets:
-        print(snapset)
+        ws = "" if first else "\n"
+        print(f"{ws}{snapset}")
+        first = False
         if members:
-            print("Snapshots:\n")
+            print("Snapshots:")
+            first_snapshot = True
             for snapshot in snapset.snapshots:
-                print(_str_indent(str(snapshot), 4))
-                print()
-        print()
+                ws = "" if first_snapshot else "\n"
+                print(ws + _str_indent(str(snapshot), 4))
+                first_snapshot = False
 
 
 def _expand_fields(default_fields, output_fields):
