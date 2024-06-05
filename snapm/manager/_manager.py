@@ -566,7 +566,7 @@ class Manager:
         # Parse size policies and normalise mount paths
         for mp_spec in mount_point_specs:
             if ":" in mp_spec:
-                (mount, policy) = mp_spec.split(":", maxsplit=1)
+                (mount, policy) = mp_spec.rsplit(":", maxsplit=1)
                 if not is_size_policy(policy):
                     mount = f"{mount}:{policy}"
                     policy = default_size_policy
