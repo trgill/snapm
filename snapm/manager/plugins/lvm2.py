@@ -297,7 +297,7 @@ def pool_free_space(vg_name, pool_name):
     lv_dict = lvs_dict[LVS_REPORT][0][LVS_LV][0]
     data_percent = float(lv_dict[LVS_DATA_PERCENT])
     pool_size = int(lv_dict[LVS_LV_SIZE].rstrip("B"))
-    return pool_size - floor(pool_size * (data_percent / 100))
+    return int(pool_size - floor((pool_size * data_percent) / 100.0))
 
 
 class Lvm2Snapshot(Snapshot):
@@ -394,6 +394,29 @@ class Lvm2Snapshot(Snapshot):
             self._lv_dict_cache = lvs_dict[LVS_REPORT][0][LVS_LV][0]
             self._lv_dict_cache_ts = now
         return self._lv_dict_cache
+
+
+class Lvm2CowSnapshot(Lvm2Snapshot):
+    """
+    Class for LVM2 copy-on-write snapshot objects.
+    """
+
+    @property
+    def free(self):
+        lv_dict = self._get_lv_dict_cache()
+        lv_data_percent = float(lv_dict[LVS_DATA_PERCENT])
+        return int(((100.0 - lv_data_percent) * self.size) / 100.0)
+
+
+class Lvm2ThinSnapshot(Lvm2Snapshot):
+    """
+    Class for LVM2 thin snapshot objects.
+    """
+
+    @property
+    def free(self):
+        lv_dict = self._get_lv_dict_cache()
+        return pool_free_space(self.vg_name, lv_dict[LVS_POOL_LV])
 
 
 def filter_cow_snapshot(lv_dict):
@@ -658,7 +681,7 @@ class Lvm2Cow(_Lvm2):
                     full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_dict[LVS_LV_NAME]}"
                     _log_debug_lvm2("Found %s snapshot: %s", self.name, full_name)
                     snapshots.append(
-                        Lvm2Snapshot(
+                        Lvm2CowSnapshot(
                             full_name,
                             snapset,
                             f"{lv_dict[LVS_LV_ORIGIN]}",
@@ -767,7 +790,7 @@ class Lvm2Cow(_Lvm2):
             raise SnapmCalloutError(
                 f"{LVCREATE_CMD} failed with: {err.stderr.decode('utf8')}"
             ) from err
-        return Lvm2Snapshot(
+        return Lvm2CowSnapshot(
             f"{vg_name}/{snapshot_name}",
             snapset_name,
             lv_name,
@@ -803,7 +826,7 @@ class Lvm2Thin(_Lvm2):
                     _log_debug_lvm2("Found %s snapshot: %s", self.name, full_name)
                     (snapset, timestamp, mount_point) = fields
                     snapshots.append(
-                        Lvm2Snapshot(
+                        Lvm2ThinSnapshot(
                             full_name,
                             snapset,
                             f"{lv_dict[LVS_LV_ORIGIN]}",
@@ -871,7 +894,7 @@ class Lvm2Thin(_Lvm2):
             run(lvcreate_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(f"{LVCREATE_CMD} failed with: {err}") from err
-        return Lvm2Snapshot(
+        return Lvm2ThinSnapshot(
             f"{vg_name}/{snapshot_name}",
             snapset_name,
             lv_name,

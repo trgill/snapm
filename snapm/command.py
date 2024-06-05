@@ -279,6 +279,15 @@ _snapshot_fields = [
     ),
     FieldType(
         PR_SNAPSHOT,
+        "free",
+        "Free",
+        "Free space available",
+        6,
+        REP_SIZE,
+        lambda f, d: f.report_size(d.free),
+    ),
+    FieldType(
+        PR_SNAPSHOT,
         "autoactivate",
         "Autoactivate",
         "Autoactivation status",
@@ -288,7 +297,7 @@ _snapshot_fields = [
     ),
 ]
 
-_DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,size,autoactivate,devpath"
+_DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,size,free,autoactivate,devpath"
 _VERBOSE_SNAPSHOT_FIELDS = _DEFAULT_SNAPSHOT_FIELDS + ",provider,snapshot_uuid"
 
 

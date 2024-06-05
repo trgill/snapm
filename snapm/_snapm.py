@@ -855,6 +855,16 @@ class Snapshot:
         raise NotImplementedError
 
     @property
+    def free(self):
+        """
+        The space available to this snapshot in bytes. For snapshots with
+        fixed-size backstores this reflects the space remaining in the
+        current backstore. For snapshots that dynamically allocate space
+        to the snapshot it indicates the pooled space available.
+        """
+        raise NotImplementedError
+
+    @property
     def autoactivate(self):
         """
         The autoactivation status of this snapshot. Returns ``True`` if the
