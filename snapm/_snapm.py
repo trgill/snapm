@@ -717,15 +717,6 @@ class Snapshot:
     subclass ``Snapshot`` to provide a specific implementation.
     """
 
-    _name = None
-    _uuid = None
-    _snapset_name = None
-    _origin = None
-    _timestamp = None
-    _mount_point = None
-    _provider = None
-    _snapshot_set = None
-
     # pylint: disable=too-many-arguments
     def __init__(self, name, snapset_name, origin, timestamp, mount_point, provider):
         """
@@ -745,6 +736,7 @@ class Snapshot:
         self._timestamp = timestamp
         self._mount_point = mount_point
         self._provider = provider
+        self._snapshot_set = None
 
     def __str__(self):
         """
