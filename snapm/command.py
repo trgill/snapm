@@ -315,8 +315,8 @@ _snapshot_fields = [
     ),
 ]
 
-_DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,size,free,autoactivate,devpath"
-_VERBOSE_SNAPSHOT_FIELDS = _DEFAULT_SNAPSHOT_FIELDS + ",provider,snapshot_uuid"
+_DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,size,free,autoactivate,provider"
+_VERBOSE_SNAPSHOT_FIELDS = _DEFAULT_SNAPSHOT_FIELDS + ",devpath,snapshot_uuid"
 
 
 def _str_indent(string, indent):
