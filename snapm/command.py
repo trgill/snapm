@@ -202,7 +202,6 @@ _snapshot_set_fields = [
 ]
 
 _DEFAULT_SNAPSET_FIELDS = "name,time,nr_snapshots,status,mountpoints"
-_VERBOSE_SNAPSET_FIELDS = _DEFAULT_SNAPSET_FIELDS + ",autoactivate,uuid"
 
 _snapshot_fields = [
     FieldType(
@@ -316,7 +315,6 @@ _snapshot_fields = [
 ]
 
 _DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,size,free,autoactivate,provider"
-_VERBOSE_SNAPSHOT_FIELDS = _DEFAULT_SNAPSHOT_FIELDS + ",devpath,snapshot_uuid"
 
 
 def _str_indent(string, indent):
@@ -548,7 +546,7 @@ def print_snapsets(
     )
 
 
-def _generic_list_cmd(cmd_args, select, opts, manager, verbose_fields, print_fn):
+def _generic_list_cmd(cmd_args, select, opts, manager, print_fn):
     """
     Generic list command implementation.
 
@@ -568,8 +566,6 @@ def _generic_list_cmd(cmd_args, select, opts, manager, verbose_fields, print_fn)
     """
     if cmd_args.options:
         fields = cmd_args.options
-    elif cmd_args.verbose:
-        fields = verbose_fields
     else:
         fields = None
 
@@ -734,9 +730,7 @@ def _list_cmd(cmd_args):
     manager = Manager()
     opts = _report_opts_from_args(cmd_args)
     select = Selection.from_cmd_args(cmd_args)
-    return _generic_list_cmd(
-        cmd_args, select, opts, manager, _VERBOSE_SNAPSET_FIELDS, print_snapsets
-    )
+    return _generic_list_cmd(cmd_args, select, opts, manager, print_snapsets)
 
 
 def _show_cmd(cmd_args):
@@ -841,9 +835,7 @@ def _list_snapshot_cmd(cmd_args):
     manager = Manager()
     opts = _report_opts_from_args(cmd_args)
     select = Selection.from_cmd_args(cmd_args)
-    return _generic_list_cmd(
-        cmd_args, select, opts, manager, _VERBOSE_SNAPSHOT_FIELDS, print_snapshots
-    )
+    return _generic_list_cmd(cmd_args, select, opts, manager, print_snapshots)
 
 
 def _show_snapshot_cmd(cmd_args):
