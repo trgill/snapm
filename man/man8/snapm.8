@@ -60,8 +60,10 @@ Snapm \(em Linux snapshot manager
 .  BR \fBcreate
 .  RB [ -b | --bootable ]
 .  RB [ -r | --rollback ]
+.  RB [ -s | --size-policy
+.  IR policy ]
 .  IR \fIname\fP
-.  IR \fImount_point\fP ...
+.  IR \fImount_point[size_policy]\fP ...
 .  ad b
 ..
 .CMD_SNAPSET_CREATE
@@ -379,6 +381,12 @@ Output report columns as rows
 Report field separator
 .
 .HP
+.BR -s | --size-policy
+.IR size_policy
+.br
+Specify a default size policy when creating snapshot sets
+.
+.HP
 .BR -u | --uuid
 .IR uuid
 .br
@@ -438,6 +446,30 @@ snapshots it contains: if any snapshots are \fIinactive\fP then the overall
 status of the snapset is also \fIinactive\fP. If any snapshots within the set
 are \fIinvalid\fP then the snapshot set status as a whole is also
 \fIinvalid\fP.
+.P
+.B Snapshot size policies
+.P
+For snapshot providers that require a fixed space to be allocated for the
+snapshot data store a size policy can be specified at creation time. There are
+currently four types of size policy that can be used to set the available
+snapshot size:
+.sp
+.PD 0
+.TP 16
+.B FIXED
+A fixed size with optional unit suffix (MiB, GiB, TiB, etc.).
+.TP
+.B %FREE
+A percentage of the free space available from 0 to 100%.
+.TP
+.B %USED
+A percentage of the space currently consumed on the mount point, as reported
+by \fIdf\fP. Values greater than 100% can be used to allow the existing content
+to be completely overwritten without running out of space.
+.TP
+.B %SIZE
+A percentage of the size of the origin volume from 0 to 100%.
+.PD
 .
 .P
 .B Snapshot Set Commands
@@ -470,6 +502,31 @@ Status:       Inactive
 When creating snapshot sets \fB--bootable\fP and \fB--rollback\fP
 can optionally be used to automatically create snapshot boot and
 rollback boot entries respectively.
+
+For snapshot providers that require a fixed size snapshot store to be
+allocated (for e.g. lvm2-cow) a size policy can be specified on the create
+command line, either as a global default or individually for each mount
+point. To specify a default policy use the \fB--size-policy\fP argument.
+To specify a per-mount point size policy append the policy to the mount
+point path separated by the \fB:\fP character:
+.br
+#
+.B snapm snapset create backup --size-policy 25%FREE /:4G /home /var
+.br
+SnapsetName:    backup
+.br
+MountPoints:    /, /home, /var
+.br
+NrSnapshots:    3
+.br
+Time:           2024-06-05 18:43:43
+.br
+UUID:           51b14f55-5281-54ca-87b9-1ff4991cb830
+.br
+Status:         Inactive
+.br
+Snapshot providers that do not allocate a fixed size for snapshot data ignore
+any size policy specified on the command line.
 .
 .HP
 .B snapm
