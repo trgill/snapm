@@ -333,7 +333,9 @@ def _do_print_type(
     return report.report_output()
 
 
-def create_snapset(manager, name, mount_points, boot=False, rollback=False):
+def create_snapset(
+    manager, name, mount_points, size_policy=None, boot=False, rollback=False
+):
     """
     Create a new snapshot set from a list of mount points.
 
@@ -341,7 +343,9 @@ def create_snapset(manager, name, mount_points, boot=False, rollback=False):
     :param name: The name of the new snapshot set
     :param mount_points: A list of mount points to snapshot
     """
-    snapset = manager.create_snapshot_set(name, mount_points)
+    snapset = manager.create_snapshot_set(
+        name, mount_points, default_size_policy=size_policy
+    )
 
     # Snapshot sets must be active to create boot entries.
     if boot or rollback:
@@ -562,6 +566,7 @@ def _create_cmd(cmd_args):
         manager,
         cmd_args.snapset_name,
         cmd_args.mount_points,
+        size_policy=cmd_args.size_policy,
         boot=cmd_args.bootable,
         rollback=cmd_args.rollback,
     )
@@ -1045,6 +1050,13 @@ def main(args):
         type=str,
         nargs="+",
         help="A list of mount points to include in this snapshot set",
+    )
+    snapset_create_parser.add_argument(
+        "-s",
+        "--size-policy",
+        type=str,
+        action="store",
+        help="A default size policy for fixed size snapshots",
     )
     snapset_create_parser.add_argument(
         "-b",
