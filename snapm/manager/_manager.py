@@ -682,7 +682,9 @@ class Manager:
                 self.by_name[old_snapset.name] = old_snapset
                 self.by_uuid[str(old_snapset.uuid)] = old_snapset
                 self.snapshot_sets.append(old_snapset)
-                raise err
+                raise SnapmPluginError(
+                    f"Could not rename all snapshots for set {old_name}"
+                )
 
         new_snapset = SnapshotSet(new_name, timestamp, new_snapshots)
         for snapshot in new_snapset.snapshots:
@@ -716,6 +718,9 @@ class Manager:
                         snapshot.name,
                         err,
                     )
+                    raise SnapmPluginError(
+                        f"Could not delete all snapshots for set {snapset.name}"
+                    )
 
             self.snapshot_sets.remove(snapset)
             self.by_name.pop(snapset.name)
@@ -748,6 +753,9 @@ class Manager:
                         snapshot.name,
                         err,
                     )
+                    raise SnapmPluginError(
+                        f"Could not roll back all snapshots for set {snapset.name}"
+                    )
             rolled_back += 1
         return rolled_back
 
@@ -773,6 +781,9 @@ class Manager:
                         snapshot.name,
                         err,
                     )
+                    raise SnapmPluginError(
+                        f"Could not activate all snapshots for set {snapset.name}"
+                    )
             activated += 1
         return activated
 
@@ -797,6 +808,9 @@ class Manager:
                         "Failed to deactivate snapshot set member %s: %s",
                         snapshot.name,
                         err,
+                    )
+                    raise SnapmPluginError(
+                        f"Could not deactivate all snapshots for set {snapset.name}"
                     )
             deactivated += 1
         return deactivated
@@ -837,7 +851,7 @@ class Manager:
 
         snapset.autoactivate = True
         if not snapset.autoactivate:
-            raise SnapmError(
+            raise SnapmPluginError(
                 "Could not enable autoactivation for all snapshots in snapshot "
                 f"set {snapset.name}"
             )
