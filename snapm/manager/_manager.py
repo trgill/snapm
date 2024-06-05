@@ -547,7 +547,7 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
-    def create_snapshot_set(self, name, mount_point_specs):
+    def create_snapshot_set(self, name, mount_point_specs, default_size_policy=None):
         """
         Create a snapshot set of the supplied mount points with the name
         ``name``.
@@ -562,14 +562,15 @@ class Manager:
         mount_points = []
         size_policies = {}
 
+        # Parse size policies and normalise mount paths
         for mp_spec in mount_point_specs:
             if ":" in mp_spec:
                 (mount, policy) = mp_spec.split(":", maxsplit=1)
                 if not is_size_policy(policy):
                     mount = f"{mount}:{policy}"
-                    policy = None
+                    policy = default_size_policy
             else:
-                (mount, policy) = (mp_spec, None)
+                (mount, policy) = (mp_spec, default_size_policy)
             mount = normpath(mount)
             mount_points.append(mount)
             size_policies[mount] = policy
