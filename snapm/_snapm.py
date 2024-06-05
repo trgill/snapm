@@ -763,6 +763,8 @@ class Snapshot:
             f"Provider:       {self.provider}\n"
             f"UUID:           {self.uuid}\n"
             f"Status:         {str(self.status)}\n"
+            f"Size:           {size_fmt(self.size)}\n"
+            f"Free:           {size_fmt(self.free)}\n"
             f"Autoactivate:   {'yes' if self.autoactivate else 'no'}\n"
             f"DevicePath:     {self.devpath}"
         )
