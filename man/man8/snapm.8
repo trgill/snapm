@@ -793,6 +793,18 @@ snapshot.
 The current status of this snapshot. Possible values are \fIActive\fP,
 \fIInactive\fP, and \fIInvalid\fP.
 .TP
+.B size
+The size of the snapshot as a human readable string.
+.TP
+.B free
+The amount of free space available to the snapshot as a human readbale string.
+.TP
+.B size_bytes
+The size of the snapshot in bytes.
+.TP
+.B free_bytes
+The amount of free space available to the snapshot in bytes.
+.TP
 .B autoactivate
 Whether this snapshot is configured for autoactivation.
 .P
@@ -813,21 +825,13 @@ List the available snapshots
 #
 .B snapm snapshot list
 .br
-SnapsetName  Origin           MountPoint       Status   Autoactivate DevPath
+SnapsetName  Origin           MountPoint       Status   Size   Free   Autoactivate Provider
 .br
-backup       fedora/home      /home            Active   yes          /dev/fedora/home-snapset_backup_1701354370_-home
+backup       /dev/fedora/root /                Active   4.0GiB 4.0GiB yes          lvm2-cow
 .br
-backup       fedora/opt       /opt             Active   yes          /dev/fedora/opt-snapset_backup_1701354370_-opt
+backup       /dev/fedora/var  /var             Active   5.8GiB 5.8GiB yes          lvm2-cow
 .br
-backup       fedora/root      /                Active   yes          /dev/fedora/root-snapset_backup_1701354370_-
-.br
-backup       fedora/data      /data            Inactive no
-.br
-backup       fedora/srv       /srv             Inactive no
-.br
-userdata     fedora/home      /home            Active   no           /dev/fedora/home-snapset_userdata_1700676215_-home
-.br
-userdata     fedora/data      /data            Active   yes          /dev/fedora/data-snapset_userdata_1700676215_-data
+backup       /dev/fedora/home /home            Inactive 1.0GiB 1.9GiB no           lvm2-thin
 .br
 .P
 Create a new snapset from the mount points /, /home, and /var
@@ -885,34 +889,38 @@ UUID:         f78f69a5-b589-5fbe-a801-3b48d90eec10
 Status:       Active
 .br
 .P
-Display the snapshot with UUID 7c473c4f-8380-5fa8-9ff8-b15f8b98bdd3
+Display the snapshot with UUID f8cc06e3-780e-5bb4-aa5f-c5aa155a25ce
 .br
 #
-.B snapm snapshot show -U 7c473c4f-8380-5fa8-9ff8-b15f8b98bdd3
+.B snapm snapshot show -U f8cc06e3-780e-5bb4-aa5f-c5aa155a25ce
 .br
-Name:           fedora/data-snapset_backup_1701354370_-data
+Name:           fedora/root-snapset_backup_1717609423_-
 .br
 SnapsetName:    backup
 .br
-Origin:         fedora/data
+Origin:         /dev/fedora/root
 .br
-Time:           2023-11-30 14:26:10
+Time:           2024-06-05 18:43:43
 .br
-MountPoint:     /data
+MountPoint:     /
 .br
-Provider:       lvm2-thin
+Provider:       lvm2-cow
 .br
-UUID:           7c473c4f-8380-5fa8-9ff8-b15f8b98bdd3
+UUID:           f8cc06e3-780e-5bb4-aa5f-c5aa155a25ce
 .br
-Status:         Inactive
+Status:         Active
 .br
-Autoactivate:   no
+Size:           4.0GiB
 .br
-DevicePath:
+Free:           4.0GiB
+.br
+Autoactivate:   yes
+.br
+DevicePath:     /dev/fedora/root-snapset_backup_1717609423_-
 .br
 VolumeGroup:    fedora
 .br
-LogicalVolume:  data-snapset_backup_1701354370_-data
+LogicalVolume:  root-snapset_backup_1717609423_-
 .br
 .P
 .SH AUTHORS
