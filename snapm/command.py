@@ -42,6 +42,7 @@ from snapm.report import (
     REP_STR,
     REP_TIME,
     REP_UUID,
+    REP_SIZE,
     REP_STR_LIST,
     ReportOpts,
     ReportObjType,
@@ -269,6 +270,15 @@ _snapshot_fields = [
     ),
     FieldType(
         PR_SNAPSHOT,
+        "size",
+        "Size",
+        "Snapshot size",
+        6,
+        REP_SIZE,
+        lambda f, d: f.report_size(d.size),
+    ),
+    FieldType(
+        PR_SNAPSHOT,
         "autoactivate",
         "Autoactivate",
         "Autoactivation status",
@@ -278,7 +288,7 @@ _snapshot_fields = [
     ),
 ]
 
-_DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,autoactivate,devpath"
+_DEFAULT_SNAPSHOT_FIELDS = "name,origin,mountpoint,status,size,autoactivate,devpath"
 _VERBOSE_SNAPSHOT_FIELDS = _DEFAULT_SNAPSHOT_FIELDS + ",provider,snapshot_uuid"
 
 
