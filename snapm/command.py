@@ -745,7 +745,7 @@ def _show_cmd(cmd_args):
     """
     manager = Manager()
     select = Selection.from_cmd_args(cmd_args)
-    show_snapsets(manager, selection=select, members=cmd_args.verbose)
+    show_snapsets(manager, selection=select, members=cmd_args.members)
     return 0
 
 
@@ -1176,6 +1176,12 @@ def main(args):
     )
     snapset_show_parser.set_defaults(func=_show_cmd)
     _add_identifier_args(snapset_show_parser, snapset=True)
+    snapset_show_parser.add_argument(
+        "-m",
+        "--members",
+        action="store_true",
+        help="Show snapshots that are part of each snapshot set",
+    )
 
     # Subparser for snapshot commands
     snapshot_parser = type_subparser.add_parser(SNAPSHOT_TYPE, help="Snapshot commands")

@@ -28,6 +28,7 @@ class MockArgs(object):
     name_prefixes = False
     no_headings = False
     options = ""
+    members = False
     sort = ""
     rows = False
     separator = None
