@@ -564,11 +564,6 @@ class SnapshotSet:
     in time and managed as a group.
     """
 
-    _name = None
-    _uuid = None
-    _timestamp = None
-    _snapshots = []
-
     def __init__(self, name, timestamp, snapshots):
         """
         Initialise a new ``SnapshotSet`` object.
@@ -578,8 +573,8 @@ class SnapshotSet:
         :param snapshots: A list of ``Snapshot`` objects to be included in this set.
         """
         self._name = name
-        self._timestamp = timestamp
         self._uuid = uuid5(NAMESPACE_SNAPSHOT_SET, name + str(timestamp))
+        self._timestamp = timestamp
         self._snapshots = snapshots
         self._by_mount_point = {}
         self.boot_entry = None
