@@ -186,6 +186,7 @@ Snapm \(em Linux snapshot manager
 .  BR snapset
 .  BR \fBshow
 .  IR [ name | uuid ]
+.  RB [ --members ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
@@ -340,6 +341,11 @@ Specify a snapset name to operate on.
 .IR name
 .br
 Specify a snapshot name to operate on.
+.
+.HP
+.BR --members
+.br
+Include individual snapshots in the output of \fBsnapset show\fP commands.
 .
 .HP
 .BR --name-prefixes | --nameprefixes
@@ -615,7 +621,9 @@ that field respectively.
 .B snapm
 .CMD_SNAPSET_SHOW
 .br
-Display snapsets matching selection criteria on standard out.
+Display snapsets matching selection criteria on standard out. If the
+\fB--members\fP option is given individual snapshots are included in the
+output.
 .
 .P
 .B Snapshot Commands
