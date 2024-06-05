@@ -57,6 +57,8 @@ _SIZE_SUFFIXES = {
     "Z": 2**70,
 }
 
+SECTOR_SIZE = 512
+
 ETC_FSTAB = "/etc/fstab"
 
 DEFAULT_PERCENT_USED = 200.0
@@ -517,18 +519,19 @@ class SizePolicy:
         configuration.
         """
 
-        def percent_of(percent, value):
-            return int(ceil((percent * value) / 100))
+        def percent_of_sectors(percent, value):
+            size = int(ceil((percent * value) / 100))
+            return SECTOR_SIZE * ceil(size / SECTOR_SIZE)
 
         match self.type:
             case SizePolicyType.FIXED:
                 return self._size
             case SizePolicyType.PERCENT_FREE:
-                return percent_of(self._percent, self._free_space)
+                return percent_of_sectors(self._percent, self._free_space)
             case SizePolicyType.PERCENT_USED:
-                return percent_of(self._percent, self._fs_used)
+                return percent_of_sectors(self._percent, self._fs_used)
             case SizePolicyType.PERCENT_SIZE:
-                return percent_of(self._percent, self._dev_size)
+                return percent_of_sectors(self._percent, self._dev_size)
             case _:
                 raise SnapmParseError(f"Invalid size policy type: {self.type}")
 
