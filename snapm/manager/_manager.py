@@ -40,6 +40,7 @@ from snapm import (
     SnapmPathError,
     SnapmNotFoundError,
     SnapmInvalidIdentifierError,
+    SnapmPluginError,
     Selection,
     is_size_policy,
     SnapshotSet,
@@ -620,7 +621,7 @@ class Manager:
                 _log_error("Error creating snapshot set member %s: %s", name, err)
                 for snapshot in snapshots:
                     snapshot.delete()
-                raise err
+                raise SnapmPluginError(f"Could not create all snapshots for set {name}")
 
         for provider in set(provider_map.values()):
             provider.end_transaction()

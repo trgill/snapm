@@ -192,6 +192,12 @@ class SnapmParseError(SnapmError):
     """
 
 
+class SnapmPluginError(SnapmError):
+    """
+    An error performing an action via a plugin.
+    """
+
+
 #
 # Selection criteria class
 #
@@ -964,6 +970,7 @@ __all__ = [
     "SnapmNotFoundError",
     "SnapmInvalidIdentifierError",
     "SnapmParseError",
+    "SnapmPluginError",
     "Selection",
     "size_fmt",
     "is_size_policy",
