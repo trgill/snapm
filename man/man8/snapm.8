@@ -610,11 +610,12 @@ Output a tabular report of snapsets.
 Displays a report with one snapset per line, containing fields describing the
 properties of the configured snapshot sets.
 
-The list of fields to display is given with \fB--options\fP as a comma separated
-list of field names. To obtain a list of available fields run '\fBsnapm snapset
-list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
-specified fields are appended to the default field list. Otherwise the given
-list of fields replaces the default set of report fields.
+The list of fields to display is given with \fB-o|--options\fP as a comma
+separated list of field names. To obtain a list of available fields run
+\&'\fBsnapm snapset list -o help\fP'. If the list of fields begins with the
+\&'\fB+\fP' character the specified fields are appended to the default field
+list. Otherwise the given list of fields replaces the default set of report
+fields.
 
 Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
 option. The option expects a comma separated list of keys, with optional
