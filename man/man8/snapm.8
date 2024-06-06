@@ -768,6 +768,18 @@ The list of mount points contained in this snapshot set.
 .B status
 The current status of this snapshot set. Possible values are \fIActive\fP,
 \fIInactive\fP, and \fIInvalid\fP.
+.TP
+.B autoactivate
+The autoactivation setting for this snapshot set.
+.TP
+.B bootentry
+The \fBboot identifier\fP of the boot loader entry configured to boot this
+snapshot set, or the empty string if no boot entry has been created.
+.TP
+.B rollbackentry
+The \fBboot identifier\fP of the boot loader entry configured to roll back
+this snapshot set following a merge operation, or the empty string if no
+rollback boot entry has been created.
 .
 .SS Snapshots
 .
