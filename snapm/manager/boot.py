@@ -19,6 +19,7 @@ from os.path import exists as path_exists
 import logging
 
 import boom
+import boom.cache
 import boom.command
 from boom.bootloader import (
     OPTIONAL_KEYS,
@@ -185,6 +186,7 @@ def _create_boom_boot_entry(
         lvm_root_lv=lvm_root_lv,
         profile=osp,
         write=False,
+        images=boom.command.I_BACKUP,
         no_fstab=True if mounts else False,
         mounts=mounts,
         add_opts=tag_arg,
