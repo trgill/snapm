@@ -744,6 +744,7 @@ class Manager:
                 f"Could not find snapshot sets matching {selection}"
             )
         for snapset in sets:
+            delete_snapset_boot_entry(snapset)
             for snapshot in snapset.snapshots:
                 try:
                     snapshot.rollback()
