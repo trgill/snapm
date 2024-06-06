@@ -264,6 +264,17 @@ def create_snapset_rollback_entry(snapset, title=None):
     )
 
 
+def _delete_boot_entry(boot_id):
+    """
+    Delete a boom boot entry by ID.
+
+    :param boot_id: The boot identifier to delete.
+    """
+    selection = boom.Selection(boot_id=boot_id)
+    boom.command.delete_entries(selection=selection)
+    boom.cache.clean_cache()
+
+
 def delete_snapset_boot_entry(snapset):
     """
     Delete the boot entry corresponding to ``snapset``.
@@ -272,8 +283,7 @@ def delete_snapset_boot_entry(snapset):
     """
     if snapset.boot_entry is None:
         return
-    selection = boom.Selection(boot_id=snapset.boot_entry.boot_id)
-    boom.command.delete_entries(selection=selection)
+    _delete_boot_entry(snapset.boot_entry.boot_id)
 
 
 def delete_snapset_rollback_entry(snapset):
@@ -284,8 +294,7 @@ def delete_snapset_rollback_entry(snapset):
     """
     if snapset.rollback_entry is None:
         return
-    selection = boom.Selection(boot_id=snapset.rollback_entry.boot_id)
-    boom.command.delete_entries(selection=selection)
+    _delete_boot_entry(boot_id=snapset.rollback_entry.boot_id)
 
 
 class BootEntryCache(dict):
