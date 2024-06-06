@@ -423,13 +423,12 @@ Snapm manages named collections of snapshots taken at a common point in time as
 allows the state of the system to be captured spanning over several volumes.
 Valid characters for snapset names are A-Z, a-z, 0-9, -, ., and +. Snapshot sets
 and snapshots are also identified by a unique UUID value. The terms \fIsnapshot
-set\fP and \fIsnapset\fP are used interchangeable
-in this manual page.
+set\fP and \fIsnapset\fP are used interchangeably in this manual page.
 
 A plugin model is used to map mount points onto possible snapshot
 \fIproviders\fP. A provider plugin must exist for each mount point specified
 when creating a snapshot set. The current plugins support LVM2 copy-on-write and
-thinly provisioned snapshots.
+LVM2 thinly provisioned snapshots.
 
 The \fIsnapset\fP subcommand allows snapsets to be created, deleted,
 enumerated, renamed and activated or deactivated.
