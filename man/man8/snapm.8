@@ -851,7 +851,7 @@ backup       /dev/fedora/var  /var             Active   5.8GiB 5.8GiB yes       
 backup       /dev/fedora/home /home            Inactive 1.0GiB 1.9GiB no           lvm2-thin
 .br
 .P
-Create a new snapset from the mount points /, /home, and /var
+Create a new snapshot set from the mount points /, /home, and /var
 .br
 #
 .B snapm snapset create backup / /home /var
@@ -867,6 +867,28 @@ Time:         2023-11-21 16:01:31
 UUID:         fb76b84b-b615-5aa7-8b2c-713614794a12
 .br
 Status:       Active
+.P
+Create a bootable snapshot set from the mount points /, /home, and /var
+.br
+#
+.B snapm snapset create upgrade -rb / /home /var
+.br
+SnapsetName:    upgrade
+.br
+MountPoints:    /, /home, /var
+.br
+NrSnapshots:    3
+.br
+Time:           2024-06-06 13:19:15
+.br
+UUID:           5c38930a-6907-54a3-9482-3f2b29a5fc09
+.br
+Status:         Active
+.br
+Boot entry:     b0eb722
+.br
+Rollback entry: c707e9c
+.br
 .P
 Delete the snapset named 'backup'
 .br
@@ -888,56 +910,60 @@ Rename the snapset 'backup' to 'oldbackup'
 .B snapm snapset rename backup oldbackup
 .br
 .P
-Display the snapset named 'oldbackup'
+Display the snapset named 'upgrade'
 .br
 #
-.B snapm snapset show oldbackup
+.B snapm snapset show upgrade
 .br
-SnapsetName:  oldbackup
+SnapsetName:    upgrade
 .br
-MountPoints:  /home, /, /var
+MountPoints:    /, /var, /home
 .br
-NrSnapshots:  3
+NrSnapshots:    3
 .br
-Time:         2023-11-21 16:01:31
+Time:           2024-06-06 13:19:15
 .br
-UUID:         f78f69a5-b589-5fbe-a801-3b48d90eec10
+UUID:           5c38930a-6907-54a3-9482-3f2b29a5fc09
 .br
-Status:       Active
+Status:         Active
+.br
+Boot entry:     b0eb722
+.br
+Rollback entry: c707e9c
 .br
 .P
-Display the snapshot with UUID f8cc06e3-780e-5bb4-aa5f-c5aa155a25ce
+Display the snapshot with UUID 96a652ed-1951-569e-86bf-ad2bafcce9d9
 .br
 #
-.B snapm snapshot show -U f8cc06e3-780e-5bb4-aa5f-c5aa155a25ce
+.B snapm snapshot show -U 96a652ed-1951-569e-86bf-ad2bafcce9d9
 .br
-Name:           fedora/root-snapset_backup_1717609423_-
+Name:           fedora/root-snapset_upgrade_1717676355_-
 .br
-SnapsetName:    backup
+SnapsetName:    upgrade
 .br
 Origin:         /dev/fedora/root
 .br
-Time:           2024-06-05 18:43:43
+Time:           2024-06-06 13:19:15
 .br
 MountPoint:     /
 .br
 Provider:       lvm2-cow
 .br
-UUID:           f8cc06e3-780e-5bb4-aa5f-c5aa155a25ce
+UUID:           96a652ed-1951-569e-86bf-ad2bafcce9d9
 .br
 Status:         Active
 .br
-Size:           4.0GiB
+Size:           6.1GiB
 .br
-Free:           4.0GiB
+Free:           6.1GiB
 .br
 Autoactivate:   yes
 .br
-DevicePath:     /dev/fedora/root-snapset_backup_1717609423_-
+DevicePath:     /dev/fedora/root-snapset_upgrade_1717676355_-
 .br
 VolumeGroup:    fedora
 .br
-LogicalVolume:  root-snapset_backup_1717609423_-
+LogicalVolume:  root-snapset_upgrade_1717676355_-
 .br
 .P
 .SH AUTHORS
