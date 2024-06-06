@@ -726,6 +726,7 @@ class Manager:
             self.by_name.pop(snapset.name)
             self.by_uuid.pop(str(snapset.uuid))
             deleted += 1
+        self._boot_cache.refresh_cache()
         return deleted
 
     def rollback_snapshot_sets(self, selection):
@@ -758,6 +759,7 @@ class Manager:
                         f"Could not roll back all snapshots for set {snapset.name}"
                     )
             rolled_back += 1
+        self._boot_cache.refresh_cache()
         return rolled_back
 
     def activate_snapshot_sets(self, selection):
@@ -861,6 +863,7 @@ class Manager:
                 f"Boot entry already associated with snapshot set {snapset.name}"
             )
         create_snapset_boot_entry(snapset)
+        self._boot_cache.refresh_cache()
 
     def create_snapshot_set_rollback_entry(self, name=None, uuid=None):
         if name is not None:
@@ -881,6 +884,7 @@ class Manager:
                 f"Rollback entry already associated with snapshot set {snapset.name}"
             )
         create_snapset_rollback_entry(snapset)
+        self._boot_cache.refresh_cache()
 
 
 __all__ = [
