@@ -696,6 +696,31 @@ that field respectively.
 .br
 Display snapshots matching selection criteria on standard out.
 .
+.SH BOOTING AND ROLLING BACK SNAPSHOT SETS
+.
+Snapshot manager integrates with the \fBboom(8)\fP boot manager to facilitate
+booting and rolling back snapshot sets. Specifying the \fB-b|--bootable\fP or
+\fB-r|--rollback\fP arguments when creating a snapshot set will cause
+\fBsnapm\fP to create a snapshot boot or rollback boot entry respectively. In
+order for a snapshot set to be made with boot or rollback support it must
+include a snapshot of the root filesystem.
+
+The snapshot boot entry allows the system to boot into the state of the system
+at the time the snapshot was created. This can be used to inspect the previous
+state of the system or to quickly recover from a failed update or
+reconfiguration.
+
+In order to reset the system back to the state at the time the snapshot set was
+created the rollback boot entry is used \fIafter\fP issuing a \fBsnapm snapset
+rollback\fP command. After running the \fBrollback\fP command the system should
+be rebooted into the rollback boot entry. This will start the rollback
+operation on all affected volumes.
+
+Note that rolling back a snapshot set will also destroy the snapshot set since
+the snapshot volumes are folded back into the origin devices. Following the
+rollback the snapshot set will no longer appear in the output of \fBsnapm
+snapset list\fP or \fBsnapm snapset show\fP commands.
+.
 .SH REPORTING COMMANDS
 .
 Both the \fBsnapset list\fP and \fBsnapshot list\fP commands use a common
@@ -972,7 +997,11 @@ Bryn M. Reeves <bmr@redhat.com>
 .
 .SH SEE ALSO
 .
+.BR boom(8)
+.br
 Snapm project page: https://github.com/snapshotmanager/snapm
+.br
+Boom project page: https://github.com/snapshotmanager/boom
 .br
 LVM2 resource page: https://www.sourceware.org/lvm2/
 .br
