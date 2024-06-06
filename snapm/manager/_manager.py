@@ -35,6 +35,7 @@ from snapm.manager.boot import (
 from snapm import (
     SNAPM_DEBUG_MANAGER,
     SnapmError,
+    SnapmNoSpaceError,
     SnapmNoProviderError,
     SnapmExistsError,
     SnapmPathError,
@@ -604,9 +605,22 @@ class Manager:
         timestamp = floor(time())
         for mount in provider_map:
             origin = provider_map[mount].origin_from_mount_point(mount)
-            provider_map[mount].check_create_snapshot(
-                origin, name, timestamp, mount, size_policies[mount]
-            )
+            try:
+                provider_map[mount].check_create_snapshot(
+                    origin, name, timestamp, mount, size_policies[mount]
+                )
+            except SnapmInvalidIdentifierError as err:
+                _log_error(
+                    "Error creating %s snapshot: %s", provider_map[mount].name, err
+                )
+                raise SnapmInvalidIdentifierError(f"Snapset name {name} too long")
+            except SnapmNoSpaceError as err:
+                _log_error(
+                    "Error creating %s snapshot: %s", provider_map[mount].name, err
+                )
+                raise SnapmNoSpaceError(
+                    f"Insufficient free space for snapshot set {name}"
+                )
 
         snapshots = []
         for mount in provider_map:
