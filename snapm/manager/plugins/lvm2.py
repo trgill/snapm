@@ -48,7 +48,8 @@ _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
 
-LVM_MAX_NAME_LEN = 127
+#: For CoW snapshots need to account for -cow LV name generated internally
+LVM_MAX_NAME_LEN = 123
 
 # Global LVM2 report options
 LVM_REPORT_FORMAT = "--reportformat"
