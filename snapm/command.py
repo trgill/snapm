@@ -632,7 +632,7 @@ def _delete_cmd(cmd_args):
     manager = Manager()
     select = Selection.from_cmd_args(cmd_args)
     count = delete_snapset(manager, select)
-    _log_info("Deleted %d snapshot sets", count)
+    _log_info("Deleted %d snapshot set%s", count, "s" if count > 1 else "")
     return 0
 
 
