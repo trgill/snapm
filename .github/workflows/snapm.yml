@@ -37,8 +37,8 @@ jobs:
           sudo mkdir -p /boot/loader/entries
           sudo cp /var/tmp/boom/examples/boom.conf /boot/boom
           # Create profiles for kernel variants seen in CI
-          sudo boom profile create --from-host --uname-pattern generic
-          sudo boom profile create --from-host --uname-pattern azure
+          sudo boom profile create --from-host --uname-pattern generic --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
+          sudo boom profile create --from-host --uname-pattern azure --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
       - name: Check PyCodestyle
         run: >
           pycodestyle snapm --ignore E501,E203,W503
