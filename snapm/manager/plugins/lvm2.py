@@ -865,7 +865,11 @@ class Lvm2Thin(_Lvm2):
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, _size_policy
     ):
-        (vg_name, _) = origin.split("/")
+        (vg_name, lv_name) = origin.split("/")
+        snapshot_name = format_snapshot_name(
+            lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
+        )
+        self._check_lvm_name(vg_name, snapshot_name)
         self._check_free_space(vg_name, origin, mount_point)
 
     def create_snapshot(
