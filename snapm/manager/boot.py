@@ -178,6 +178,13 @@ def _create_boom_boot_entry(
                 f"Error calling boom to create default OsProfile: {err}"
             )
 
+    if mounts:
+        add_opts = f"rw {tag_arg}"
+        del_opts = "ro"
+    else:
+        add_opts = tag_arg
+        del_opts = None
+
     entry = boom.command.create_entry(
         title,
         version,
@@ -185,11 +192,12 @@ def _create_boom_boot_entry(
         root_device,
         lvm_root_lv=lvm_root_lv,
         profile=osp,
+        add_opts=add_opts,
+        del_opts=del_opts,
         write=False,
         images=boom.command.I_BACKUP,
         no_fstab=True if mounts else False,
         mounts=mounts,
-        add_opts=tag_arg,
     )
 
     # Apply defaults for optional keys enabled in profile
