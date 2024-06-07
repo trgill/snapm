@@ -89,12 +89,17 @@ class BootTests(unittest.TestCase):
         os.unlink(TMP_FSTAB)
 
     def _populate_boom_root_path(self):
+        """
+        Populate a mock /boot directory for testing.
+        """
         boot_dir = tempfile.mkdtemp("_snapm_boom_dir", dir=_VAR_TMP)
         boom_dir = os.path.join(boot_dir, "boom")
         os.makedirs(os.path.join(boot_dir, "loader", "entries"), exist_ok=True)
+
         subdirs = ["cache", "hosts", "profiles"]
         for subdir in subdirs:
             os.makedirs(os.path.join(boom_dir, subdir), exist_ok=True)
+
         boom_conf = [
             "[global]\n",
             f"boot_root = {boot_dir}\n",
@@ -106,6 +111,18 @@ class BootTests(unittest.TestCase):
         ]
         with open(os.path.join(boom_dir, "boom.conf"), "w", encoding="utf8") as file:
             file.writelines(boom_conf)
+
+        # Create fake kernel and initramfs for current uname -r
+        version = os.uname()[2]
+        with open(
+            os.path.join(boot_dir, f"vmlinuz-{version}"), "w", encoding="utf8"
+        ) as file:
+            file.write("test\n")
+        with open(
+            os.path.join(boot_dir, f"initramfs-{version}.img"), "w", encoding="utf8"
+        ) as file:
+            file.write("test\n")
+
         return boot_dir
 
     def _cleanup_boom_root_path(self, boot_path):
