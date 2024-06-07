@@ -28,8 +28,8 @@ from snapm.manager.boot import (
     BootCache,
     create_snapset_boot_entry,
     delete_snapset_boot_entry,
-    create_snapset_rollback_entry,
-    delete_snapset_rollback_entry,
+    create_snapset_revert_entry,
+    delete_snapset_revert_entry,
 )
 
 from snapm import (
@@ -162,15 +162,15 @@ class Plugin(metaclass=PluginRegistry):
         """
         raise NotImplementedError
 
-    def rollback_snapshot(self, name):
+    def revert_snapshot(self, name):
         """
-        Request to roll back a snapshot and revert the content of the origin
+        Request to revert a snapshot and revert the content of the origin
         volume to its state at the time of the snapshot.
 
         This may be deferred until the next device activation or mount
         operation for the respective volume.
 
-        :param name: The name of the snapshot to roll back.
+        :param name: The name of the snapshot to revert.
         """
         raise NotImplementedError
 
@@ -465,13 +465,11 @@ class Manager:
             elif str(snapset.uuid) in self._boot_cache.entry_cache:
                 snapset.boot_entry = self._boot_cache.entry_cache[str(snapset.uuid)]
 
-            # Associate snapset with rollback entry if present
-            if snapset.name in self._boot_cache.rollback_cache:
-                snapset.rollback_entry = self._boot_cache.rollback_cache[snapset.name]
-            elif str(snapset.uuid) in self._boot_cache.rollback_cache:
-                snapset.rollback_entry = self._boot_cache.rollback_cache[
-                    str(snapset.uuid)
-                ]
+            # Associate snapset with revert entry if present
+            if snapset.name in self._boot_cache.revert_cache:
+                snapset.revert_entry = self._boot_cache.revert_cache[snapset.name]
+            elif str(snapset.uuid) in self._boot_cache.revert_cache:
+                snapset.revert_entry = self._boot_cache.revert_cache[str(snapset.uuid)]
 
             self.snapshot_sets.append(snapset)
             self.by_name[snapset.name] = snapset
@@ -722,7 +720,7 @@ class Manager:
             )
         for snapset in sets:
             delete_snapset_boot_entry(snapset)
-            delete_snapset_rollback_entry(snapset)
+            delete_snapset_revert_entry(snapset)
             for snapshot in snapset.snapshots:
                 try:
                     snapshot.delete()
@@ -743,17 +741,17 @@ class Manager:
         self._boot_cache.refresh_cache()
         return deleted
 
-    def rollback_snapshot_sets(self, selection):
+    def revert_snapshot_sets(self, selection):
         """
-        Roll back snapshot sets matching selection criteria ``selection``.
+        Revert snapshot sets matching selection criteria ``selection``.
 
-        Request to roll back each snapshot origin within each snapshot set
+        Request to revert each snapshot origin within each snapshot set
         to the state at the time the snapshot was taken.
 
-        :param selection: Selection criteria for snapshot sets to roll back.
+        :param selection: Selection criteria for snapshot sets to revert.
         """
         sets = self.find_snapshot_sets(selection=selection)
-        rolled_back = 0
+        reverted = 0
         if not sets:
             raise SnapmNotFoundError(
                 f"Could not find snapshot sets matching {selection}"
@@ -762,19 +760,19 @@ class Manager:
             delete_snapset_boot_entry(snapset)
             for snapshot in snapset.snapshots:
                 try:
-                    snapshot.rollback()
+                    snapshot.revert()
                 except SnapmError as err:
                     _log_error(
-                        "Failed to roll back snapshot set member %s: %s",
+                        "Failed to revert snapshot set member %s: %s",
                         snapshot.name,
                         err,
                     )
                     raise SnapmPluginError(
-                        f"Could not roll back all snapshots for set {snapset.name}"
+                        f"Could not revert all snapshots for set {snapset.name}"
                     )
-            rolled_back += 1
+            reverted += 1
         self._boot_cache.refresh_cache()
-        return rolled_back
+        return reverted
 
     def activate_snapshot_sets(self, selection):
         """
@@ -879,7 +877,7 @@ class Manager:
         create_snapset_boot_entry(snapset)
         self._boot_cache.refresh_cache()
 
-    def create_snapshot_set_rollback_entry(self, name=None, uuid=None):
+    def create_snapshot_set_revert_entry(self, name=None, uuid=None):
         if name is not None:
             if name not in self.by_name:
                 raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
@@ -893,11 +891,11 @@ class Manager:
         else:
             raise SnapmNotFoundError("A snapshot set name or UUID is required")
 
-        if snapset.rollback_entry is not None:
+        if snapset.revert_entry is not None:
             raise SnapmExistsError(
-                f"Rollback entry already associated with snapshot set {snapset.name}"
+                f"Revert entry already associated with snapshot set {snapset.name}"
             )
-        create_snapset_rollback_entry(snapset)
+        create_snapset_revert_entry(snapset)
         self._boot_cache.refresh_cache()
 
 

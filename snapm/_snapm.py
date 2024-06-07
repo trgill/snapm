@@ -599,7 +599,7 @@ class SnapshotSet:
         self._snapshots = snapshots
         self._by_mount_point = {}
         self.boot_entry = None
-        self.rollback_entry = None
+        self.revert_entry = None
         for snapshot in self._snapshots:
             self._by_mount_point[snapshot.mount_point] = snapshot
 
@@ -619,8 +619,8 @@ class SnapshotSet:
         )
         if self.boot_entry:
             snapset_str += f"\nBoot entry:     {self.boot_entry.disp_boot_id}"
-        if self.rollback_entry:
-            snapset_str += f"\nRollback entry: {self.rollback_entry.disp_boot_id}"
+        if self.revert_entry:
+            snapset_str += f"\nRevert entry:   {self.revert_entry.disp_boot_id}"
         return snapset_str
 
     @property
@@ -911,15 +911,15 @@ class Snapshot:
             self.name, self.origin, new_name, self.timestamp, self.mount_point
         )
 
-    def rollback(self):
+    def revert(self):
         """
-        Request to roll back a snapshot and revert the content of the origin
+        Request to revert a snapshot and revert the content of the origin
         volume to its state at the time of the snapshot.
 
         This may be deferred until the next device activation or mount
         operation for the respective volume.
         """
-        self._provider.rollback_snapshot(self.name)
+        self._provider.revert_snapshot(self.name)
 
     def invalidate_cache(self):
         """

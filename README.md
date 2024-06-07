@@ -20,7 +20,7 @@ provisioned snapshots are supported.
                 * [create](#create)
                 * [delete](#delete)
                 * [rename](#rename)
-                * [rollback](#rollback)
+                * [revert](#revert)
                 * [activate](#activate)
                 * [deactivate](#deactivate)
                 * [autoactivate](#autoactivate)
@@ -100,7 +100,7 @@ deactivate, list and display snapsets.
 ##### create
 Create a new snapset with the provided name and list of mount points.
 ```
-# snapm snapset create [-b|--bootable] [-r|--rollback] <name> mount_point...
+# snapm snapset create [-b|--bootable] [-r|--revert] <name> mount_point...
 ```
 ###### Size Policies
 Some snapshot implementations (Lvm2CoW) require a fixed size to be specified
@@ -159,17 +159,17 @@ Rename an existing snapset.
 # snapm snapset rename <old_name> <new_name>
 ```
 
-##### rollback
-Roll back an existing snapset, re-setting the content of the origin volumes
+##### revert
+Revert an existing snapset, re-setting the content of the origin volumes
 to the state they were in at the time the snapset was created. The snapset
-to be rolled back may be specified either by its name or uuid.
+to be reverted may be specified either by its name or uuid.
 
 Rolling back a snapshot set with mounted and in-use origin volumes will
-schedule the roll back to take place the next time that the volumes are
-activated, for example by booting into a configured rollback boot entry for
+schedule the revert to take place the next time that the volumes are
+activated, for example by booting into a configured revert boot entry for
 the snapshot set.
 ```
-# snapm snapset rollback <name|uuid>
+# snapm snapset revert <name|uuid>
 ```
 
 ##### activate
@@ -357,7 +357,7 @@ positional arguments:
 options:
   -h, --help      show this help message and exit
   -b, --bootable  Create a boot entry for this snapshot set
-  -r, --rollback  Create a rollback boot entry for this snapshot set
+  -r, --revert  Create a revert boot entry for this snapshot set
 ```
 
 ## Documentation

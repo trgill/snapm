@@ -378,7 +378,7 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.set_autoactivate(s, True)
 
-    def test_rollback_snapshot_sets(self):
+    def test_revert_snapshot_sets(self):
         origin_file = "root/origin"
         snapshot_file = "root/snapshot"
         testset = "testset0"
@@ -392,9 +392,9 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(self._lvm.test_path(origin_file), True)
         self.assertEqual(self._lvm.test_path(snapshot_file), True)
 
-        # Start roll back the snapshot set
+        # Start revert the snapshot set
         selection = snapm.Selection(name=testset)
-        self.manager.rollback_snapshot_sets(selection)
+        self.manager.revert_snapshot_sets(selection)
 
         # Unmount the set, deactivate/reactivate and re-mount
         self._lvm.umount_all()

@@ -59,7 +59,7 @@ Snapm \(em Linux snapshot manager
 .  BR snapset
 .  BR \fBcreate
 .  RB [ -b | --bootable ]
-.  RB [ -r | --rollback ]
+.  RB [ -r | --revert ]
 .  RB [ -s | --size-policy
 .  IR policy ]
 .  IR \fIname\fP
@@ -97,10 +97,10 @@ Snapm \(em Linux snapshot manager
 .
 .HP
 .B snapm
-.de CMD_SNAPSET_ROLLBACK
+.de CMD_SNAPSET_REVERT
 .  ad l
 .  BR snapset
-.  BR \fBrollback
+.  BR \fBrevert
 .  IR [ name | uuid ]
 .  RB [ --name
 .  IR name ]
@@ -108,7 +108,7 @@ Snapm \(em Linux snapshot manager
 .  IR uuid ]
 .  ad b
 ..
-.CMD_SNAPSET_ROLLBACK
+.CMD_SNAPSET_REVERT
 .
 .HP
 .B snapm
@@ -370,9 +370,9 @@ Specify which fields to display.
 Specify which fields to sort by.
 .
 .HP
-.BR -r | --rollback
+.BR -r | --revert
 .br
-When creating snapshot sets automatically create a snapshot rollback entry
+When creating snapshot sets automatically create a snapshot revert entry
 for the set.
 .
 .HP
@@ -431,7 +431,7 @@ when creating a snapshot set. The current plugins support LVM2 copy-on-write and
 LVM2 thinly provisioned snapshots.
 
 The \fIsnapset\fP subcommand allows snapsets to be created, deleted,
-enumerated, renamed, rolled back, and activated or deactivated.
+enumerated, renamed, reverted, and activated or deactivated.
 
 The \fIsnapshot\fP subcommand provides access to information describing
 individual snapshots that are part of a snapshot set, for example the device
@@ -508,9 +508,9 @@ UUID:         f217177c-f35a-5b57-b33e-4c8ba0bb231a
 Status:       Inactive
 .br
 
-When creating snapshot sets \fB--bootable\fP and \fB--rollback\fP
+When creating snapshot sets \fB--bootable\fP and \fB--revert\fP
 can optionally be used to automatically create snapshot boot and
-rollback boot entries respectively.
+revert boot entries respectively.
 
 For snapshot providers that require a fixed size snapshot store to be
 allocated (for e.g. lvm2-cow) a size policy can be specified on the create
@@ -554,15 +554,15 @@ Rename an existing snapset. The snapset to be renamed is specified as
 .
 .HP
 .B snapm
-.CMD_SNAPSET_ROLLBACK
+.CMD_SNAPSET_REVERT
 .br
-Roll back an existing snapset, re-setting the content of the origin volumes
+Revert an existing snapset, re-setting the content of the origin volumes
 to the state they were in at the time the snapset was created. The snapset
-to be rolled back may be specified either by its \fBname\fP or \fBuuid\fP.
+to be reverted may be specified either by its \fBname\fP or \fBuuid\fP.
 
 Rolling back a snapshot set with mounted and in-use origin volumes will
-schedule the roll back to take place the next time that the volumes are
-activated, for example by booting into a configured rollback boot entry for
+schedule the revert to take place the next time that the volumes are
+activated, for example by booting into a configured revert boot entry for
 the snapshot set.
 .
 .HP
@@ -700,9 +700,9 @@ Display snapshots matching selection criteria on standard out.
 .
 Snapshot manager integrates with the \fBboom(8)\fP boot manager to facilitate
 booting and rolling back snapshot sets. Specifying the \fB-b|--bootable\fP or
-\fB-r|--rollback\fP arguments when creating a snapshot set will cause
-\fBsnapm\fP to create a snapshot boot or rollback boot entry respectively. In
-order for a snapshot set to be made with boot or rollback support it must
+\fB-r|--revert\fP arguments when creating a snapshot set will cause
+\fBsnapm\fP to create a snapshot boot or revert boot entry respectively. In
+order for a snapshot set to be made with boot or revert support it must
 include a snapshot of the root filesystem.
 
 The snapshot boot entry allows the system to boot into the state of the system
@@ -711,14 +711,14 @@ state of the system or to quickly recover from a failed update or
 reconfiguration.
 
 In order to reset the system back to the state at the time the snapshot set was
-created the rollback boot entry is used \fIafter\fP issuing a \fBsnapm snapset
-rollback\fP command. After running the \fBrollback\fP command the system should
-be rebooted into the rollback boot entry. This will start the rollback
+created the revert boot entry is used \fIafter\fP issuing a \fBsnapm snapset
+revert\fP command. After running the \fBrevert\fP command the system should
+be rebooted into the revert boot entry. This will start the revert
 operation on all affected volumes.
 
 Note that rolling back a snapshot set will also destroy the snapshot set since
 the snapshot volumes are folded back into the origin devices. Following the
-rollback the snapshot set will no longer appear in the output of \fBsnapm
+revert the snapshot set will no longer appear in the output of \fBsnapm
 snapset list\fP or \fBsnapm snapset show\fP commands.
 .
 .SH REPORTING COMMANDS
@@ -758,7 +758,7 @@ Snapshot set Fields
 .br
   bootentry     - Snapshot set boot entry [sha]
 .br
-  rollbackentry - Snapshot set rollback boot entry [sha]
+  revertentry - Snapshot set revert boot entry [sha]
 .br
 .
 .SH REPORT FIELDS
@@ -801,10 +801,10 @@ The autoactivation setting for this snapshot set.
 The \fBboot identifier\fP of the boot loader entry configured to boot this
 snapshot set, or the empty string if no boot entry has been created.
 .TP
-.B rollbackentry
-The \fBboot identifier\fP of the boot loader entry configured to roll back
+.B revertentry
+The \fBboot identifier\fP of the boot loader entry configured to revert
 this snapshot set following a merge operation, or the empty string if no
-rollback boot entry has been created.
+revert boot entry has been created.
 .
 .SS Snapshots
 .
@@ -912,7 +912,7 @@ Status:         Active
 .br
 Boot entry:     b0eb722
 .br
-Rollback entry: c707e9c
+Revert entry: c707e9c
 .br
 .P
 Delete the snapset named 'backup'
@@ -954,7 +954,7 @@ Status:         Active
 .br
 Boot entry:     b0eb722
 .br
-Rollback entry: c707e9c
+Revert entry: c707e9c
 .br
 .P
 Display the snapshot with UUID 96a652ed-1951-569e-86bf-ad2bafcce9d9

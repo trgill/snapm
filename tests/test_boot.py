@@ -155,17 +155,17 @@ class BootTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.create_snapshot_set_boot_entry()
 
-    def test_create_snapshot_rollback_entry_no_id(self):
+    def test_create_snapshot_revert_entry_no_id(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
-            self.manager.create_snapshot_set_rollback_entry()
+            self.manager.create_snapshot_set_revert_entry()
 
     def test_create_snapshot_boot_entry_bad_name(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.create_snapshot_set_boot_entry(name="bootset1")
 
-    def test_create_snapshot_rollback_entry_bad_name(self):
+    def test_create_snapshot_revert_entry_bad_name(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
-            self.manager.create_snapshot_set_rollback_entry(name="bootset1")
+            self.manager.create_snapshot_set_revert_entry(name="bootset1")
 
     def test_create_snapshot_boot_entry(self):
         self.manager.create_snapshot_set_boot_entry(name="bootset0")
@@ -173,10 +173,10 @@ class BootTests(unittest.TestCase):
         # Clean up boot entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 
-    def test_create_snapshot_rollback_entry(self):
-        self.manager.create_snapshot_set_rollback_entry(name="bootset0")
+    def test_create_snapshot_revert_entry(self):
+        self.manager.create_snapshot_set_revert_entry(name="bootset0")
 
-        # Clean up rollback entry
+        # Clean up revert entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 
     def test_create_snapshot_boot_entry_bad_uuid(self):
@@ -185,9 +185,9 @@ class BootTests(unittest.TestCase):
                 uuid="00000000-0000-0000-0000-000000000000"
             )
 
-    def test_create_snapshot_rollback_entry_bad_uuid(self):
+    def test_create_snapshot_revert_entry_bad_uuid(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
-            self.manager.create_snapshot_set_rollback_entry(
+            self.manager.create_snapshot_set_revert_entry(
                 uuid="00000000-0000-0000-0000-000000000000"
             )
 
@@ -198,17 +198,17 @@ class BootTests(unittest.TestCase):
         # Clean up boot entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 
-    def test_create_snapshot_rollback_entry_uuid(self):
+    def test_create_snapshot_revert_entry_uuid(self):
         sset = self.manager.find_snapshot_sets(snapm.Selection(name="bootset0"))[0]
-        self.manager.create_snapshot_set_rollback_entry(uuid=str(sset.uuid))
+        self.manager.create_snapshot_set_revert_entry(uuid=str(sset.uuid))
 
-        # Clean up rollback entry
+        # Clean up revert entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 
     def test_create_boot_entries_and_discovery(self):
         sset = self.manager.find_snapshot_sets(snapm.Selection(name="bootset0"))[0]
         self.manager.create_snapshot_set_boot_entry(name="bootset0")
-        self.manager.create_snapshot_set_rollback_entry(name="bootset0")
+        self.manager.create_snapshot_set_revert_entry(name="bootset0")
 
         # Re-discover snapshot sets w/attached boot entries
         self.manager.discover_snapshot_sets()
@@ -219,10 +219,10 @@ class BootTests(unittest.TestCase):
         for snapshot in sset.snapshots:
             self.assertIn(snapshot.devpath, boot_entry.options)
 
-        # Validate roll back entry
-        rollback_entry = sset.rollback_entry
+        # Validate revert entry
+        revert_entry = sset.revert_entry
         root_snapshot = sset.snapshot_by_mount_point("/")
-        self.assertIn(root_snapshot.origin, rollback_entry.options)
+        self.assertIn(root_snapshot.origin, revert_entry.options)
 
         # Clean up boot entries
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))

@@ -420,7 +420,7 @@ class CommandTests(unittest.TestCase):
         ]
         self.assertEqual(command.main(args), 0)
 
-    def test_main_snapset_rollback(self):
+    def test_main_snapset_revert(self):
         origin_file = "root/origin"
         snapshot_file = "root/snapshot"
         testset = "testset0"
@@ -434,8 +434,8 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(self._lvm.test_path(origin_file), True)
         self.assertEqual(self._lvm.test_path(snapshot_file), True)
 
-        # Start roll back the snapshot set
-        args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "rollback", testset]
+        # Start revert the snapshot set
+        args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "revert", testset]
         self.assertEqual(command.main(args), 0)
 
         # Unmount the set, deactivate/reactivate and re-mount

@@ -190,14 +190,12 @@ _snapshot_set_fields = [
     ),
     FieldType(
         PR_SNAPSET,
-        "rollbackentry",
-        "RollbackEntry",
-        "Snapshot set rollback boot entry",
+        "revertentry",
+        "RevertEntry",
+        "Snapshot set revert boot entry",
         13,
         REP_SHA,
-        lambda f, d: f.report_sha(
-            "" if not d.rollback_entry else d.rollback_entry.boot_id
-        ),
+        lambda f, d: f.report_sha("" if not d.revert_entry else d.revert_entry.boot_id),
     ),
 ]
 
@@ -371,7 +369,7 @@ def _do_print_type(
 
 
 def create_snapset(
-    manager, name, mount_points, size_policy=None, boot=False, rollback=False
+    manager, name, mount_points, size_policy=None, boot=False, revert=False
 ):
     """
     Create a new snapshot set from a list of mount points.
@@ -385,7 +383,7 @@ def create_snapset(
     )
 
     # Snapshot sets must be active to create boot entries.
-    if boot or rollback:
+    if boot or revert:
         select = Selection(name=snapset.name)
         manager.activate_snapshot_sets(select)
 
@@ -396,11 +394,11 @@ def create_snapset(
             _log_error("Failed to create snapshot set boot entry: %s", err)
             manager.delete_snapshot_sets(select)
             return None
-    if rollback:
+    if revert:
         try:
-            manager.create_snapshot_set_rollback_entry(name=snapset.name)
+            manager.create_snapshot_set_revert_entry(name=snapset.name)
         except (OSError, ValueError, TypeError) as err:
-            _log_error("Failed to create snapshot set rollback boot entry: %s", err)
+            _log_error("Failed to create snapshot set revert boot entry: %s", err)
             manager.delete_snapshot_sets(select)
             return None
     return snapset
@@ -425,18 +423,16 @@ def rename_snapset(manager, old_name, new_name):
     return manager.rename_snapshot_set(old_name, new_name)
 
 
-def rollback_snapset(manager, selection):
+def revert_snapset(manager, selection):
     """
-    Roll back snapshot set matching selection criteria.
+    Revert snapshot set matching selection criteria.
 
     :param manager: The manager context to use
-    :param selection: Selection criteria for the snapshot set to roll back.
+    :param selection: Selection criteria for the snapshot set to revert.
     """
     if not selection.is_single():
-        raise SnapmInvalidIdentifierError(
-            "Roll back requires unique selection criteria"
-        )
-    return manager.rollback_snapshot_sets(selection)
+        raise SnapmInvalidIdentifierError("Revert requires unique selection criteria")
+    return manager.revert_snapshot_sets(selection)
 
 
 def show_snapshots(manager, selection=None):
@@ -609,7 +605,7 @@ def _create_cmd(cmd_args):
         cmd_args.mount_points,
         size_policy=cmd_args.size_policy,
         boot=cmd_args.bootable,
-        rollback=cmd_args.rollback,
+        revert=cmd_args.revert,
     )
     if snapset is None:
         return 1
@@ -651,19 +647,19 @@ def _rename_cmd(cmd_args):
     return 0
 
 
-def _rollback_cmd(cmd_args):
+def _revert_cmd(cmd_args):
     """
     Delete snapshot set command handler.
 
-    Attempt to roll back the specified snapshot set.
+    Attempt to revert the specified snapshot set.
 
     :param cmd_args: Command line arguments for the command
     :returns: integer status code returned from ``main()``
     """
     manager = Manager()
     select = Selection.from_cmd_args(cmd_args)
-    count = rollback_snapset(manager, select)
-    _log_info("Set %d snapshot set%s for roll back", count, "s" if count > 1 else "")
+    count = revert_snapset(manager, select)
+    _log_info("Set %d snapshot set%s for revert", count, "s" if count > 1 else "")
     return 0
 
 
@@ -1027,7 +1023,7 @@ def _add_autoactivate_args(parser):
 CREATE_CMD = "create"
 DELETE_CMD = "delete"
 RENAME_CMD = "rename"
-ROLLBACK_CMD = "rollback"
+REVERT_CMD = "revert"
 ACTIVATE_CMD = "activate"
 DEACTIVATE_CMD = "deactivate"
 AUTOACTIVATE_CMD = "autoactivate"
@@ -1103,9 +1099,9 @@ def main(args):
     )
     snapset_create_parser.add_argument(
         "-r",
-        "--rollback",
+        "--revert",
         action="store_true",
-        help="Create a rollback boot entry for this snapshot set",
+        help="Create a revert boot entry for this snapshot set",
     )
 
     # snapset delete subcommand
@@ -1135,12 +1131,12 @@ def main(args):
         help="The new name of the snapshot set to be renamed",
     )
 
-    # snapset rollback command
-    snapset_rollback_parser = snapset_subparser.add_parser(
-        ROLLBACK_CMD, help="Roll back snapshot sets"
+    # snapset revert command
+    snapset_revert_parser = snapset_subparser.add_parser(
+        REVERT_CMD, help="Revert snapshot sets"
     )
-    snapset_rollback_parser.set_defaults(func=_rollback_cmd)
-    _add_identifier_args(snapset_rollback_parser, snapset=True)
+    snapset_revert_parser.set_defaults(func=_revert_cmd)
+    _add_identifier_args(snapset_revert_parser, snapset=True)
 
     # snapset activate subcommand
     snapset_activate_parser = snapset_subparser.add_parser(

@@ -52,8 +52,8 @@ _OS_RELEASE = "/etc/os-release"
 #: Snapshot set kernel command line argument
 SNAPSET_ARG = "snapm.snapset"
 
-#: Snapshot set rollback kernel command line argument
-ROLLBACK_ARG = "snapm.rollback"
+#: Snapshot set revert kernel command line argument
+REVERT_ARG = "snapm.revert"
 
 #: /dev path prefix
 _DEV_PREFIX = "/dev/"
@@ -243,32 +243,32 @@ def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
     )
 
 
-def create_snapset_rollback_entry(snapset, title=None):
+def create_snapset_revert_entry(snapset, title=None):
     """
-    Create a boom boot entry to roll back the snapshot set represented by
+    Create a boom boot entry to revert the snapshot set represented by
     ``snapset``.
 
-    :param snapset: The snapshot set for which to create a rollback entry.
-    :param title: An optional title for the rollback entry. If ``title`` is
-                  ``None`` the rollback entry will be titled as
-                  "Rollback snapset_name snapset_time".
+    :param snapset: The snapshot set for which to create a revert entry.
+    :param title: An optional title for the revert entry. If ``title`` is
+                  ``None`` the revert entry will be titled as
+                  "Revert snapset_name snapset_time".
     """
-    title = title or f"Rollback {snapset.name} {snapset.time}"
+    title = title or f"Revert {snapset.name} {snapset.time}"
     root_snapshot = _find_snapset_root(snapset)
     root_device = root_snapshot.origin
     if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
         lvm_root_lv = root_device.removeprefix(_DEV_PREFIX)
     else:
         lvm_root_lv = None
-    snapset.rollback_entry = _create_boom_boot_entry(
+    snapset.revert_entry = _create_boom_boot_entry(
         snapset,
         title=title,
-        tag_arg=f"{ROLLBACK_ARG}={snapset.uuid}",
+        tag_arg=f"{REVERT_ARG}={snapset.uuid}",
         root_device=root_device,
         lvm_root_lv=lvm_root_lv,
     )
     _log_debug(
-        "Created rollback entry '%s' for snapshot set with UUID=%s", title, snapset.uuid
+        "Created revert entry '%s' for snapshot set with UUID=%s", title, snapset.uuid
     )
 
 
@@ -294,22 +294,22 @@ def delete_snapset_boot_entry(snapset):
     _delete_boot_entry(snapset.boot_entry.boot_id)
 
 
-def delete_snapset_rollback_entry(snapset):
+def delete_snapset_revert_entry(snapset):
     """
-    Delete the rollback entry corresponding to ``snapset``.
+    Delete the revert entry corresponding to ``snapset``.
 
-    :param snapset: The snapshot set for which to remove a rollback entry.
+    :param snapset: The snapshot set for which to remove a revert entry.
     """
-    if snapset.rollback_entry is None:
+    if snapset.revert_entry is None:
         return
-    _delete_boot_entry(boot_id=snapset.rollback_entry.boot_id)
+    _delete_boot_entry(boot_id=snapset.revert_entry.boot_id)
 
 
 class BootEntryCache(dict):
     """
     Cache mapping snapshot sets to boom ``BootEntry`` instances.
 
-    Boot entries in the cache are either snapshot set boot entries or rollback
+    Boot entries in the cache are either snapshot set boot entries or revert
     entries depending on the value of ``entry_arg``.
     """
 
@@ -346,7 +346,7 @@ class BootEntryCache(dict):
 
 class BootCache:
     """
-    Set of caches mapping snapshot sets to boot entries and rollback entries.
+    Set of caches mapping snapshot sets to boot entries and revert entries.
     """
 
     def __init__(self):
@@ -354,17 +354,17 @@ class BootCache:
         _log_debug(
             "Initialised boot entry cache with %d entries", len(self.entry_cache)
         )
-        self.rollback_cache = BootEntryCache(ROLLBACK_ARG)
+        self.revert_cache = BootEntryCache(REVERT_ARG)
         _log_debug(
-            "Initialised rollback boot entry cache with %d entries",
-            len(self.rollback_cache),
+            "Initialised revert boot entry cache with %d entries",
+            len(self.revert_cache),
         )
 
     def refresh_cache(self):
         self.entry_cache.refresh_cache()
         _log_debug("Refreshed boot entry cache with %d entries", len(self.entry_cache))
-        self.rollback_cache.refresh_cache()
+        self.revert_cache.refresh_cache()
         _log_debug(
-            "Refreshed rollback boot entry cache with %d entries",
-            len(self.rollback_cache),
+            "Refreshed revert boot entry cache with %d entries",
+            len(self.revert_cache),
         )
