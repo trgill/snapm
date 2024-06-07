@@ -35,6 +35,7 @@ class MockArgs(object):
     uuid = None
     verbose = 0
     version = False
+    json = False
 
 
 def have_root():
