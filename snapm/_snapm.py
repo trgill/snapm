@@ -64,6 +64,34 @@ ETC_FSTAB = "/etc/fstab"
 
 DEFAULT_PERCENT_USED = 200.0
 
+# Constants for SnapshotSet property names
+SNAPSET_NAME = "SnapsetName"
+SNAPSET_MOUNT_POINTS = "MountPoints"
+SNAPSET_NR_SNAPSHOTS = "NrSnapshots"
+SNAPSET_TIME = "Time"
+SNAPSET_TIMESTAMP = "Timestamp"
+SNAPSET_UUID = "UUID"
+SNAPSET_STATUS = "Status"
+SNAPSET_AUTOACTIVATE = "Autoactivate"
+SNAPSET_BOOT_ENTRIES = "BootEntries"
+SNAPSET_SNAPSHOT_ENTRY = "SnapshotEntry"
+SNAPSET_REVERT_ENTRY = "RevertEntry"
+SNAPSET_SNAPSHOTS = "Snapshots"
+
+# Constants for Snapshot property names
+SNAPSHOT_NAME = "Name"
+SNAPSHOT_ORIGIN = "Origin"
+SNAPSHOT_MOUNT_POINT = "MountPoint"
+SNAPSHOT_PROVIDER = "Provider"
+SNAPSHOT_UUID = "UUID"
+SNAPSHOT_STATUS = "Status"
+SNAPSHOT_SIZE = "Size"
+SNAPSHOT_FREE = "Free"
+SNAPSHOT_SIZE_BYTES = "SizeBytes"
+SNAPSHOT_FREE_BYTES = "FreeBytes"
+SNAPSHOT_AUTOACTIVATE = "Autoactivate"
+SNAPSHOT_DEV_PATH = "DevicePath"
+
 
 class SnapmLogger(logging.Logger):
     """
@@ -580,19 +608,6 @@ class SnapStatus(Enum):
         return "Invalid"
 
 
-# Constants for SnapshotSet property names
-SNAPSET_NAME = "SnapsetName"
-MOUNT_POINTS = "MountPoints"
-NR_SNAPSHOTS = "NrSnapshots"
-SNAPSET_TIME = "Time"
-SNAPSET_UUID = "UUID"
-SNAPSET_STATUS = "Status"
-BOOT_ENTRIES = "BootEntries"
-SNAPSHOT_ENTRY = "Snapshot"
-REVERT_ENTRY = "Revert"
-SNAPSET_SNAPSHOTS = "Snapshots"
-
-
 class SnapshotSet:
     """
     Representation of a set of snapshots taken at the same point
@@ -624,19 +639,24 @@ class SnapshotSet:
         :returns: A multi-line string describing this snapshot set.
         """
         snapset_str = (
-            f"{SNAPSET_NAME}:    {self.name}\n"
-            f"{MOUNT_POINTS}:    {', '.join([s.mount_point for s in self.snapshots])}\n"
-            f"{NR_SNAPSHOTS}:    {self.nr_snapshots}\n"
-            f"{SNAPSET_TIME}:           {datetime.fromtimestamp(self.timestamp)}\n"
-            f"{SNAPSET_UUID}:           {self.uuid}\n"
-            f"{SNAPSET_STATUS}:         {str(self.status)}"
+            f"{SNAPSET_NAME}:      {self.name}\n"
+            f"{SNAPSET_MOUNT_POINTS}:      {', '.join([s.mount_point for s in self.snapshots])}\n"
+            f"{SNAPSET_NR_SNAPSHOTS}:      {self.nr_snapshots}\n"
+            f"{SNAPSET_TIME}:             {datetime.fromtimestamp(self.timestamp)}\n"
+            f"{SNAPSET_UUID}:             {self.uuid}\n"
+            f"{SNAPSET_STATUS}:           {str(self.status)}\n"
+            f"{SNAPSET_AUTOACTIVATE}:     {'yes' if self.autoactivate else 'no'}"
         )
         if self.boot_entry or self.revert_entry:
-            snapset_str += f"\n{BOOT_ENTRIES}:"
+            snapset_str += f"\n{SNAPSET_BOOT_ENTRIES}:"
         if self.boot_entry:
-            snapset_str += f"\n  {SNAPSHOT_ENTRY}:     {self.boot_entry.disp_boot_id}"
+            snapset_str += (
+                f"\n  {SNAPSET_SNAPSHOT_ENTRY}:  {self.boot_entry.disp_boot_id}"
+            )
         if self.revert_entry:
-            snapset_str += f"\n  {REVERT_ENTRY}:       {self.revert_entry.disp_boot_id}"
+            snapset_str += (
+                f"\n  {SNAPSET_REVERT_ENTRY}:    {self.revert_entry.disp_boot_id}"
+            )
         return snapset_str
 
     def as_dict(self, members=False):
@@ -645,18 +665,22 @@ class SnapshotSet:
         """
         pmap = {}
         pmap[SNAPSET_NAME] = self.name
-        pmap[MOUNT_POINTS] = [s.mount_point for s in self.snapshots]
-        pmap[NR_SNAPSHOTS] = self.nr_snapshots
+        pmap[SNAPSET_MOUNT_POINTS] = [s.mount_point for s in self.snapshots]
+        pmap[SNAPSET_NR_SNAPSHOTS] = self.nr_snapshots
         pmap[SNAPSET_TIME] = self.time
         pmap[SNAPSET_UUID] = str(self.uuid)
         pmap[SNAPSET_STATUS] = str(self.status)
 
         if self.boot_entry or self.revert_entry:
-            pmap[BOOT_ENTRIES] = {}
+            pmap[SNAPSET_BOOT_ENTRIES] = {}
         if self.boot_entry:
-            pmap[BOOT_ENTRIES][SNAPSHOT_ENTRY] = self.boot_entry.disp_boot_id
+            pmap[SNAPSET_BOOT_ENTRIES][
+                SNAPSET_SNAPSHOT_ENTRY
+            ] = self.boot_entry.disp_boot_id
         if self.revert_entry:
-            pmap[BOOT_ENTRIES][REVERT_ENTRY] = self.revert_entry.disp_boot_id
+            pmap[SNAPSET_BOOT_ENTRIES][
+                SNAPSET_REVERT_ENTRY
+            ] = self.revert_entry.disp_boot_id
 
         if members:
             pmap[SNAPSET_SNAPSHOTS] = []
@@ -772,21 +796,6 @@ class SnapshotSet:
         raise SnapmNotFoundError(
             f"Mount point {mount_point} not found in snapset {self.name}"
         )
-
-
-# Constants for Snapshot property names
-SNAPSHOT_NAME = "Name"
-SNAPSHOT_ORIGIN = "Origin"
-SNAPSHOT_MOUNT_POINT = "MountPoint"
-SNAPSHOT_PROVIDER = "Provider"
-SNAPSHOT_UUID = "UUID"
-SNAPSHOT_STATUS = "Status"
-SNAPSHOT_SIZE = "Size"
-SNAPSHOT_FREE = "Free"
-SNAPSHOT_SIZE_BYTES = "SizeBytes"
-SNAPSHOT_FREE_BYTES = "FreeBytes"
-SNAPSHOT_AUTOACTIVATE = "Autoactivate"
-SNAPSHOT_DEV_PATH = "DevicePath"
 
 
 # pylint: disable=too-many-instance-attributes
@@ -1040,6 +1049,30 @@ class Snapshot:
 
 __all__ = [
     "ETC_FSTAB",
+    "SNAPSET_NAME",
+    "SNAPSET_MOUNT_POINTS",
+    "SNAPSET_NR_SNAPSHOTS",
+    "SNAPSET_TIME",
+    "SNAPSET_TIMESTAMP",
+    "SNAPSET_UUID",
+    "SNAPSET_STATUS",
+    "SNAPSET_AUTOACTIVATE",
+    "SNAPSET_BOOT_ENTRIES",
+    "SNAPSET_SNAPSHOT_ENTRY",
+    "SNAPSET_REVERT_ENTRY",
+    "SNAPSET_SNAPSHOTS",
+    "SNAPSHOT_NAME",
+    "SNAPSHOT_ORIGIN",
+    "SNAPSHOT_MOUNT_POINT",
+    "SNAPSHOT_PROVIDER",
+    "SNAPSHOT_UUID",
+    "SNAPSHOT_STATUS",
+    "SNAPSHOT_SIZE",
+    "SNAPSHOT_FREE",
+    "SNAPSHOT_SIZE_BYTES",
+    "SNAPSHOT_FREE_BYTES",
+    "SNAPSHOT_AUTOACTIVATE",
+    "SNAPSHOT_DEV_PATH",
     "SNAPM_DEBUG_MANAGER",
     "SNAPM_DEBUG_COMMAND",
     "SNAPM_DEBUG_PLUGINS",
