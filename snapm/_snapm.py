@@ -17,6 +17,7 @@ Global definitions for the top-level snapm package.
 from uuid import UUID, uuid5
 from datetime import datetime
 from enum import Enum
+import json
 import math
 import logging
 import re
@@ -638,6 +639,38 @@ class SnapshotSet:
             snapset_str += f"\n  {REVERT_ENTRY}:       {self.revert_entry.disp_boot_id}"
         return snapset_str
 
+    def as_dict(self, members=False):
+        """
+        Return a representation of this snapshot as a dictionary.
+        """
+        pmap = {}
+        pmap[SNAPSET_NAME] = self.name
+        pmap[MOUNT_POINTS] = [s.mount_point for s in self.snapshots]
+        pmap[NR_SNAPSHOTS] = self.nr_snapshots
+        pmap[SNAPSET_TIME] = self.time
+        pmap[SNAPSET_UUID] = str(self.uuid)
+        pmap[SNAPSET_STATUS] = str(self.status)
+
+        if self.boot_entry or self.revert_entry:
+            pmap[BOOT_ENTRIES] = {}
+        if self.boot_entry:
+            pmap[BOOT_ENTRIES][SNAPSHOT_ENTRY] = self.boot_entry.disp_boot_id
+        if self.revert_entry:
+            pmap[BOOT_ENTRIES][REVERT_ENTRY] = self.revert_entry.disp_boot_id
+
+        if members:
+            pmap[SNAPSET_SNAPSHOTS] = []
+            for snapshot in self.snapshots:
+                pmap[SNAPSET_SNAPSHOTS].append(snapshot.as_dict())
+
+        return pmap
+
+    def json(self, members=False, pretty=False):
+        """
+        Return a string representation of this ``SnapshotSet`` in JSON notation.
+        """
+        return json.dumps(self.as_dict(members=members), indent=4 if pretty else None)
+
     @property
     def name(self):
         """
@@ -804,6 +837,30 @@ class Snapshot:
             f"{SNAPSHOT_AUTOACTIVATE}:   {'yes' if self.autoactivate else 'no'}\n"
             f"{SNAPSHOT_DEV_PATH}:     {self.devpath}"
         )
+
+    def as_dict(self):
+        """
+        Return a representation of this snapshot as a dictionary.
+        """
+        pmap = {}
+        pmap[SNAPSHOT_NAME] = self.name
+        pmap[SNAPSET_NAME] = self.snapset_name
+        pmap[SNAPSHOT_ORIGIN] = self.origin
+        pmap[SNAPSET_TIME] = self.time
+        pmap[SNAPSHOT_MOUNT_POINT] = self.mount_point
+        pmap[SNAPSHOT_PROVIDER] = self.provider
+        pmap[SNAPSHOT_UUID] = str(self.uuid)
+        pmap[SNAPSHOT_STATUS] = str(self.status)
+        pmap[SNAPSHOT_SIZE] = size_fmt(self.size)
+        pmap[SNAPSHOT_FREE] = size_fmt(self.free)
+        pmap[SNAPSHOT_SIZE_BYTES] = self.size
+        pmap[SNAPSHOT_FREE_BYTES] = self.free
+        pmap[SNAPSHOT_AUTOACTIVATE] = self.autoactivate
+        pmap[SNAPSHOT_DEV_PATH] = self.devpath
+        return pmap
+
+    def json(self, pretty=False):
+        return json.dumps(self.as_dict(), indent=4 if pretty else None)
 
     @property
     def name(self):
