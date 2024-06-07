@@ -151,7 +151,7 @@ def _build_snapset_mount_list(snapset):
 
 
 def _create_boom_boot_entry(
-    snapset, title=None, tag_arg=None, root_device=None, lvm_root_lv=None, mounts=None
+    snapset, version, title, tag_arg, root_device, lvm_root_lv=None, mounts=None
 ):
     """
     Create a boom boot entry to boot into the snapshot set represented by
@@ -163,10 +163,10 @@ def _create_boom_boot_entry(
                   "Snapshot snapset_name snapset_time".
     """
     assert title is not None, "Boot entry argument title must have a value"
+    assert version is not None, "Boot entry argument version must have a value"
     assert tag_arg is not None, "Boot entry argument tag_arg must have a value"
     assert root_device is not None, "Boot entry argument root_device must have a value"
 
-    version = _get_uts_release()
     machine_id = _get_machine_id()
 
     osp = match_os_profile_by_version(version)
@@ -222,7 +222,8 @@ def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
                   ``None`` the boot entry will be titled as
                   "Snapshot snapset_name snapset_time".
     """
-    title = title or f"Snapshot {snapset.name} {snapset.time}"
+    version = _get_uts_release()
+    title = title or f"Snapshot {snapset.name} {snapset.time} ({version})"
     root_snapshot = _find_snapset_root(snapset)
     root_device = root_snapshot.devpath
     if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
@@ -232,9 +233,10 @@ def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
     mounts = _build_snapset_mount_list(snapset)
     snapset.boot_entry = _create_boom_boot_entry(
         snapset,
-        title=title,
-        tag_arg=f"{SNAPSET_ARG}={snapset.uuid}",
-        root_device=root_device,
+        version,
+        title,
+        f"{SNAPSET_ARG}={snapset.uuid}",
+        root_device,
         lvm_root_lv=lvm_root_lv,
         mounts=mounts,
     )
@@ -253,7 +255,8 @@ def create_snapset_revert_entry(snapset, title=None):
                   ``None`` the revert entry will be titled as
                   "Revert snapset_name snapset_time".
     """
-    title = title or f"Revert {snapset.name} {snapset.time}"
+    version = _get_uts_release()
+    title = title or f"Revert {snapset.name} {snapset.time} ({version})"
     root_snapshot = _find_snapset_root(snapset)
     root_device = root_snapshot.origin
     if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
@@ -262,9 +265,10 @@ def create_snapset_revert_entry(snapset, title=None):
         lvm_root_lv = None
     snapset.revert_entry = _create_boom_boot_entry(
         snapset,
-        title=title,
-        tag_arg=f"{REVERT_ARG}={snapset.uuid}",
-        root_device=root_device,
+        version,
+        title,
+        f"{REVERT_ARG}={snapset.uuid}",
+        root_device,
         lvm_root_lv=lvm_root_lv,
     )
     _log_debug(
