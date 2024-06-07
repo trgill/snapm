@@ -617,10 +617,12 @@ class SnapshotSet:
             f"UUID:           {self.uuid}\n"
             f"Status:         {str(self.status)}"
         )
+        if self.boot_entry or self.revert_entry:
+            snapset_str += "\nBoot entries:"
         if self.boot_entry:
-            snapset_str += f"\nBoot entry:     {self.boot_entry.disp_boot_id}"
+            snapset_str += f"\n  Snapshot:     {self.boot_entry.disp_boot_id}"
         if self.revert_entry:
-            snapset_str += f"\nRevert entry:   {self.revert_entry.disp_boot_id}"
+            snapset_str += f"\n  Revert:       {self.revert_entry.disp_boot_id}"
         return snapset_str
 
     @property
