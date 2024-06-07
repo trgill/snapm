@@ -435,25 +435,31 @@ def revert_snapset(manager, selection):
     return manager.revert_snapshot_sets(selection)
 
 
-def show_snapshots(manager, selection=None):
+def show_snapshots(manager, selection=None, json=False):
     """
     Show snapshots matching selection criteria.
     """
     snapshots = manager.find_snapshots(selection=selection)
     first = True
     for snapshot in snapshots:
+        if json:
+            print(snapshot.json(pretty=True))
+            continue
         ws = "" if first else "\n"
         print(f"{ws}{snapshot}")
         first = False
 
 
-def show_snapsets(manager, selection=None, members=False):
+def show_snapsets(manager, selection=None, members=False, json=False):
     """
     Show snapshot sets matching selection criteria.
     """
     snapsets = manager.find_snapshot_sets(selection=selection)
     first = True
     for snapset in snapsets:
+        if json:
+            print(snapset.json(members=members, pretty=True))
+            continue
         ws = "" if first else "\n"
         print(f"{ws}{snapset}")
         first = False
@@ -743,7 +749,9 @@ def _show_cmd(cmd_args):
     """
     manager = Manager()
     select = Selection.from_cmd_args(cmd_args)
-    show_snapsets(manager, selection=select, members=cmd_args.members)
+    show_snapsets(
+        manager, selection=select, members=cmd_args.members, json=cmd_args.json
+    )
     return 0
 
 
@@ -848,7 +856,7 @@ def _show_snapshot_cmd(cmd_args):
     """
     manager = Manager()
     select = Selection.from_cmd_args(cmd_args)
-    show_snapshots(manager, selection=select)
+    show_snapshots(manager, selection=select, json=cmd_args.json)
     return 0
 
 
@@ -1020,6 +1028,15 @@ def _add_autoactivate_args(parser):
     )
 
 
+def _add_json_arg(parser):
+    parser.add_argument(
+        "-j",
+        "--json",
+        action="store_true",
+        help="Display output in JSON notation",
+    )
+
+
 CREATE_CMD = "create"
 DELETE_CMD = "delete"
 RENAME_CMD = "rename"
@@ -1180,6 +1197,7 @@ def main(args):
         action="store_true",
         help="Show snapshots that are part of each snapshot set",
     )
+    _add_json_arg(snapset_show_parser)
 
     # Subparser for snapshot commands
     snapshot_parser = type_subparser.add_parser(SNAPSHOT_TYPE, help="Snapshot commands")
@@ -1221,6 +1239,7 @@ def main(args):
     )
     snapshot_show_parser.set_defaults(func=_show_snapshot_cmd)
     _add_identifier_args(snapshot_show_parser, snapset=True, snapshot=True)
+    _add_json_arg(snapshot_show_parser)
 
     cmd_args = parser.parse_args(args[1:])
 
