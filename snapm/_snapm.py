@@ -579,6 +579,19 @@ class SnapStatus(Enum):
         return "Invalid"
 
 
+# Constants for SnapshotSet property names
+SNAPSET_NAME = "SnapsetName"
+MOUNT_POINTS = "MountPoints"
+NR_SNAPSHOTS = "NrSnapshots"
+SNAPSET_TIME = "Time"
+SNAPSET_UUID = "UUID"
+SNAPSET_STATUS = "Status"
+BOOT_ENTRIES = "BootEntries"
+SNAPSHOT_ENTRY = "Snapshot"
+REVERT_ENTRY = "Revert"
+SNAPSET_SNAPSHOTS = "Snapshots"
+
+
 class SnapshotSet:
     """
     Representation of a set of snapshots taken at the same point
@@ -610,19 +623,19 @@ class SnapshotSet:
         :returns: A multi-line string describing this snapshot set.
         """
         snapset_str = (
-            f"SnapsetName:    {self.name}\n"
-            f"MountPoints:    {', '.join([s.mount_point for s in self.snapshots])}\n"
-            f"NrSnapshots:    {self.nr_snapshots}\n"
-            f"Time:           {datetime.fromtimestamp(self.timestamp)}\n"
-            f"UUID:           {self.uuid}\n"
-            f"Status:         {str(self.status)}"
+            f"{SNAPSET_NAME}:    {self.name}\n"
+            f"{MOUNT_POINTS}:    {', '.join([s.mount_point for s in self.snapshots])}\n"
+            f"{NR_SNAPSHOTS}:    {self.nr_snapshots}\n"
+            f"{SNAPSET_TIME}:           {datetime.fromtimestamp(self.timestamp)}\n"
+            f"{SNAPSET_UUID}:           {self.uuid}\n"
+            f"{SNAPSET_STATUS}:         {str(self.status)}"
         )
         if self.boot_entry or self.revert_entry:
-            snapset_str += "\nBoot entries:"
+            snapset_str += f"\n{BOOT_ENTRIES}:"
         if self.boot_entry:
-            snapset_str += f"\n  Snapshot:     {self.boot_entry.disp_boot_id}"
+            snapset_str += f"\n  {SNAPSHOT_ENTRY}:     {self.boot_entry.disp_boot_id}"
         if self.revert_entry:
-            snapset_str += f"\n  Revert:       {self.revert_entry.disp_boot_id}"
+            snapset_str += f"\n  {REVERT_ENTRY}:       {self.revert_entry.disp_boot_id}"
         return snapset_str
 
     @property
@@ -728,6 +741,21 @@ class SnapshotSet:
         )
 
 
+# Constants for Snapshot property names
+SNAPSHOT_NAME = "Name"
+SNAPSHOT_ORIGIN = "Origin"
+SNAPSHOT_MOUNT_POINT = "MountPoint"
+SNAPSHOT_PROVIDER = "Provider"
+SNAPSHOT_UUID = "UUID"
+SNAPSHOT_STATUS = "Status"
+SNAPSHOT_SIZE = "Size"
+SNAPSHOT_FREE = "Free"
+SNAPSHOT_SIZE_BYTES = "SizeBytes"
+SNAPSHOT_FREE_BYTES = "FreeBytes"
+SNAPSHOT_AUTOACTIVATE = "Autoactivate"
+SNAPSHOT_DEV_PATH = "DevicePath"
+
+
 # pylint: disable=too-many-instance-attributes
 class Snapshot:
     """
@@ -763,18 +791,18 @@ class Snapshot:
         :returns: A multi-line string describing this snapshot.
         """
         return (
-            f"Name:           {self.name}\n"
-            f"SnapsetName:    {self.snapset_name}\n"
-            f"Origin:         {self.origin}\n"
-            f"Time:           {datetime.fromtimestamp(self.timestamp)}\n"
-            f"MountPoint:     {self.mount_point}\n"
-            f"Provider:       {self.provider}\n"
-            f"UUID:           {self.uuid}\n"
-            f"Status:         {str(self.status)}\n"
-            f"Size:           {size_fmt(self.size)}\n"
-            f"Free:           {size_fmt(self.free)}\n"
-            f"Autoactivate:   {'yes' if self.autoactivate else 'no'}\n"
-            f"DevicePath:     {self.devpath}"
+            f"{SNAPSHOT_NAME}:           {self.name}\n"
+            f"{SNAPSET_NAME}:    {self.snapset_name}\n"
+            f"{SNAPSHOT_ORIGIN}:         {self.origin}\n"
+            f"{SNAPSET_TIME}:           {datetime.fromtimestamp(self.timestamp)}\n"
+            f"{SNAPSHOT_MOUNT_POINT}:     {self.mount_point}\n"
+            f"{SNAPSHOT_PROVIDER}:       {self.provider}\n"
+            f"{SNAPSHOT_UUID}:           {self.uuid}\n"
+            f"{SNAPSHOT_STATUS}:         {str(self.status)}\n"
+            f"{SNAPSHOT_SIZE}:           {size_fmt(self.size)}\n"
+            f"{SNAPSHOT_FREE}:           {size_fmt(self.free)}\n"
+            f"{SNAPSHOT_AUTOACTIVATE}:   {'yes' if self.autoactivate else 'no'}\n"
+            f"{SNAPSHOT_DEV_PATH}:     {self.devpath}"
         )
 
     @property
