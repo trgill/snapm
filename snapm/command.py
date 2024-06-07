@@ -22,6 +22,7 @@ in the snapm object API.
 """
 from argparse import ArgumentParser
 from os.path import basename
+from json import dumps
 import logging
 
 from snapm import (
@@ -441,13 +442,20 @@ def show_snapshots(manager, selection=None, json=False):
     """
     snapshots = manager.find_snapshots(selection=selection)
     first = True
+
+    if json:
+        snap_list = []
+
     for snapshot in snapshots:
         if json:
-            print(snapshot.json(pretty=True))
+            snap_list.append(snapshot.as_dict())
             continue
         ws = "" if first else "\n"
         print(f"{ws}{snapshot}")
         first = False
+
+    if json:
+        print(dumps(snap_list, indent=4))
 
 
 def show_snapsets(manager, selection=None, members=False, json=False):
@@ -456,9 +464,13 @@ def show_snapsets(manager, selection=None, members=False, json=False):
     """
     snapsets = manager.find_snapshot_sets(selection=selection)
     first = True
+
+    if json:
+        set_list = []
+
     for snapset in snapsets:
         if json:
-            print(snapset.json(members=members, pretty=True))
+            set_list.append(snapset.as_dict(members=members))
             continue
         ws = "" if first else "\n"
         print(f"{ws}{snapset}")
@@ -470,6 +482,9 @@ def show_snapsets(manager, selection=None, members=False, json=False):
                 ws = "" if first_snapshot else "\n"
                 print(ws + _str_indent(str(snapshot), 4))
                 first_snapshot = False
+
+    if json:
+        print(dumps(set_list, indent=4))
 
 
 def _expand_fields(default_fields, output_fields):
