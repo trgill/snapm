@@ -770,6 +770,16 @@ class Manager:
                     raise SnapmPluginError(
                         f"Could not revert all snapshots for set {snapset.name}"
                     )
+            if snapset.origin_mounted:
+                _log_warn(
+                    "Snaphot set %s origin is in use: reboot required to complete revert",
+                    snapset.name,
+                )
+                if snapset.revert_entry:
+                    _log_warn(
+                        "Boot into '%s' to continue",
+                        snapset.revert_entry.title,
+                    )
             reverted += 1
         self._boot_cache.refresh_cache()
         return reverted
