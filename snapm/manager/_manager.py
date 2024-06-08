@@ -677,19 +677,19 @@ class Manager:
                 new_snapshots.append(new_snapshot)
             except SnapmError as err:
                 _log_error("Failed to rename snapshot %s: %s", snapshot.name, err)
-                revert_snapshots = []
+                rollback_snapshots = []
                 for new_snapshot in new_snapshots:
                     try:
-                        revert_snapshot = snapshot.rename(old_name)
-                        revert_snapshots.append(revert_snapshot)
+                        rollback_snapshot = snapshot.rename(old_name)
+                        rollback_snapshots.append(rollback_snapshot)
                     except SnapmError as err2:
                         _log_error(
-                            "Failed to revert snapshot rename on %s: %s",
+                            "Failed to rollback snapshot rename on %s: %s",
                             snapshot.name,
                             err2,
                         )
                 old_snapset = SnapshotSet(
-                    old_name, timestamp, snapshots + revert_snapshots
+                    old_name, timestamp, snapshots + rollback_snapshots
                 )
                 self.by_name[old_snapset.name] = old_snapset
                 self.by_uuid[str(old_snapset.uuid)] = old_snapset
