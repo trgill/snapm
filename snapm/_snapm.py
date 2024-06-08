@@ -21,6 +21,7 @@ import json
 import math
 import logging
 import re
+import os
 
 _log = logging.getLogger(__name__)
 
@@ -785,6 +786,18 @@ class SnapshotSet:
                     err,
                 )
 
+    @property
+    def origin_mounted(self):
+        """
+        Test whether the origin volumes for this ``SnapshotSet`` are currently
+        mounted and in use.
+
+        :returns: ``True`` if any of the snaphots belonging to this
+                  ``SnapshotSet`` are currently mounted, or ``False``
+                  otherwise.
+        """
+        return any([s.origin_mounted for s in self.snapshots])
+
     def snapshot_by_mount_point(self, mount_point):
         """
         Return the snapshot corresponding to ``mount_point``.
@@ -994,6 +1007,22 @@ class Snapshot:
         snapshot is automatically activated or ``False`` otherwise.
         """
         raise NotImplementedError
+
+    @property
+    def origin_mounted(self):
+        """
+        Test whether the origin volume for this ``Snapshot`` is currently
+        mounted and in use.
+
+        :returns: ``True`` if this snaphot's prigin is currently mounted
+                  or ``False`` otherwise.
+        """
+        with open("/proc/mounts") as mounts:
+            for line in mounts:
+                fields = line.split(" ")
+                if self.mount_point == fields[1]:
+                    return os.path.samefile(self.origin, fields[0])
+        return False
 
     def delete(self):
         """
