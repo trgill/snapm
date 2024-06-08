@@ -457,6 +457,8 @@ def size_fmt(value):
     :returns: A human readable string reflecting value.
     """
     suffixes = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"]
+    if value == 0:
+        return "0B"
     magnitude = int(math.floor(math.log(value, 1024)))
     val = value / math.pow(1024, magnitude)
     if magnitude > 7:
