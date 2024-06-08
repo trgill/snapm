@@ -669,6 +669,7 @@ class SnapshotSet:
         pmap[SNAPSET_NAME] = self.name
         pmap[SNAPSET_MOUNT_POINTS] = [s.mount_point for s in self.snapshots]
         pmap[SNAPSET_NR_SNAPSHOTS] = self.nr_snapshots
+        pmap[SNAPSET_TIMESTAMP] = self.timestamp
         pmap[SNAPSET_TIME] = self.time
         pmap[SNAPSET_UUID] = str(self.uuid)
         pmap[SNAPSET_STATUS] = str(self.status)
@@ -857,6 +858,7 @@ class Snapshot:
         pmap[SNAPSHOT_NAME] = self.name
         pmap[SNAPSET_NAME] = self.snapset_name
         pmap[SNAPSHOT_ORIGIN] = self.origin
+        pmap[SNAPSET_TIMESTAMP] = self.timestamp
         pmap[SNAPSET_TIME] = self.time
         pmap[SNAPSHOT_MOUNT_POINT] = self.mount_point
         pmap[SNAPSHOT_PROVIDER] = self.provider
