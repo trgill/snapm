@@ -35,6 +35,7 @@ from snapm import (
     SNAPSET_UUID,
     SNAPSET_STATUS,
     SNAPSET_AUTOACTIVATE,
+    SNAPSET_BOOTABLE,
     SNAPSET_BOOT_ENTRIES,
     SNAPSET_SNAPSHOT_ENTRY,
     SNAPSET_REVERT_ENTRY,
@@ -203,6 +204,15 @@ _snapshot_set_fields = [
         12,
         REP_STR,
         lambda f, d: f.report_str(_bool_to_yes_no(d.autoactivate)),
+    ),
+    FieldType(
+        PR_SNAPSET,
+        "bootable",
+        SNAPSET_BOOTABLE,
+        "Configured for snapshot boot",
+        8,
+        REP_STR,
+        lambda f, d: f.report_str(_bool_to_yes_no(d.boot_entry is not None)),
     ),
     FieldType(
         PR_SNAPSET,

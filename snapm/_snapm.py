@@ -74,6 +74,7 @@ SNAPSET_TIMESTAMP = "Timestamp"
 SNAPSET_UUID = "UUID"
 SNAPSET_STATUS = "Status"
 SNAPSET_AUTOACTIVATE = "Autoactivate"
+SNAPSET_BOOTABLE = "Bootable"
 SNAPSET_BOOT_ENTRIES = "BootEntries"
 SNAPSET_SNAPSHOT_ENTRY = "SnapshotEntry"
 SNAPSET_REVERT_ENTRY = "RevertEntry"
@@ -649,6 +650,7 @@ class SnapshotSet:
             f"{SNAPSET_UUID}:             {self.uuid}\n"
             f"{SNAPSET_STATUS}:           {str(self.status)}\n"
             f"{SNAPSET_AUTOACTIVATE}:     {'yes' if self.autoactivate else 'no'}\n"
+            f"{SNAPSET_BOOTABLE}:         {'yes' if self.boot_entry is not None else 'no'}"
         )
         if self.boot_entry or self.revert_entry:
             snapset_str += f"\n{SNAPSET_BOOT_ENTRIES}:"
@@ -675,6 +677,7 @@ class SnapshotSet:
         pmap[SNAPSET_UUID] = str(self.uuid)
         pmap[SNAPSET_STATUS] = str(self.status)
         pmap[SNAPSET_AUTOACTIVATE] = self.autoactivate
+        pmap[SNAPSET_BOOTABLE] = self.boot_entry is not None
 
         if self.boot_entry or self.revert_entry:
             pmap[SNAPSET_BOOT_ENTRIES] = {}
@@ -1091,6 +1094,7 @@ __all__ = [
     "SNAPSET_UUID",
     "SNAPSET_STATUS",
     "SNAPSET_AUTOACTIVATE",
+    "SNAPSET_BOOTABLE",
     "SNAPSET_BOOT_ENTRIES",
     "SNAPSET_SNAPSHOT_ENTRY",
     "SNAPSET_REVERT_ENTRY",
