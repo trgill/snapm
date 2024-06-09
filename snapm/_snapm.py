@@ -648,7 +648,7 @@ class SnapshotSet:
             f"{SNAPSET_TIME}:             {datetime.fromtimestamp(self.timestamp)}\n"
             f"{SNAPSET_UUID}:             {self.uuid}\n"
             f"{SNAPSET_STATUS}:           {str(self.status)}\n"
-            f"{SNAPSET_AUTOACTIVATE}:     {'yes' if self.autoactivate else 'no'}"
+            f"{SNAPSET_AUTOACTIVATE}:     {'yes' if self.autoactivate else 'no'}\n"
         )
         if self.boot_entry or self.revert_entry:
             snapset_str += f"\n{SNAPSET_BOOT_ENTRIES}:"
@@ -674,6 +674,7 @@ class SnapshotSet:
         pmap[SNAPSET_TIME] = self.time
         pmap[SNAPSET_UUID] = str(self.uuid)
         pmap[SNAPSET_STATUS] = str(self.status)
+        pmap[SNAPSET_AUTOACTIVATE] = self.autoactivate
 
         if self.boot_entry or self.revert_entry:
             pmap[SNAPSET_BOOT_ENTRIES] = {}
