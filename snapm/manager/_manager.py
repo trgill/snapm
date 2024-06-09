@@ -741,6 +741,58 @@ class Manager:
         self._boot_cache.refresh_cache()
         return deleted
 
+    def revert_snapshot_set(self, name=None, uuid=None):
+        """
+        Revert snapshot sets matching selection criteria ``selection``.
+
+        Request to revert each snapshot origin within each snapshot set
+        to the state at the time the snapshot was taken.
+
+        :param selection: Selection criteria for snapshot sets to revert.
+        """
+        if name and uuid:
+            if by_name[name] != by_uuid[uuid]:
+                raise SnapmInvalidIdentifierError(
+                    f"Conflicting name and UUID: {str(uuid)} does not match '{name}'"
+                )
+            snapset = by_name[name]
+        if name is not None:
+            if name not in self.by_name:
+                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
+            snapset = self.by_name[name]
+        elif uuid is not None:
+            if uuid not in self.by_uuid:
+                raise SnapmNotFoundError(
+                    f"Could not find snapshot set with uuid {uuid}"
+                )
+            snapset = self.by_uuid[uuid]
+        else:
+            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+
+        # Snapshot boot entry becomes invalid as soon as revert is initiated.
+        delete_snapset_boot_entry(snapset)
+
+        for snapshot in snapset.snapshots:
+            try:
+                snapshot.revert()
+            except SnapmError as err:
+                _log_error(
+                    "Failed to revert snapshot set member %s: %s",
+                    snapshot.name,
+                    err,
+                )
+                raise SnapmPluginError(
+                    f"Could not revert all snapshots for set {snapset.name}"
+                )
+        if snapset.origin_mounted:
+            _log_warn(
+                "Snaphot set %s origin is in use: reboot required to complete revert",
+                snapset.name,
+            )
+
+        self._boot_cache.refresh_cache()
+        return snapset
+
     def revert_snapshot_sets(self, selection):
         """
         Revert snapshot sets matching selection criteria ``selection``.
@@ -757,31 +809,8 @@ class Manager:
                 f"Could not find snapshot sets matching {selection}"
             )
         for snapset in sets:
-            delete_snapset_boot_entry(snapset)
-            for snapshot in snapset.snapshots:
-                try:
-                    snapshot.revert()
-                except SnapmError as err:
-                    _log_error(
-                        "Failed to revert snapshot set member %s: %s",
-                        snapshot.name,
-                        err,
-                    )
-                    raise SnapmPluginError(
-                        f"Could not revert all snapshots for set {snapset.name}"
-                    )
-            if snapset.origin_mounted:
-                _log_warn(
-                    "Snaphot set %s origin is in use: reboot required to complete revert",
-                    snapset.name,
-                )
-                if snapset.revert_entry:
-                    _log_warn(
-                        "Boot into '%s' to continue",
-                        snapset.revert_entry.title,
-                    )
+            self.revert_snapshot_set(name=snapset.name)
             reverted += 1
-        self._boot_cache.refresh_cache()
         return reverted
 
     def activate_snapshot_sets(self, selection):
