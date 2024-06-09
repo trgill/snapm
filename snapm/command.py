@@ -448,16 +448,14 @@ def rename_snapset(manager, old_name, new_name):
     return manager.rename_snapshot_set(old_name, new_name)
 
 
-def revert_snapset(manager, selection):
+def revert_snapset(manager, name=None, uuid=None):
     """
     Revert snapshot set matching selection criteria.
 
     :param manager: The manager context to use
     :param selection: Selection criteria for the snapshot set to revert.
     """
-    if not selection.is_single():
-        raise SnapmInvalidIdentifierError("Revert requires unique selection criteria")
-    return manager.revert_snapshot_sets(selection)
+    return manager.revert_snapshot_set(name=name, uuid=uuid)
 
 
 def show_snapshots(manager, selection=None, json=False):
@@ -702,9 +700,23 @@ def _revert_cmd(cmd_args):
     :returns: integer status code returned from ``main()``
     """
     manager = Manager()
-    select = Selection.from_cmd_args(cmd_args)
-    count = revert_snapset(manager, select)
-    _log_info("Set %d snapshot set%s for revert", count, "s" if count > 1 else "")
+    name = None
+    uuid = None
+
+    selection = Selection.from_cmd_args(cmd_args)
+    if not selection.is_single():
+        raise SnapmInvalidIdentifierError("Revert requires unique selection criteria")
+    if selection.name:
+        name = selection.name
+    elif select.name:
+        uuid = selection.uuid
+    else:
+        raise SnapmInvalidIdentifierError("Revert requires a snapset name or UUID")
+
+    snapset = revert_snapset(manager, name=name, uuid=uuid)
+    if snapset.origin_mounted and snapset.revert_entry:
+        print(f"Boot into '{snapset.revert_entry.title}' to continue")
+    _log_info("Started revert for snapset %s", snapset.name)
     return 0
 
 
