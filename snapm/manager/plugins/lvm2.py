@@ -648,6 +648,7 @@ class Lvm2Cow(_Lvm2):
 
     name = "lvm2-cow"
     version = "0.1.0"
+    snapshot_class = Lvm2CowSnapshot
 
     def discover_snapshots(self):
         """
@@ -818,6 +819,7 @@ class Lvm2Thin(_Lvm2):
 
     name = "lvm2-thin"
     version = "0.1.0"
+    snapshot_class = Lvm2ThinSnapshot
 
     def discover_snapshots(self):
         snapshots = []

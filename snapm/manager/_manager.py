@@ -45,6 +45,7 @@ from snapm import (
     Selection,
     is_size_policy,
     SnapshotSet,
+    Snapshot,
 )
 
 
@@ -78,6 +79,7 @@ class Plugin(metaclass=PluginRegistry):
 
     name = "plugin"
     version = "0.1.0"
+    snapshot_class = Snapshot
 
     def __init__(self):
         self.size_map = None

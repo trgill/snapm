@@ -101,20 +101,24 @@ class ReportObj:
     snapset = None
     snapshot = None
 
-    def __init__(self, snapset=None, snapshot=None):
+    def __init__(self, snapset=None, snapshot=None, plugin=None):
         self.snapset = snapset
         self.snapshot = snapshot
+        self.plugin = plugin
 
 
 #: Snapshot set report object type
 PR_SNAPSET = 1
 #: Snapshot report object type
 PR_SNAPSHOT = 2
+#: Plugin report object type
+PR_PLUGIN = 4
 
 #: Report object types table for ``snapm.command`` reports
 _report_obj_types = [
     ReportObjType(PR_SNAPSET, "Snapshot set", "snapset_", lambda o: o.snapset),
     ReportObjType(PR_SNAPSHOT, "Snapshot", "snapshot_", lambda o: o.snapshot),
+    ReportObjType(PR_PLUGIN, "Plugin", "plugin_", lambda o: o.plugin),
 ]
 
 
@@ -351,6 +355,38 @@ _DEFAULT_SNAPSHOT_FIELDS = (
     "name,origin,mountpoint,status,size,free,autoactivate,provider"
 )
 
+_plugin_fields = [
+    FieldType(
+        PR_PLUGIN,
+        "name",
+        "PluginName",
+        "Name of the plugin",
+        10,
+        REP_STR,
+        lambda f, d: f.report_str(d.name),
+    ),
+    FieldType(
+        PR_PLUGIN,
+        "version",
+        "PluginVersion",
+        "Version of the plugin",
+        13,
+        REP_STR,
+        lambda f, d: f.report_str(d.version),
+    ),
+    FieldType(
+        PR_PLUGIN,
+        "type",
+        "PluginType",
+        "The snapshot type created by this plugin",
+        10,
+        REP_STR,
+        lambda f, d: f.report_str(d.snapshot_class.__name__),
+    ),
+]
+
+_DEFAULT_PLUGIN_FIELDS = ("name,version,type")
+
 
 def _str_indent(string, indent):
     """
@@ -529,6 +565,38 @@ def _expand_fields(default_fields, output_fields):
     elif output_fields.startswith("+"):
         output_fields = default_fields + "," + output_fields[1:]
     return output_fields
+
+
+def print_plugins(
+    manager, selection=None, output_fields=None, opts=None, sort_keys=None
+):
+    """
+    Print plugins matching selection criteria.
+
+    Format a set of ``snapm.manager.Plugin`` objects matching
+    the given criteria, and output them as a report to the file
+    given in ``opts.report_file``.
+
+    Selection criteria are currently ignored for plugin reports.
+
+    :param selection: A Selection object giving selection
+                      criteria for the operation
+    :param output_fields: a comma-separated list of output fields
+    :param opts: output formatting and control options
+    :param sort_keys: a comma-separated list of sort keys
+    """
+    output_fields = _expand_fields(_DEFAULT_PLUGIN_FIELDS, output_fields)
+
+    plugins = manager.plugins
+    selected = [ReportObj(None, None, plugin) for plugin in plugins]
+
+    return _do_print_type(
+        _plugin_fields,
+        selected,
+        output_fields=output_fields,
+        opts=opts,
+        sort_keys=sort_keys,
+    )
 
 
 def print_snapshots(
@@ -921,6 +989,18 @@ def _snapshot_show_cmd(cmd_args):
     return 0
 
 
+def _plugin_list_cmd(cmd_args):
+    """
+    List available plugins.
+
+    :param cmd_args: Command line arguments for the command
+    :returns: integer status code returned from ``main()``
+    """
+    manager = Manager()
+    opts = _report_opts_from_args(cmd_args)
+    return _generic_list_cmd(cmd_args, None, opts, manager, print_plugins)
+
+
 def _report_opts_from_args(cmd_args):
     opts = ReportOpts()
 
@@ -1110,6 +1190,7 @@ LIST_CMD = "list"
 
 SNAPSET_TYPE = "snapset"
 SNAPSHOT_TYPE = "snapshot"
+PLUGIN_TYPE = "plugin"
 
 
 def main(args):
@@ -1301,6 +1382,17 @@ def main(args):
     snapshot_show_parser.set_defaults(func=_snapshot_show_cmd)
     _add_identifier_args(snapshot_show_parser, snapset=True, snapshot=True)
     _add_json_arg(snapshot_show_parser)
+
+    # Subparser for plugin commands
+    plugin_parser = type_subparser.add_parser(PLUGIN_TYPE, help="Plugin commands")
+    plugin_subparser = plugin_parser.add_subparsers(dest="command")
+
+    # plugin list subcommand
+    plugin_list_parser = plugin_subparser.add_parser(
+        LIST_CMD, help="List plugins"
+    )
+    plugin_list_parser.set_defaults(func=_plugin_list_cmd)
+    _add_report_args(plugin_list_parser)
 
     cmd_args = parser.parse_args(args[1:])
 

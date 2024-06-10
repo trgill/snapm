@@ -154,6 +154,14 @@ class CommandTestsSimple(unittest.TestCase):
         args = MockArgs()
         command._snapshot_show_cmd(args)
 
+    def test__plugin_list_cmd_simple(self):
+        args = MockArgs()
+        command._plugin_list_cmd(args)
+
+    def test_main_plugin_list(self):
+        args = [os.path.join(os.getcwd(), "bin/snapm"), "plugin", "list"]
+        self.assertEqual(command.main(args), 0)
+
     def test_set_debug_none(self):
         args = MockArgs()
         command.set_debug(args.debug)

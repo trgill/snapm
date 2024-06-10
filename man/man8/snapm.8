@@ -19,6 +19,12 @@
 .de ARG_SNAPSHOT_COMMANDS
 .  RI [ activate | deactivate | autoactivate | list | show ]
 ..
+.de ARG_PLUGIN_TYPE
+.  RI plugin
+..
+.de ARG_PLUGIN_COMMANDS
+.  RI [ list ]
+..
 .
 ..
 .SH NAME
@@ -52,6 +58,17 @@ Snapm \(em Linux snapshot manager
 .CMD_SNAPSHOT_COMMAND
 
 .
+.HP
+.B snapm
+.de CMD_PLUGIN_COMMAND
+.  ad l
+.  ARG_GLOBAL
+.  ARG_PLUGIN_TYPE
+.  ARG_PLUGIN_COMMANDS
+.  ad b
+..
+.CMD_PLUGIN_COMMAND
+
 .HP
 .B snapm
 .de CMD_SNAPSET_CREATE
@@ -299,6 +316,24 @@ Snapm \(em Linux snapshot manager
 .  ad b
 ..
 .CMD_SNAPSHOT_SHOW
+.
+.HP
+.B snapm
+.de CMD_PLUGIN_LIST
+.  BR plugin
+.  BR \fBlist
+.  RB [ --nameprefixes ]
+.  RB [ --noheadings ]
+.  RB [ --options
+.  IR fields ]
+.  RB [ --sort
+.  IR fields ]
+.  RB [ --rows ]
+.  RB [ --separator
+.  IR separator ]
+.  ad b
+..
+.CMD_PLUGIN_LIST
 
 .
 .PD
@@ -713,6 +748,34 @@ that field respectively.
 .CMD_SNAPSHOT_SHOW
 .br
 Display snapshots matching selection criteria on standard out.
+.
+.P
+.B Plugin Commands
+.P
+.
+.HP
+.B snapm
+.CMD_PLUGIN_LIST
+.br
+Output a tabular report of plugins.
+
+Displays a report with one plugin per line, containing fields describing the
+properties of the available plugins.
+
+The list of fields to display is given with \fB--options\fP as a comma separated
+list of field names. To obtain a list of available fields run '\fBsnapm plugin
+list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
+specified fields are appended to the default field list. Otherwise the given
+list of fields replaces the default set of report fields.
+
+The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
+used to generate output in a machine readable form, suitable for setting shell
+or environment variables.
+
+Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
+option. The option expects a comma separated list of keys, with optional
+\fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
+that field respectively.
 .
 .SH BOOTING AND ROLLING BACK SNAPSHOT SETS
 .
