@@ -456,10 +456,16 @@ are \fIinvalid\fP then the snapshot set status as a whole is also
 .P
 .B Snapshot size policies
 .P
+An optional size policy hint can be specified when creating a snapshot set,
+either as a global default or individually for each mount point. The policy is
+used at creation time to check that sufficient space is present.
+
 For snapshot providers that require a fixed space to be allocated for the
-snapshot data store a size policy can be specified at creation time. There are
-currently four types of size policy that can be used to set the available
-snapshot size:
+snapshot the policy is used to determine the size of the snapshot backing
+store.
+
+There are currently four types of size policy that can be used to specify the
+space required:
 .sp
 .PD 0
 .TP 16
@@ -493,6 +499,7 @@ The default size policy for all volumes if none is specified is 200%USED.
 Create a new snapshot set using the specified list of mount points.
 
 The newly created snapset is displayed on the terminal on success:
+
 .br
 #
 .B snapm snapset create backup / /home /data /opt /srv
@@ -510,16 +517,15 @@ UUID:         f217177c-f35a-5b57-b33e-4c8ba0bb231a
 Status:       Inactive
 .br
 
-When creating snapshot sets \fB--bootable\fP and \fB--revert\fP
-can optionally be used to automatically create snapshot boot and
-revert boot entries respectively.
+When creating snapshot sets \fB--bootable\fP and \fB--revert\fP can optionally
+be used to automatically create snapshot boot and revert boot entries
+respectively.
 
-For snapshot providers that require a fixed size snapshot store to be
-allocated (for e.g. lvm2-cow) a size policy can be specified on the create
-command line, either as a global default or individually for each mount
-point. To specify a default policy use the \fB--size-policy\fP argument.
-To specify a per-mount point size policy append the policy to the mount
-point path separated by the \fB:\fP character:
+A size policy can be specified on the create command line, either as a global
+default or individually for each mount point. To specify a default policy use
+the \fB--size-policy\fP argument.  To specify a per-mount point size policy
+append the policy to the mount point path separated by the \fB:\fP character:
+
 .br
 #
 .B snapm snapset create backup --size-policy 25%FREE /:4G /home /var
@@ -537,8 +543,10 @@ UUID:           51b14f55-5281-54ca-87b9-1ff4991cb830
 Status:         Inactive
 
 .br
-Snapshot providers that do not allocate a fixed size for snapshot data ignore
-any size policy specified on the command line.
+Snapshot providers that do not allocate a fixed size for snapshot data will
+check for available space according to the policy at creation time but do not
+enforce a fixed size for individual snapshots: space is allocated from the
+available pool on an as-needed basis.
 .
 .HP
 .B snapm
