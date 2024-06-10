@@ -103,6 +103,9 @@ Create a new snapset with the provided name and list of mount points.
 # snapm snapset create [-b|--bootable] [-r|--revert] <name> mount_point...
 ```
 ###### Size Policies
+Size policies can be used to control the size of fixed-sized snapshots and to
+check for available space when creating a snapshot set.
+
 Some snapshot implementations (Lvm2CoW) require a fixed size to be specified
 for the snapshot backstore when the snapshot is created. The default size
 allocated by snapshot manager is 2x the current file system usage, allowing the
@@ -110,7 +113,8 @@ existing content of the volume to be overwritten twice before exhausting the
 snapshot space.
 
 Plugins for snapshot providers that do not require a fixed snapshot size will
-ignore any size policy hints.
+check that space is available for the requested size policy at snapshot set
+creation time.
 
 Size policy hints can be manually given on the command line to override the
 default behavior on a per-mount point basis. Four policies are available:
@@ -124,8 +128,9 @@ default behavior on a per-mount point basis. Four policies are available:
 The FIXED size policy accepts optional units of KiB, MiB, GiB, TiB, PiB, EiB
 and ZiB. Units may be abbreviated to the first character.
 
-Size policies are specified by adding a ':' and the required policy to the
-corresponding mount point path, for example:
+Per-mount point size policies are specified by adding a ':' and the required
+policy to the corresponding mount point path, for example:
+
 
 ```
 # snapm snapset create backup /:2G /var:1G /home
