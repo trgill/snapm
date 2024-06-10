@@ -865,30 +865,43 @@ class Lvm2Thin(_Lvm2):
             return False
         return True
 
-    def _check_free_space(self, vg_name, origin, mount_point):
-        pool_name = pool_name_from_vg_lv(origin)
-        space_used = mount_point_space_used(mount_point)
+    def _check_free_space(self, vg_name, lv_name, pool_name, mount_point, size_policy):
+        fs_used = mount_point_space_used(mount_point)
+        lv_size = lv_dev_size(vg_name, lv_name)
         pool_free = pool_free_space(vg_name, pool_name)
-        if pool_free < space_used:
+        policy = SizePolicy(mount_point, pool_free, fs_used, lv_size, size_policy)
+        snapshot_min_size = policy.size
+        if pool_free < (
+            sum(self.size_map[vg_name][pool_name].values()) + snapshot_min_size
+        ):
             raise SnapmNoSpaceError(
                 f"Volume group thin pool {vg_name}/{pool_name} "
                 f"has insufficient free space to snapshot {mount_point}"
             )
+        return snapshot_min_size
 
     def check_create_snapshot(
-        self, origin, snapset_name, timestamp, mount_point, _size_policy
+        self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
         (vg_name, lv_name) = origin.split("/")
+        pool_name = pool_name_from_vg_lv(origin)
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        self._check_free_space(vg_name, origin, mount_point)
+        if vg_name not in self.size_map:
+            self.size_map[vg_name] = {}
+        if pool_name not in self.size_map[vg_name]:
+            self.size_map[vg_name][pool_name] = {}
+        self.size_map[vg_name][pool_name][mount_point] = self._check_free_space(
+            vg_name, lv_name, pool_name, mount_point, size_policy
+        )
 
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
         (vg_name, lv_name) = origin.split("/")
+        pool_name = pool_name_from_vg_lv(origin)
         _log_debug(
             "Creating thin snapshot for %s/%s mounted at %s",
             vg_name,
@@ -898,7 +911,7 @@ class Lvm2Thin(_Lvm2):
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
-        self._check_free_space(vg_name, origin, mount_point)
+        self._check_free_space(vg_name, lv_name, pool_name, mount_point, size_policy)
 
         lvcreate_cmd = [
             LVCREATE_CMD,
