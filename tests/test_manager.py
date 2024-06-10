@@ -244,6 +244,49 @@ class ManagerTests(unittest.TestCase):
         sets = self.manager.find_snapshot_sets(selection=s)
         self.assertEqual(len(sets), 1)
 
+    def test_create_snapshot_set_default_size_policy(self):
+        self.manager.create_snapshot_set(
+            "testset0", self._lvm.mount_points(), default_size_policy="10%FREE"
+        )
+        s = snapm.Selection(name="testset0")
+        sets = self.manager.find_snapshot_sets(selection=s)
+        self.assertEqual(len(sets), 1)
+
+    def test_create_snapshot_set_size_policies_10_free(self):
+        mount_specs = [f"{mp}:10%FREE" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set("testset0", mount_specs)
+        s = snapm.Selection(name="testset0")
+        sets = self.manager.find_snapshot_sets(selection=s)
+        self.assertEqual(len(sets), 1)
+
+    def test_create_snapshot_set_size_policies_10_size(self):
+        mount_specs = [f"{mp}:10%SIZE" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set("testset0", mount_specs)
+        s = snapm.Selection(name="testset0")
+        sets = self.manager.find_snapshot_sets(selection=s)
+        self.assertEqual(len(sets), 1)
+
+    def test_create_snapshot_set_size_policies_200_used(self):
+        mount_specs = [f"{mp}:200%USED" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set("testset0", mount_specs)
+        s = snapm.Selection(name="testset0")
+        sets = self.manager.find_snapshot_sets(selection=s)
+        self.assertEqual(len(sets), 1)
+
+    def test_create_snapshot_set_size_policies_100_size(self):
+        mount_specs = [f"{mp}:100%SIZE" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set("testset0", mount_specs)
+        s = snapm.Selection(name="testset0")
+        sets = self.manager.find_snapshot_sets(selection=s)
+        self.assertEqual(len(sets), 1)
+
+    def test_create_snapshot_set_size_policies_fixed(self):
+        mount_specs = [f"{mp}:512MiB" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set("testset0", mount_specs)
+        s = snapm.Selection(name="testset0")
+        sets = self.manager.find_snapshot_sets(selection=s)
+        self.assertEqual(len(sets), 1)
+
     def test_create_snapshot_set_bad_name_backslash(self):
         with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
             self.manager.create_snapshot_set("bad\\name", self._lvm.mount_points())

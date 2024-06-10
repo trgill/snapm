@@ -36,7 +36,7 @@ _LV_SIZE = 1024**3
 _SNAPSHOT_SIZE = 512 * 2**20
 
 # GiB
-_THIN_POOL_SIZE = 2
+_THIN_POOL_SIZE = 6
 
 
 def _version_string_to_tuple(version):
