@@ -350,7 +350,9 @@ Include individual snapshots in the output of \fBsnapset show\fP commands.
 .HP
 .BR --name-prefixes | --nameprefixes
 .br
-Add a prefix to report field names.
+Add a 'SNAPM_' prefix plus the field name to the output. Useful with
+\fB--noheadings\fP to produce a list of field=value pairs that can be used
+to set environment or shell variables.
 .
 .HP
 .BR --no-headings | --noheadings
@@ -617,6 +619,10 @@ separated list of field names. To obtain a list of available fields run
 list. Otherwise the given list of fields replaces the default set of report
 fields.
 
+The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
+used to generate output in a machine readable form, suitable for setting shell
+or environment variables.
+
 Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
 option. The option expects a comma separated list of keys, with optional
 \fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
@@ -684,6 +690,10 @@ list of field names. To obtain a list of available fields run '\fBsnapm snapshot
 list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
 specified fields are appended to the default field list. Otherwise the given
 list of fields replaces the default set of report fields.
+
+The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
+used to generate output in a machine readable form, suitable for setting shell
+or environment variables.
 
 Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
 option. The option expects a comma separated list of keys, with optional
