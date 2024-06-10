@@ -816,7 +816,7 @@ def _show_cmd(cmd_args):
     return 0
 
 
-def _activate_snapshot_cmd(cmd_args):
+def _snapshot_activate_cmd(cmd_args):
     """
     Activate snapshot command handler.
 
@@ -840,7 +840,7 @@ def _activate_snapshot_cmd(cmd_args):
     return 0
 
 
-def _deactivate_snapshot_cmd(cmd_args):
+def _snapshot_deactivate_cmd(cmd_args):
     """
     Deactivate snapshot command handler.
 
@@ -864,7 +864,7 @@ def _deactivate_snapshot_cmd(cmd_args):
     return 0
 
 
-def _autoactivate_snapshot_cmd(cmd_args):
+def _snapshot_autoactivate_cmd(cmd_args):
     """
     Autoactivate snapshot command handler.
 
@@ -889,7 +889,7 @@ def _autoactivate_snapshot_cmd(cmd_args):
     return 0
 
 
-def _list_snapshot_cmd(cmd_args):
+def _snapshot_list_cmd(cmd_args):
     """
     List snapshots command handler.
 
@@ -905,7 +905,7 @@ def _list_snapshot_cmd(cmd_args):
     return _generic_list_cmd(cmd_args, select, opts, manager, print_snapshots)
 
 
-def _show_snapshot_cmd(cmd_args):
+def _snapshot_show_cmd(cmd_args):
     """
     Show snapshots command handler.
 
@@ -1269,20 +1269,20 @@ def main(args):
         ACTIVATE_CMD, help="Activate snapshots"
     )
     _add_identifier_args(snapshot_activate_parser, snapset=True, snapshot=True)
-    snapshot_activate_parser.set_defaults(func=_activate_snapshot_cmd)
+    snapshot_activate_parser.set_defaults(func=_snapshot_activate_cmd)
 
     # snapshot deactivate subcommand
     snapshot_deactivate_parser = snapshot_subparser.add_parser(
         DEACTIVATE_CMD, help="Deactivate snapshots"
     )
     _add_identifier_args(snapshot_deactivate_parser, snapset=True, snapshot=True)
-    snapshot_deactivate_parser.set_defaults(func=_deactivate_snapshot_cmd)
+    snapshot_deactivate_parser.set_defaults(func=_snapshot_deactivate_cmd)
 
     # snapshot autoactivate command
     snapshot_autoactivate_parser = snapshot_subparser.add_parser(
         AUTOACTIVATE_CMD, help="Set autoactivation status for snapshots"
     )
-    snapshot_autoactivate_parser.set_defaults(func=_autoactivate_snapshot_cmd)
+    snapshot_autoactivate_parser.set_defaults(func=_snapshot_autoactivate_cmd)
     _add_identifier_args(snapshot_autoactivate_parser, snapset=True, snapshot=True)
     _add_autoactivate_args(snapshot_autoactivate_parser)
 
@@ -1290,7 +1290,7 @@ def main(args):
     snapshot_list_parser = snapshot_subparser.add_parser(
         LIST_CMD, help="List snapshots"
     )
-    snapshot_list_parser.set_defaults(func=_list_snapshot_cmd)
+    snapshot_list_parser.set_defaults(func=_snapshot_list_cmd)
     _add_report_args(snapshot_list_parser)
     _add_identifier_args(snapshot_list_parser, snapset=True, snapshot=True)
 
@@ -1298,7 +1298,7 @@ def main(args):
     snapshot_show_parser = snapshot_subparser.add_parser(
         SHOW_CMD, help="Display snapshots"
     )
-    snapshot_show_parser.set_defaults(func=_show_snapshot_cmd)
+    snapshot_show_parser.set_defaults(func=_snapshot_show_cmd)
     _add_identifier_args(snapshot_show_parser, snapset=True, snapshot=True)
     _add_json_arg(snapshot_show_parser)
 

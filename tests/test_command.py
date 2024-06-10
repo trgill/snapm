@@ -139,7 +139,7 @@ class CommandTestsSimple(unittest.TestCase):
 
     def test__list_snapshot_cmd_simple(self):
         args = MockArgs()
-        command._list_snapshot_cmd(args)
+        command._snapshot_list_cmd(args)
 
     def test__show_cmd_simple(self):
         args = MockArgs()
@@ -152,7 +152,7 @@ class CommandTestsSimple(unittest.TestCase):
 
     def test__show_snapshot_cmd_simple(self):
         args = MockArgs()
-        command._show_snapshot_cmd(args)
+        command._snapshot_show_cmd(args)
 
     def test_set_debug_none(self):
         args = MockArgs()
