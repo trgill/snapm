@@ -25,6 +25,7 @@ from snapm import (
     SNAPM_DEBUG_PLUGINS,
     SnapmInvalidIdentifierError,
     SnapmCalloutError,
+    SnapmBusyError,
     SnapmNoSpaceError,
     SizePolicy,
     SnapStatus,
@@ -82,6 +83,7 @@ LVM_COW_ORIGIN_ATTR = "o"
 LVM_ACTIVE_ATTR = "a"
 LVM_INVALID_ATTR = "I"
 LVM_LV_TYPE_DEFAULT = "-"
+LVM_LV_ORIGIN_MERGING = "O"
 LVM_SKIP_ACTIVATION_ATTR = "k"
 
 # lv_attr flag indexes
@@ -711,6 +713,10 @@ class Lvm2Cow(_Lvm2):
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
+        if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
+            raise SnapmBusyError(
+                f"Snapshot revert is in progress for {vg_name}/{lv_name}"
+            )
         if lv_attr[0] != LVM_LV_TYPE_DEFAULT and lv_attr[0] != LVM_COW_ORIGIN_ATTR:
             return False
         return True
@@ -849,6 +855,10 @@ class Lvm2Thin(_Lvm2):
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
+        if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
+            raise SnapmBusyError(
+                f"Snapshot revert is in progress for {vg_name}/{lv_name}"
+            )
         if lv_attr[0] != LVM_THIN_VOL_ATTR:
             return False
         return True

@@ -198,6 +198,13 @@ class SnapmExistsError(SnapmError):
     """
 
 
+class SnapmBusyError(SnapmError):
+    """
+    A resouce needed by the current command is already in use: for e.g.
+    a snapshot merge is in progress for a previous snapshot set.
+    """
+
+
 class SnapmPathError(SnapmError):
     """
     An invalid path was supplied, for example attempting to snapshot
@@ -1124,6 +1131,7 @@ __all__ = [
     "SnapmNoSpaceError",
     "SnapmNoProviderError",
     "SnapmExistsError",
+    "SnapmBusyError",
     "SnapmPathError",
     "SnapmNotFoundError",
     "SnapmInvalidIdentifierError",
