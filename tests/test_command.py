@@ -233,6 +233,19 @@ class CommandTests(unittest.TestCase):
     def test_create_snapset(self):
         command.create_snapset(self.manager, "testset0", self._lvm.mount_points())
 
+    def test_create_snapset_default_size_policy(self):
+        command.create_snapset(
+            self.manager, "testset0", self._lvm.mount_points(), size_policy="10%FREE"
+        )
+
+    def test_create_snapset_per_mount_size_policy_10_free(self):
+        mount_specs = [f"{mp}:10%FREE" for mp in self._lvm.mount_points()]
+        command.create_snapset(self.manager, "testset0", mount_specs)
+
+    def test_create_snapset_per_mount_size_policy_100_size(self):
+        mount_specs = [f"{mp}:100%SIZE" for mp in self._lvm.mount_points()]
+        command.create_snapset(self.manager, "testset0", mount_specs)
+
     def test_create_delete_snapset(self):
         command.create_snapset(self.manager, "testset0", self._lvm.mount_points())
         command.delete_snapset(self.manager, snapm.Selection(name="testset0"))
