@@ -49,8 +49,10 @@ _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
 
-#: For CoW snapshots need to account for -cow LV name generated internally
-LVM_MAX_NAME_LEN = 123
+#: Maximum length for LVM2 LV names
+LVM_MAX_NAME_LEN = 127
+#: Length of extension for LVM2 CoW snapshot LV name
+LVM_COW_SNAPSHOT_NAME_LEN = 4
 
 # Global LVM2 report options
 LVM_REPORT_FORMAT = "--reportformat"
@@ -638,22 +640,6 @@ class _Lvm2(Plugin):
         except CalledProcessError as err:
             raise SnapmCalloutError(f"{LVCHANGE_CMD} failed with: {err}") from err
 
-    def _check_lvm_name(self, vg_name, lv_name):
-        """
-        Check whether a proposed LVM name exceeds the maximum allowed name
-        length for an LVM2 logical volume.
-
-        :param vg_name: The volume group name to check.
-        :param lv_name: The logical volume name to check.
-        :raises: ``SnapmInvalidIdentifierError`` if the proposed name exceeds
-                 limits.
-        """
-        full_name = f"{vg_name}/{lv_name}"
-        if len(full_name) > LVM_MAX_NAME_LEN:
-            raise SnapmInvalidIdentifierError(
-                f"Logical volume name {full_name} exceeds maximum LVM2 name length"
-            )
-
 
 class Lvm2Cow(_Lvm2):
     """
@@ -808,6 +794,22 @@ class Lvm2Cow(_Lvm2):
             snapshot_name,
         )
 
+    def _check_lvm_name(self, vg_name, lv_name):
+        """
+        Check whether a proposed LVM name exceeds the maximum allowed name
+        length for an LVM2 logical volume.
+
+        :param vg_name: The volume group name to check.
+        :param lv_name: The logical volume name to check.
+        :raises: ``SnapmInvalidIdentifierError`` if the proposed name exceeds
+                 limits.
+        """
+        full_name = f"{vg_name}/{lv_name}"
+        if len(full_name) + LVM_COW_SNAPSHOT_NAME_LEN > LVM_MAX_NAME_LEN:
+            raise SnapmInvalidIdentifierError(
+                f"Logical volume name {full_name} exceeds maximum LVM2 name length"
+            )
+
 
 class Lvm2Thin(_Lvm2):
     """
@@ -919,3 +921,19 @@ class Lvm2Thin(_Lvm2):
             vg_name,
             snapshot_name,
         )
+
+    def _check_lvm_name(self, vg_name, lv_name):
+        """
+        Check whether a proposed LVM name exceeds the maximum allowed name
+        length for an LVM2 logical volume.
+
+        :param vg_name: The volume group name to check.
+        :param lv_name: The logical volume name to check.
+        :raises: ``SnapmInvalidIdentifierError`` if the proposed name exceeds
+                 limits.
+        """
+        full_name = f"{vg_name}/{lv_name}"
+        if len(full_name) > LVM_MAX_NAME_LEN:
+            raise SnapmInvalidIdentifierError(
+                f"Logical volume name {full_name} exceeds maximum LVM2 name length"
+            )
