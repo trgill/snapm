@@ -584,17 +584,16 @@ class SizePolicy:
             size = int(math.ceil((percent * value) / 100))
             return SECTOR_SIZE * math.ceil(size / SECTOR_SIZE)
 
-        match self.type:
-            case SizePolicyType.FIXED:
-                return self._size
-            case SizePolicyType.PERCENT_FREE:
-                return percent_of_sectors(self._percent, self._free_space)
-            case SizePolicyType.PERCENT_USED:
-                return percent_of_sectors(self._percent, self._fs_used)
-            case SizePolicyType.PERCENT_SIZE:
-                return percent_of_sectors(self._percent, self._dev_size)
-            case _:
-                raise SnapmParseError(f"Invalid size policy type: {self.type}")
+        if self.type == SizePolicyType.FIXED:
+            return self._size
+        elif self.type == SizePolicyType.PERCENT_FREE:
+            return percent_of_sectors(self._percent, self._free_space)
+        elif self.type == SizePolicyType.PERCENT_USED:
+            return percent_of_sectors(self._percent, self._fs_used)
+        elif self.type == SizePolicyType.PERCENT_SIZE:
+            return percent_of_sectors(self._percent, self._dev_size)
+        else:
+            raise SnapmParseError(f"Invalid size policy type: {self.type}")
 
 
 class SnapStatus(Enum):
