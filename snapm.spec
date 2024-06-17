@@ -17,6 +17,7 @@ BuildRequires:	python3-setuptools
 BuildRequires:	python3-devel
 %if 0%{?sphinx_docs}
 BuildRequires:	python3-sphinx
+BuildRequires:  boom-boot
 %endif
 
 Requires: python3-snapm = %{version}-%{release}
