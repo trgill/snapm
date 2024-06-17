@@ -666,8 +666,8 @@ class Lvm2Cow(_Lvm2):
                     )
                 except ValueError:
                     continue
-                (snapset, timestamp, mount_point) = fields
                 if fields is not None:
+                    (snapset, timestamp, mount_point) = fields
                     full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_dict[LVS_LV_NAME]}"
                     _log_debug_lvm2("Found %s snapshot: %s", self.name, full_name)
                     snapshots.append(
