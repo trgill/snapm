@@ -63,6 +63,11 @@ package builds can be performed by running `python setup.py` and a
 setup command. See `python setup.py --help` for detailed information on
 the available options and commands.
 
+The `snapm` command uses the [boom boot manager][5] to manage boot entries for
+the snapshots that it creates. If installing `snapm` manually, Install `boom`
+first: either from your distribution repositories or the upstream Git repo.
+Snapshot manager is tested with boom-1.6.0 and later.
+
 ### Building an RPM package
 A spec file is included in the repository that can be used to build RPM packages
 of snapm. The packit service is also enabled for new pull requests and will
@@ -383,3 +388,4 @@ Installation and user documentation will be added in a future update.
  [2]: https://snapm.readthedocs.io/en/latest/
  [3]: http://sphinx-doc.org/
  [4]: https://www.readthedocs.org/
+ [5]: https://github.com/snapshotmanager/boom
