@@ -32,6 +32,8 @@ provisioned snapshots are supported.
                 * [autoactivate](#snapshot-autoactivate)
                 * [list](#snapshot-list)
                 * [show](#snapshot-show)
+            * [plugin](#plugin)
+                * [list](#plugin-list)
          * [Reporting commands](#reporting-commands)
          * [Getting help](#getting-help)
       * [Patches and pull requests](#patches-and-pull-requests)
@@ -164,6 +166,24 @@ per-mount point policy can be set with the `--size-policy` argument:
 # snapm snapset create backup --size-policy 100%SIZE / /home /var
 ```
 
+On success the `snapm snapset create` command displays the newly created
+snapshot set on stdout:
+
+```
+# snapm snapset create -br --size-policy 100%USED backup / /home /var
+SnapsetName:      backup
+MountPoints:      /, /home, /var
+NrSnapshots:      3
+Time:             2024-06-18 20:13:02
+UUID:             9650baf8-e771-51fa-a0dd-f516447f3740
+Status:           Active
+Autoactivate:     yes
+Bootable:         yes
+BootEntries:
+  SnapshotEntry:  0b98db4
+  RevertEntry:    d96a135
+```
+
 ##### delete
 Delete an existing snapset by name or uuid.
 ```
@@ -181,12 +201,19 @@ Revert an existing snapset, re-setting the content of the origin volumes
 to the state they were in at the time the snapset was created. The snapset
 to be reverted may be specified either by its name or uuid.
 
-Rolling back a snapshot set with mounted and in-use origin volumes will
-schedule the revert to take place the next time that the volumes are
-activated, for example by booting into a configured revert boot entry for
-the snapshot set.
 ```
 # snapm snapset revert <name|uuid>
+```
+
+If the origins of the snapshot set are in use at the time of the revert the
+operation is deferred until the next time the snapshot set is activated (for
+example during a reboot). If a revert boot entry was created for the snapshot
+set the `revert` command will suggest booting into it to continue:
+
+```
+# snapm snapset revert upgrade
+WARNING - Snaphot set upgrade origin is in use: reboot required to complete revert
+Boot into 'Revert upgrade 2024-06-10 15:25:15 (6.8.9-300.fc40.x86_64)' to continue
 ```
 
 ##### activate
@@ -215,10 +242,287 @@ List available snapsets matching selection criteria.
 # snapm snapset list [<name|uuid>]
 ```
 
+By default the information is presented as a tabular report with column headings
+indicating the meaning of each value. The default column selection includes the
+SnapsetName, Time, NrSnapshots, Status, and MountPoints fields:
+
+```
+# snapm snapset list
+SnapsetName  Time                 NrSnapshots Status  MountPoints
+backup       2024-06-18 20:13:02            3 Active  /, /home, /var
+upgrade      2024-06-18 20:21:29            3 Active  /, /home, /var
+```
+
+Custom field specifications may be given with the `-o`/`--options` argument. To
+obtain a list of available fields run `snapm snapset list -o+help`:
+
+```
+# snapm snapset list -o+help
+Snapshot set Fields
+-------------------
+  name         - Snapshot set name [str]
+  uuid         - Snapshot set UUID [uuid]
+  timestamp    - Snapshot set creation time as a UNIX epoch value [num]
+  time         - Snapshot set creation time [time]
+  nr_snapshots - Number of snapshots [num]
+  mountpoints  - Snapshot set mount points [strlist]
+  status       - Snapshot set status [str]
+  autoactivate - Autoactivation status [str]
+  bootable     - Configured for snapshot boot [str]
+  bootentry    - Snapshot set boot entry [sha]
+  revertentry  - Snapshot set revert boot entry [sha]
+
+```
+
+To specify custom fields pass a comma separated list to `-o`:
+
+```
+# snapm snapset list -oname,time
+SnapsetName  Time
+backup       2024-06-18 20:13:02
+upgrade      2024-06-18 20:21:29
+```
+
+To add fields to the default field set prefix the list of fields with the `+`
+character:
+
+```
+# snapm snapset list -o+bootentry,revertentry
+SnapsetName  Time                 NrSnapshots Status  MountPoints              SnapshotEntry RevertEntry
+backup       2024-06-18 20:13:02            3 Active  /, /home, /var           0b98db415a504 d96a135311e15
+upgrade      2024-06-18 20:21:29            3 Active  /, /home, /var           a981dad40357d d87f7dc57950a
+```
+
+The report can also be produced in JSON notation, suitable for parsing by other
+tools using the `--json` argument:
+
+```
+# snapm snapset list --json
+{
+    "Snapsets": [
+        {
+            "snapset_name": "backup",
+            "snapset_time": "2024-06-18 20:13:02",
+            "snapset_nr_snapshots": 3,
+            "snapset_status": "Active",
+            "snapset_mountpoints": [
+                "/",
+                "/home",
+                "/var"
+            ]
+        },
+        {
+            "snapset_name": "upgrade",
+            "snapset_time": "2024-06-18 20:21:29",
+            "snapset_nr_snapshots": 3,
+            "snapset_status": "Active",
+            "snapset_mountpoints": [
+                "/",
+                "/home",
+                "/var"
+            ]
+        }
+    ]
+}
+```
+
+For further report formatting options refer to the `snapm(8)` manual page.
+
 ##### show
 Display available snapsets matching selection criteria.
 ```
 # snapm snapset show [<name|uuid>]
+```
+
+By default the output is formatted in the same way as the output of the `snapm
+snapset create` command:
+
+```
+# snapm snapset show upgrade
+SnapsetName:      upgrade
+MountPoints:      /, /var, /home
+NrSnapshots:      3
+Time:             2024-06-18 20:21:29
+UUID:             bbe5a2e3-7467-5fd2-93bf-6e921b0845d7
+Status:           Active
+Autoactivate:     yes
+Bootable:         yes
+BootEntries:
+  SnapshotEntry:  a981dad
+  RevertEntry:    d87f7dc
+```
+
+The individual snapshots making up each set are also displayed if `--members` is
+used:
+
+```
+# snapm snapset show --members
+SnapsetName:      upgrade
+MountPoints:      /, /var, /home
+NrSnapshots:      3
+Time:             2024-06-18 20:21:29
+UUID:             bbe5a2e3-7467-5fd2-93bf-6e921b0845d7
+Status:           Active
+Autoactivate:     yes
+Bootable:         yes
+BootEntries:
+  SnapshotEntry:  a981dad
+  RevertEntry:    d87f7dc
+Snapshots:
+    Name:           fedora/root-snapset_upgrade_1718738489_-
+    SnapsetName:    upgrade
+    Origin:         /dev/fedora/root
+    Time:           2024-06-18 20:21:29
+    MountPoint:     /
+    Provider:       lvm2-cow
+    UUID:           7e6ddffe-220f-5cdf-80d7-0d7e95b88a24
+    Status:         Active
+    Size:           3.1GiB
+    Free:           3.1GiB
+    Autoactivate:   yes
+    DevicePath:     /dev/fedora/root-snapset_upgrade_1718738489_-
+    VolumeGroup:    fedora
+    LogicalVolume:  root-snapset_upgrade_1718738489_-
+
+    Name:           fedora/var-snapset_upgrade_1718738489_-var
+    SnapsetName:    upgrade
+    Origin:         /dev/fedora/var
+    Time:           2024-06-18 20:21:29
+    MountPoint:     /var
+    Provider:       lvm2-cow
+    UUID:           0a9d0467-5941-573e-99b5-041ee6693925
+    Status:         Active
+    Size:           1.4GiB
+    Free:           1.4GiB
+    Autoactivate:   yes
+    DevicePath:     /dev/fedora/var-snapset_upgrade_1718738489_-var
+    VolumeGroup:    fedora
+    LogicalVolume:  var-snapset_upgrade_1718738489_-var
+
+    Name:           fedora/home-snapset_upgrade_1718738489_-home
+    SnapsetName:    upgrade
+    Origin:         /dev/fedora/home
+    Time:           2024-06-18 20:21:29
+    MountPoint:     /home
+    Provider:       lvm2-thin
+    UUID:           81cb2222-cac5-5177-a8dc-c07701f16599
+    Status:         Active
+    Size:           1.0GiB
+    Free:           1.9GiB
+    Autoactivate:   yes
+    DevicePath:     /dev/fedora/home-snapset_upgrade_1718738489_-home
+    VolumeGroup:    fedora
+    LogicalVolume:  home-snapset_upgrade_1718738489_-home
+```
+
+The output is also available in JSON notation using the `--json` argument:
+
+```
+# snapm snapset show upgrade --json
+[
+    {
+        "SnapsetName": "upgrade",
+        "MountPoints": [
+            "/",
+            "/var",
+            "/home"
+        ],
+        "NrSnapshots": 3,
+        "Timestamp": 1718738489,
+        "Time": "2024-06-18 20:21:29",
+        "UUID": "bbe5a2e3-7467-5fd2-93bf-6e921b0845d7",
+        "Status": "Active",
+        "Autoactivate": true,
+        "Bootable": true,
+        "BootEntries": {
+            "SnapshotEntry": "a981dad",
+            "RevertEntry": "d87f7dc"
+        }
+    }
+]
+```
+
+The output is a JSON array of dictionaries describing each configured snapshot
+set.
+
+Similarly for `--members`:
+
+```
+# snapm snapset show --members --json
+[
+    {
+        "SnapsetName": "upgrade",
+        "MountPoints": [
+            "/",
+            "/var",
+            "/home"
+        ],
+        "NrSnapshots": 3,
+        "Timestamp": 1718738489,
+        "Time": "2024-06-18 20:21:29",
+        "UUID": "bbe5a2e3-7467-5fd2-93bf-6e921b0845d7",
+        "Status": "Active",
+        "Autoactivate": true,
+        "Bootable": true,
+        "BootEntries": {
+            "SnapshotEntry": "a981dad",
+            "RevertEntry": "d87f7dc"
+        },
+        "Snapshots": [
+            {
+                "Name": "fedora/root-snapset_upgrade_1718738489_-",
+                "SnapsetName": "upgrade",
+                "Origin": "/dev/fedora/root",
+                "Timestamp": 1718738489,
+                "Time": "2024-06-18 20:21:29",
+                "MountPoint": "/",
+                "Provider": "lvm2-cow",
+                "UUID": "7e6ddffe-220f-5cdf-80d7-0d7e95b88a24",
+                "Status": "Active",
+                "Size": "3.1GiB",
+                "Free": "3.1GiB",
+                "SizeBytes": 3279945728,
+                "FreeBytes": 3278961744,
+                "Autoactivate": true,
+                "DevicePath": "/dev/fedora/root-snapset_upgrade_1718738489_-"
+            },
+            {
+                "Name": "fedora/var-snapset_upgrade_1718738489_-var",
+                "SnapsetName": "upgrade",
+                "Origin": "/dev/fedora/var",
+                "Timestamp": 1718738489,
+                "Time": "2024-06-18 20:21:29",
+                "MountPoint": "/var",
+                "Provider": "lvm2-cow",
+                "UUID": "0a9d0467-5941-573e-99b5-041ee6693925",
+                "Status": "Active",
+                "Size": "1.4GiB",
+                "Free": "1.4GiB",
+                "SizeBytes": 1463812096,
+                "FreeBytes": 1461616377,
+                "Autoactivate": true,
+                "DevicePath": "/dev/fedora/var-snapset_upgrade_1718738489_-var"
+            },
+            {
+                "Name": "fedora/home-snapset_upgrade_1718738489_-home",
+                "SnapsetName": "upgrade",
+                "Origin": "/dev/fedora/home",
+                "Timestamp": 1718738489,
+                "Time": "2024-06-18 20:21:29",
+                "MountPoint": "/home",
+                "Provider": "lvm2-thin",
+                "UUID": "81cb2222-cac5-5177-a8dc-c07701f16599",
+                "Status": "Active",
+                "Size": "1.0GiB",
+                "Free": "1.9GiB",
+                "SizeBytes": 1073741824,
+                "FreeBytes": 2079837914,
+                "Autoactivate": true,
+                "DevicePath": "/dev/fedora/home-snapset_upgrade_1718738489_-home"
+            }
+        ]
+    }
+]
 ```
 
 #### snapshot
@@ -249,10 +553,253 @@ List available snapshots matching selection criteria.
 # snapm snapshot list [<name|uuid>]
 ```
 
+By default the information is presented as a tabular report with column headings
+indicating the meaning of each value. The default column selection includes the
+SnapsetName, Name, Origin, MountPoint, Status, Size, Free, Autoactivate, and
+Provider fields:
+
+```
+# snapm snapshot list
+SnapsetName  Name                                         Origin           MountPoint       Status  Size   Free   Autoactivate Provider
+upgrade      fedora/root-snapset_upgrade_1718738489_-     /dev/fedora/root /                Active  3.1GiB 3.1GiB yes          lvm2-cow
+upgrade      fedora/var-snapset_upgrade_1718738489_-var   /dev/fedora/var  /var             Active  1.4GiB 1.4GiB yes          lvm2-cow
+upgrade      fedora/home-snapset_upgrade_1718738489_-home /dev/fedora/home /home            Active  1.0GiB 1.9GiB yes          lvm2-thin
+```
+
+Custom field specifications may be given with the `-o`/`--options` argument. To
+obtain a list of available fields run `snapm snapset list -o+help`:
+
+```
+# snapm snapshot list -o+help
+Snapshot Fields
+---------------
+  name         - Snapshot name [str]
+  uuid         - Snapshot UUID [uuid]
+  origin       - Origin [str]
+  mountpoint   - Snapshot mount point [str]
+  devpath      - Snapshot device path [str]
+  provider     - Snapshot provider plugin [str]
+  status       - Snapshot status [str]
+  size         - Snapshot size [size]
+  free         - Free space available [size]
+  size_bytes   - Snapshot size in bytes [num]
+  free_bytes   - Free space available in bytes [num]
+  autoactivate - Autoactivation status [str]
+
+Snapshot set Fields
+-------------------
+  name         - Snapshot set name [str]
+  uuid         - Snapshot set UUID [uuid]
+  timestamp    - Snapshot set creation time as a UNIX epoch value [num]
+  time         - Snapshot set creation time [time]
+  nr_snapshots - Number of snapshots [num]
+  mountpoints  - Snapshot set mount points [strlist]
+  status       - Snapshot set status [str]
+  autoactivate - Autoactivation status [str]
+  bootable     - Configured for snapshot boot [str]
+  bootentry    - Snapshot set boot entry [sha]
+  revertentry  - Snapshot set revert boot entry [sha]
+
+```
+
+To specify custom fields pass a comma separated list to `-o`:
+
+```
+# snapm snapshot list -osnapset_name,status,devpath
+SnapsetName  Status  DevicePath
+upgrade      Active  /dev/fedora/root-snapset_upgrade_1718738489_-
+upgrade      Active  /dev/fedora/var-snapset_upgrade_1718738489_-var
+upgrade      Active  /dev/fedora/home-snapset_upgrade_1718738489_-home
+```
+
+To add fields to the default field set prefix the list of fields with the `+`
+character:
+
+```
+# snapm snapshot list -o+devpath
+SnapsetName  Name                                         Origin           MountPoint       Status  Size   Free   Autoactivate Provider  DevicePath
+upgrade      fedora/root-snapset_upgrade_1718738489_-     /dev/fedora/root /                Active  3.1GiB 3.1GiB yes          lvm2-cow  /dev/fedora/root-snapset_upgrade_1718738489_-
+upgrade      fedora/var-snapset_upgrade_1718738489_-var   /dev/fedora/var  /var             Active  1.4GiB 1.4GiB yes          lvm2-cow  /dev/fedora/var-snapset_upgrade_1718738489_-var
+upgrade      fedora/home-snapset_upgrade_1718738489_-home /dev/fedora/home /home            Active  1.0GiB 1.9GiB yes          lvm2-thin /dev/fedora/home-snapset_upgrade_1718738489_-home
+```
+
+The report can also be produced in JSON notation, suitable for parsing by other
+tools using the `--json` argument:
+
+```
+# snapm snapshot list --json
+{
+    "Snapshots": [
+        {
+            "snapset_name": "upgrade",
+            "snapshot_name": "fedora/root-snapset_upgrade_1718738489_-",
+            "snapshot_origin": "/dev/fedora/root",
+            "snapshot_mountpoint": "/",
+            "snapshot_status": "Active",
+            "snapshot_size": "3.1GiB",
+            "snapshot_free": "3.1GiB",
+            "snapshot_autoactivate": true,
+            "snapshot_provider": "lvm2-cow"
+        },
+        {
+            "snapset_name": "upgrade",
+            "snapshot_name": "fedora/var-snapset_upgrade_1718738489_-var",
+            "snapshot_origin": "/dev/fedora/var",
+            "snapshot_mountpoint": "/var",
+            "snapshot_status": "Active",
+            "snapshot_size": "1.4GiB",
+            "snapshot_free": "1.4GiB",
+            "snapshot_autoactivate": true,
+            "snapshot_provider": "lvm2-cow"
+        },
+        {
+            "snapset_name": "upgrade",
+            "snapshot_name": "fedora/home-snapset_upgrade_1718738489_-home",
+            "snapshot_origin": "/dev/fedora/home",
+            "snapshot_mountpoint": "/home",
+            "snapshot_status": "Active",
+            "snapshot_size": "1.0GiB",
+            "snapshot_free": "1.9GiB",
+            "snapshot_autoactivate": true,
+            "snapshot_provider": "lvm2-thin"
+        }
+    ]
+}
+```
+
+For further report formatting options refer to the `snapm(8)` manual page.
+
 ##### snapshot show
 Display available snapshots matching selection criteria.
 ```
 # snapm snapshot show [<name|uuid>]
+```
+
+By default the output is formatted in the same way as the output of the `snapm
+snapset show --members` command:
+
+```
+# snapm snapshot show
+Name:           fedora/root-snapset_upgrade_1718738489_-
+SnapsetName:    upgrade
+Origin:         /dev/fedora/root
+Time:           2024-06-18 20:21:29
+MountPoint:     /
+Provider:       lvm2-cow
+UUID:           7e6ddffe-220f-5cdf-80d7-0d7e95b88a24
+Status:         Active
+Size:           3.1GiB
+Free:           3.1GiB
+Autoactivate:   yes
+DevicePath:     /dev/fedora/root-snapset_upgrade_1718738489_-
+VolumeGroup:    fedora
+LogicalVolume:  root-snapset_upgrade_1718738489_-
+
+Name:           fedora/var-snapset_upgrade_1718738489_-var
+SnapsetName:    upgrade
+Origin:         /dev/fedora/var
+Time:           2024-06-18 20:21:29
+MountPoint:     /var
+Provider:       lvm2-cow
+UUID:           0a9d0467-5941-573e-99b5-041ee6693925
+Status:         Active
+Size:           1.4GiB
+Free:           1.4GiB
+Autoactivate:   yes
+DevicePath:     /dev/fedora/var-snapset_upgrade_1718738489_-var
+VolumeGroup:    fedora
+LogicalVolume:  var-snapset_upgrade_1718738489_-var
+
+Name:           fedora/home-snapset_upgrade_1718738489_-home
+SnapsetName:    upgrade
+Origin:         /dev/fedora/home
+Time:           2024-06-18 20:21:29
+MountPoint:     /home
+Provider:       lvm2-thin
+UUID:           81cb2222-cac5-5177-a8dc-c07701f16599
+Status:         Active
+Size:           1.0GiB
+Free:           1.9GiB
+Autoactivate:   yes
+DevicePath:     /dev/fedora/home-snapset_upgrade_1718738489_-home
+VolumeGroup:    fedora
+LogicalVolume:  home-snapset_upgrade_1718738489_-home
+```
+
+The output is also available in JSON notation using the `--json` argument:
+
+```
+# snapm snapshot show --json
+[
+    {
+        "Name": "fedora/root-snapset_upgrade_1718738489_-",
+        "SnapsetName": "upgrade",
+        "Origin": "/dev/fedora/root",
+        "Timestamp": 1718738489,
+        "Time": "2024-06-18 20:21:29",
+        "MountPoint": "/",
+        "Provider": "lvm2-cow",
+        "UUID": "7e6ddffe-220f-5cdf-80d7-0d7e95b88a24",
+        "Status": "Active",
+        "Size": "3.1GiB",
+        "Free": "3.1GiB",
+        "SizeBytes": 3279945728,
+        "FreeBytes": 3278961744,
+        "Autoactivate": true,
+        "DevicePath": "/dev/fedora/root-snapset_upgrade_1718738489_-"
+    },
+    {
+        "Name": "fedora/var-snapset_upgrade_1718738489_-var",
+        "SnapsetName": "upgrade",
+        "Origin": "/dev/fedora/var",
+        "Timestamp": 1718738489,
+        "Time": "2024-06-18 20:21:29",
+        "MountPoint": "/var",
+        "Provider": "lvm2-cow",
+        "UUID": "0a9d0467-5941-573e-99b5-041ee6693925",
+        "Status": "Active",
+        "Size": "1.4GiB",
+        "Free": "1.4GiB",
+        "SizeBytes": 1463812096,
+        "FreeBytes": 1461616377,
+        "Autoactivate": true,
+        "DevicePath": "/dev/fedora/var-snapset_upgrade_1718738489_-var"
+    },
+    {
+        "Name": "fedora/home-snapset_upgrade_1718738489_-home",
+        "SnapsetName": "upgrade",
+        "Origin": "/dev/fedora/home",
+        "Timestamp": 1718738489,
+        "Time": "2024-06-18 20:21:29",
+        "MountPoint": "/home",
+        "Provider": "lvm2-thin",
+        "UUID": "81cb2222-cac5-5177-a8dc-c07701f16599",
+        "Status": "Active",
+        "Size": "1.0GiB",
+        "Free": "1.9GiB",
+        "SizeBytes": 1073741824,
+        "FreeBytes": 2079837914,
+        "Autoactivate": true,
+        "DevicePath": "/dev/fedora/home-snapset_upgrade_1718738489_-home"
+    }
+]
+```
+
+The output is a JSON array of dictionaries describing each configured snapshot.
+
+#### plugin
+The `plugin` command is used to display information on the available snapshot
+provider plugins.
+
+##### plugin list
+
+The `plugin list` command lists the available plugins:
+
+```
+# snapm plugin list
+PluginName PluginVersion PluginType
+lvm2-cow   0.1.0         Lvm2CowSnapshot
+lvm2-thin  0.1.0         Lvm2ThinSnapshot
 ```
 
 ### Reporting commands
@@ -321,6 +868,29 @@ Snapshot set Fields
 
 ```
 
+#### JSON reports
+
+All reports can optionally be formatted as JSON for parsing by other tools using
+the `--json` argument:
+
+```
+# snapm plugin list --json
+{
+    "Plugins": [
+        {
+            "plugin_name": "lvm2-cow",
+            "plugin_version": "0.1.0",
+            "plugin_type": "Lvm2CowSnapshot"
+        },
+        {
+            "plugin_name": "lvm2-thin",
+            "plugin_version": "0.1.0",
+            "plugin_type": "Lvm2ThinSnapshot"
+        }
+    ]
+}
+```
+
 ### Getting help
 Help is available for the `snapm` command and each subcommand.
 
@@ -328,14 +898,16 @@ Run the command with `--help` to display the full usage message:
 
 ```
 # snapm --help
-usage: snapm [-h] [-d DEBUGOPTS] [-v] [-V] {snapset,snapshot} ...
+usage: snapm [-h] [-d DEBUGOPTS] [-v] [-V] {snapset,snapshot,plugin} ...
 
 Snapshot Manager
 
 positional arguments:
-  {snapset,snapshot}    Command type
+  {snapset,snapshot,plugin}
+                        Command type
     snapset             Snapshot set commands
     snapshot            Snapshot commands
+    plugin              Plugin commands
 
 options:
   -h, --help            show this help message and exit
