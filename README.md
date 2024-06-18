@@ -73,7 +73,8 @@ Snapshot manager is tested with boom-1.6.0 and later.
 ### Building an RPM package
 A spec file is included in the repository that can be used to build RPM packages
 of snapm. The packit service is also enabled for new pull requests and will
-automatically build packages for fedora-stable and fedora-development.
+automatically build packages for fedora-stable, fedora-development, epel-9,
+centos-stream-9, and centos-stream-10.
 
 ## The snapm command
 
