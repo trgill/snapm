@@ -406,7 +406,7 @@ def _str_indent(string, indent):
 
 
 def _do_print_type(
-    report_fields, selected, output_fields=None, opts=None, sort_keys=None
+    report_fields, selected, output_fields=None, opts=None, sort_keys=None, title=None
 ):
     """
     Print an object type report (snapshot set, snapshot)
@@ -430,7 +430,7 @@ def _do_print_type(
     opts = opts if opts is not None else ReportOpts()
 
     report = Report(
-        _report_obj_types, report_fields, output_fields, opts, sort_keys, None
+        _report_obj_types, report_fields, output_fields, opts, sort_keys, title
     )
 
     for obj in selected:
@@ -596,6 +596,7 @@ def print_plugins(
         output_fields=output_fields,
         opts=opts,
         sort_keys=sort_keys,
+        title="Plugins",
     )
 
 
@@ -629,6 +630,7 @@ def print_snapshots(
         output_fields=output_fields,
         opts=opts,
         sort_keys=sort_keys,
+        title="Snapshots",
     )
 
 
@@ -662,6 +664,7 @@ def print_snapsets(
         output_fields=output_fields,
         opts=opts,
         sort_keys=sort_keys,
+        title="Snapsets",
     )
 
 
