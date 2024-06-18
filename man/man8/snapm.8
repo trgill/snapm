@@ -190,7 +190,7 @@ Snapm \(em Linux snapshot manager
 .  IR fields ]
 .  RB [ --sort
 .  IR fields ]
-.  RB [ --rows ]
+.  RB [ --rows | --json ]
 .  RB [ --separator
 .  IR separator ]
 .  ad b
@@ -208,6 +208,7 @@ Snapm \(em Linux snapshot manager
 .  IR name ]
 .  RB [ --uuid
 .  IR uuid ]
+.  RB [ --json ]
 .  ad b
 ..
 .CMD_SNAPSET_SHOW
@@ -292,7 +293,7 @@ Snapm \(em Linux snapshot manager
 .  IR fields ]
 .  RB [ --sort
 .  IR fields ]
-.  RB [ --rows ]
+.  RB [ --rows | --json ]
 .  RB [ --separator
 .  IR separator ]
 .  ad b
@@ -313,6 +314,7 @@ Snapm \(em Linux snapshot manager
 .  IR name ]
 .  RB [ --snapshot-uuid
 .  IR uuid ]
+.  RB [ --json ]
 .  ad b
 ..
 .CMD_SNAPSHOT_SHOW
@@ -416,6 +418,11 @@ for the set.
 .BR --rows
 .br
 Output report columns as rows
+.
+.HP
+.BR --json
+.br
+Produce show or list output in JSON notation
 .
 .HP
 .BR --separator
@@ -931,6 +938,11 @@ The amount of free space available to the snapshot in bytes.
 .B autoactivate
 Whether this snapshot is configured for autoactivation.
 .P
+.
+.SS JSON output
+.
+Reports can optionally be output in JSON notation by using the \fB--json\fP
+argument.
 .SH EXAMPLES
 List the available snapshot sets
 .br
