@@ -742,6 +742,7 @@ class ReportTests(unittest.TestCase):
             "field_name_prefix=\n"
             "unquoted=True\n"
             "aligned=True\n"
+            "json=False\n"
             "columns_as_rows=False\n"
         )
         log.error(xstr)
