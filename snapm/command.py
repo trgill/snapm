@@ -243,7 +243,7 @@ _DEFAULT_SNAPSET_FIELDS = "name,time,nr_snapshots,status,mountpoints"
 _snapshot_fields = [
     FieldType(
         PR_SNAPSHOT,
-        "snapshot_name",
+        "name",
         SNAPSHOT_NAME,
         "Snapshot name",
         24,
@@ -252,7 +252,7 @@ _snapshot_fields = [
     ),
     FieldType(
         PR_SNAPSHOT,
-        "snapshot_uuid",
+        "uuid",
         SNAPSHOT_UUID,
         "Snapshot UUID",
         37,
