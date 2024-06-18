@@ -385,7 +385,7 @@ _plugin_fields = [
     ),
 ]
 
-_DEFAULT_PLUGIN_FIELDS = ("name,version,type")
+_DEFAULT_PLUGIN_FIELDS = "name,version,type"
 
 
 def _str_indent(string, indent):
@@ -1398,9 +1398,7 @@ def main(args):
     plugin_subparser = plugin_parser.add_subparsers(dest="command")
 
     # plugin list subcommand
-    plugin_list_parser = plugin_subparser.add_parser(
-        LIST_CMD, help="List plugins"
-    )
+    plugin_list_parser = plugin_subparser.add_parser(LIST_CMD, help="List plugins")
     plugin_list_parser.set_defaults(func=_plugin_list_cmd)
     _add_report_args(plugin_list_parser)
 
