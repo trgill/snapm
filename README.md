@@ -68,7 +68,7 @@ the available options and commands.
 The `snapm` command uses the [boom boot manager][5] to manage boot entries for
 the snapshots that it creates. If installing `snapm` manually, Install `boom`
 first: either from your distribution repositories or the upstream Git repo.
-Snapshot manager is tested with boom-1.6.0 and later.
+Snapshot manager is tested with boom-1.6.4 and later.
 
 ### Building an RPM package
 A spec file is included in the repository that can be used to build RPM packages
