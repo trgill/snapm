@@ -30,6 +30,7 @@ from snapm.manager.boot import (
     delete_snapset_boot_entry,
     create_snapset_revert_entry,
     delete_snapset_revert_entry,
+    check_boom_config,
 )
 
 from snapm import (
@@ -420,6 +421,7 @@ class Manager:
         self.snapshot_sets = []
         self.by_name = {}
         self.by_uuid = {}
+        check_boom_config()
         self._boot_cache = BootCache()
         load_plugins()
         for plugin_class in PluginRegistry.plugins:

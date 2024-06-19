@@ -21,6 +21,7 @@ import logging
 import boom
 import boom.cache
 import boom.command
+from boom.config import load_boom_config
 from boom.bootloader import (
     OPTIONAL_KEYS,
     optional_key_default,
@@ -307,6 +308,17 @@ def delete_snapset_revert_entry(snapset):
     if snapset.revert_entry is None:
         return
     _delete_boot_entry(boot_id=snapset.revert_entry.boot_id)
+
+
+def check_boom_config():
+    """
+    Check for boom configuration and create the default config if not found.
+    """
+    try:
+        load_boom_config()
+    except ValueError as e:
+        _log_info("No boom configuration found: generating default config in /boot")
+        boom.command.create_config()
 
 
 class BootEntryCache(dict):
