@@ -43,8 +43,10 @@ from snapm import (
     SnapmNotFoundError,
     SnapmInvalidIdentifierError,
     SnapmPluginError,
+    SnapmStateError,
     Selection,
     is_size_policy,
+    SnapStatus,
     SnapshotSet,
     Snapshot,
 )
@@ -772,6 +774,11 @@ class Manager:
             snapset = self.by_uuid[uuid]
         else:
             raise SnapmNotFoundError("A snapshot set name or UUID is required")
+
+        if snapset.status == SnapStatus.INVALID:
+            raise SnapmStateError(
+                f"Cannot revert snapset {snapset.name} with invalid snapshots"
+            )
 
         # Snapshot boot entry becomes invalid as soon as revert is initiated.
         delete_snapset_boot_entry(snapset)

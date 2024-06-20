@@ -236,6 +236,12 @@ class SnapmPluginError(SnapmError):
     """
 
 
+class SnapmStateError(SnapmError):
+    """
+    The status of an object does not allow an operation to proceed.
+    """
+
+
 #
 # Selection criteria class
 #
@@ -1136,6 +1142,7 @@ __all__ = [
     "SnapmInvalidIdentifierError",
     "SnapmParseError",
     "SnapmPluginError",
+    "SnapmStateError",
     "Selection",
     "size_fmt",
     "is_size_policy",
