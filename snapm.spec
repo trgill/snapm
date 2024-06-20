@@ -22,6 +22,7 @@ BuildRequires:  boom-boot
 
 Requires: python3-snapm = %{version}-%{release}
 Requires: python3-boom
+Recommends: boom-boot
 
 %package -n python3-snapm
 Summary: %{summary}
@@ -82,6 +83,7 @@ rm doc/conf.py
 
 %changelog
 * Thu Jun 20 2023 Bryn M. Reeves <bmr@redhat.com> - 0.3.0
+- dist: add boom-boot to RPM Recommends
 - snapm: forbid revert if snapset status is SnapStatus.INVALID
 - dist: add pyproject.toml
 - tests: fix boot path in tests/boot/boom/boom.conf
