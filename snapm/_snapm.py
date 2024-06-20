@@ -814,6 +814,30 @@ class SnapshotSet:
         """
         return any([s.origin_mounted for s in self.snapshots])
 
+    @property
+    def snapshot_mounted(self):
+        """
+        Test whether the snapshot volumes for this ``SnapshotSet`` are currently
+        mounted and in use.
+
+        :returns: ``True`` if any of the snaphots belonging to this
+                  ``SnapshotSet`` are currently mounted, or ``False``
+                  otherwise.
+        """
+        return any([s.snapshot_mounted for s in self.snapshots])
+
+    @property
+    def mounted(self):
+        """
+        Test whether the either the origin or snapshot volumes for this
+        ``SnapshotSet`` are currently mounted and in use.
+
+        :returns: ``True`` if any of the snaphots belonging to this
+                  ``SnapshotSet`` are currently mounted, or ``False``
+                  otherwise.
+        """
+        return self.snapshot_mounted or self.origin_mounted
+
     def snapshot_by_mount_point(self, mount_point):
         """
         Return the snapshot corresponding to ``mount_point``.
@@ -1039,6 +1063,35 @@ class Snapshot:
                 if self.mount_point == fields[1]:
                     return os.path.samefile(self.origin, fields[0])
         return False
+
+    @property
+    def snapshot_mounted(self):
+        """
+        Test whether the snapshot volume for this ``Snapshot`` is currently
+        mounted and in use.
+
+        :returns: ``True`` if this snaphot is currently mounted or ``False``
+                  otherwise.
+        """
+        if self.status != SnapStatus.ACTIVE:
+            return False
+        with open("/proc/mounts") as mounts:
+            for line in mounts:
+                fields = line.split(" ")
+                if self.mount_point == fields[1]:
+                    return os.path.samefile(self.devpath, fields[0])
+        return False
+
+    @property
+    def mounted(self):
+        """
+        Test whether either the snapshot or origin volume for this ``Snapshot``
+        is currently mounted and in use.
+
+        :returns: ``True`` if this snapshot or its origin is currently mounted
+                  or ``False`` otherwise.
+        """
+        return self.snapshot_mounted or self.origin_mounted
 
     def delete(self):
         """
