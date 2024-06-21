@@ -510,7 +510,7 @@ def is_size_policy(policy):
         return False
     if "%" not in policy:
         try:
-            value = parse_size_with_units(policy)
+            parse_size_with_units(policy)
         except SnapmParseError:
             return False
         return True
