@@ -176,7 +176,7 @@ def _create_boom_boot_entry(
         except ValueError as err:
             raise SnapmCalloutError(
                 f"Error calling boom to create default OsProfile: {err}"
-            )
+            ) from err
 
     if mounts:
         add_opts = f"rw {tag_arg}"
