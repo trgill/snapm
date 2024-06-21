@@ -708,7 +708,7 @@ class Manager:
                 self.snapshot_sets.append(old_snapset)
                 raise SnapmPluginError(
                     f"Could not rename all snapshots for set {old_name}"
-                )
+                ) from err
 
         new_snapset = SnapshotSet(new_name, timestamp, new_snapshots)
         for snapshot in new_snapset.snapshots:
