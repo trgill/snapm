@@ -32,7 +32,6 @@ from boom.osprofile import match_os_profile_by_version
 from snapm import (
     SnapmNotFoundError,
     SnapmCalloutError,
-    SnapmInvalidIdentifierError,
     ETC_FSTAB,
 )
 
