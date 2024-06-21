@@ -151,16 +151,21 @@ def _build_snapset_mount_list(snapset):
 
 
 def _create_boom_boot_entry(
-    snapset, version, title, tag_arg, root_device, lvm_root_lv=None, mounts=None
+    version, title, tag_arg, root_device, lvm_root_lv=None, mounts=None
 ):
     """
-    Create a boom boot entry to boot into the snapshot set represented by
-    ``snapset``.
+    Create a boom boot entry according to the passed arguments.
 
-    :param snapset: The snapshot set for which to create a boot entry.
-    :param title: An optional title for the boot entry. If ``title`` is
-                  ``None`` the boot entry will be titled as
-                  "Snapshot snapset_name snapset_time".
+    :param version: The UTS release name for the boot entry
+    :param title: The title for the boot entry.
+    :param tag_arg: A tag argument to be added to the kernel command line and
+                    used to associate the entry with a snapshot set name or
+                    UUID.
+    :param root_device: The root device for the entry. Passed to root=...
+    :param lvm_root_lv: An optional LVM2 root logical volume.
+    :param mounts: An optional list of mount specifications to use for the
+                   boot entry. If defined fstab=no will be appended to the
+                   generated kernel command line.
     """
     assert title is not None, "Boot entry argument title must have a value"
     assert version is not None, "Boot entry argument version must have a value"
@@ -232,7 +237,6 @@ def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
         lvm_root_lv = None
     mounts = _build_snapset_mount_list(snapset)
     snapset.boot_entry = _create_boom_boot_entry(
-        snapset,
         version,
         title,
         f"{SNAPSET_ARG}={snapset.uuid}",
@@ -264,7 +268,6 @@ def create_snapset_revert_entry(snapset, title=None):
     else:
         lvm_root_lv = None
     snapset.revert_entry = _create_boom_boot_entry(
-        snapset,
         version,
         title,
         f"{REVERT_ARG}={snapset.uuid}",
