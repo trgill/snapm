@@ -196,7 +196,7 @@ def _create_boom_boot_entry(
         del_opts=del_opts,
         write=False,
         images=boom.command.I_BACKUP,
-        no_fstab=True if mounts else False,
+        no_fstab=bool(mounts),
         mounts=mounts,
     )
 
