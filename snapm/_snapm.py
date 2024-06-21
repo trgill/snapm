@@ -924,6 +924,9 @@ class Snapshot:
         return pmap
 
     def json(self, pretty=False):
+        """
+        Return a string representation of this ``Snapshot`` in JSON notation.
+        """
         return json.dumps(self.as_dict(), indent=4 if pretty else None)
 
     @property
