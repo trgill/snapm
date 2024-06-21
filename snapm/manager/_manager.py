@@ -854,7 +854,7 @@ class Manager:
                     )
                     raise SnapmPluginError(
                         f"Could not activate all snapshots for set {snapset.name}"
-                    )
+                    ) from err
             activated += 1
         return activated
 
