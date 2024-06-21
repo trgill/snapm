@@ -15,5 +15,5 @@
 Top level interface to the snapshot manager.
 """
 
-from ._manager import *
-from ._manager import __all__
+from ._manager import *  # noqa: F401, F403
+from ._manager import __all__  # noqa: F401
