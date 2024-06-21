@@ -591,14 +591,13 @@ class SizePolicy:
 
         if self.type == SizePolicyType.FIXED:
             return self._size
-        elif self.type == SizePolicyType.PERCENT_FREE:
+        if self.type == SizePolicyType.PERCENT_FREE:
             return percent_of_sectors(self._percent, self._free_space)
-        elif self.type == SizePolicyType.PERCENT_USED:
+        if self.type == SizePolicyType.PERCENT_USED:
             return percent_of_sectors(self._percent, self._fs_used)
-        elif self.type == SizePolicyType.PERCENT_SIZE:
+        if self.type == SizePolicyType.PERCENT_SIZE:
             return percent_of_sectors(self._percent, self._dev_size)
-        else:
-            raise SnapmParseError(f"Invalid size policy type: {self.type}")
+        raise SnapmParseError(f"Invalid size policy type: {self.type}")
 
 
 class SnapStatus(Enum):
