@@ -217,7 +217,7 @@ def _create_boom_boot_entry(
     return entry
 
 
-def create_snapset_boot_entry(snapset, title=None, tag_arg=None):
+def create_snapset_boot_entry(snapset, title=None):
     """
     Create a boom boot entry to boot into the snapshot set represented by
     ``snapset``.
