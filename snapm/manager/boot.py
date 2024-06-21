@@ -315,7 +315,7 @@ def check_boom_config():
     """
     try:
         load_boom_config()
-    except ValueError as e:
+    except ValueError:
         _log_info("No boom configuration found: generating default config in /boot")
         boom.command.create_config()
 
