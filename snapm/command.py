@@ -96,9 +96,6 @@ class ReportObj:
     Common report object for snapm reports
     """
 
-    snapset = None
-    snapshot = None
-
     def __init__(self, snapset=None, snapshot=None, plugin=None):
         self.snapset = snapset
         self.snapshot = snapshot
