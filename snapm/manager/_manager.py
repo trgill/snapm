@@ -587,7 +587,9 @@ class Manager:
 
         for mount in mount_points:
             _log_debug(
-                f"Probing plugins for {mount} with size policy {size_policies[mount]}"
+                "Probing plugins for %s with size policy %s",
+                mount,
+                size_policies[mount],
             )
 
             if not ismount(mount):
