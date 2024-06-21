@@ -882,7 +882,7 @@ class Manager:
                     )
                     raise SnapmPluginError(
                         f"Could not deactivate all snapshots for set {snapset.name}"
-                    )
+                    ) from err
             deactivated += 1
         return deactivated
 
