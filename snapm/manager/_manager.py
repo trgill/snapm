@@ -619,14 +619,16 @@ class Manager:
                 _log_error(
                     "Error creating %s snapshot: %s", provider_map[mount].name, err
                 )
-                raise SnapmInvalidIdentifierError(f"Snapset name {name} too long")
+                raise SnapmInvalidIdentifierError(
+                    f"Snapset name {name} too long"
+                ) from err
             except SnapmNoSpaceError as err:
                 _log_error(
                     "Error creating %s snapshot: %s", provider_map[mount].name, err
                 )
                 raise SnapmNoSpaceError(
                     f"Insufficient free space for snapshot set {name}"
-                )
+                ) from err
 
         snapshots = []
         for mount in provider_map:
@@ -641,7 +643,9 @@ class Manager:
                 _log_error("Error creating snapshot set member %s: %s", name, err)
                 for snapshot in snapshots:
                     snapshot.delete()
-                raise SnapmPluginError(f"Could not create all snapshots for set {name}")
+                raise SnapmPluginError(
+                    f"Could not create all snapshots for set {name}"
+                ) from err
 
         for provider in set(provider_map.values()):
             provider.end_transaction()
