@@ -800,7 +800,7 @@ class Manager:
                 )
                 raise SnapmPluginError(
                     f"Could not revert all snapshots for set {snapset.name}"
-                )
+                ) from err
         if snapset.mounted:
             _log_warn(
                 "Snaphot set %s is in use: reboot required to complete revert",
