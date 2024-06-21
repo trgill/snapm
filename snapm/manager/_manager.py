@@ -744,7 +744,7 @@ class Manager:
                     )
                     raise SnapmPluginError(
                         f"Could not delete all snapshots for set {snapset.name}"
-                    )
+                    ) from err
 
             self.snapshot_sets.remove(snapset)
             self.by_name.pop(snapset.name)
