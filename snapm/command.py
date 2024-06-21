@@ -787,7 +787,7 @@ def _revert_cmd(cmd_args):
         raise SnapmInvalidIdentifierError("Revert requires unique selection criteria")
     if selection.name:
         name = selection.name
-    elif select.name:
+    elif selection.uuid:
         uuid = selection.uuid
     else:
         raise SnapmInvalidIdentifierError("Revert requires a snapset name or UUID")
