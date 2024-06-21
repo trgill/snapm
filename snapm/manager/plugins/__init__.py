@@ -14,5 +14,5 @@
 """
 Snapshot manager plugin interface.
 """
-from ._plugin import *
-from ._plugin import __all__
+from ._plugin import *  # noqa: F401, F403
+from ._plugin import __all__  # noqa: F401
