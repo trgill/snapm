@@ -379,6 +379,10 @@ class BootCache:
         )
 
     def refresh_cache(self):
+        """
+        Refresh the cache of boot entry mappings held by this ``BootCache``
+        instance.
+        """
         self.entry_cache.refresh_cache()
         _log_debug("Refreshed boot entry cache with %d entries", len(self.entry_cache))
         self.revert_cache.refresh_cache()
