@@ -580,6 +580,7 @@ def print_plugins(
     :param opts: output formatting and control options
     :param sort_keys: a comma-separated list of sort keys
     """
+    del selection
     output_fields = _expand_fields(_DEFAULT_PLUGIN_FIELDS, output_fields)
 
     plugins = manager.plugins
