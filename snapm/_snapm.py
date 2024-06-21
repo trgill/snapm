@@ -1058,7 +1058,7 @@ class Snapshot:
         :returns: ``True`` if this snaphot's prigin is currently mounted
                   or ``False`` otherwise.
         """
-        with open("/proc/mounts") as mounts:
+        with open("/proc/mounts", "r", encoding="utf8") as mounts:
             for line in mounts:
                 fields = line.split(" ")
                 if self.mount_point == fields[1]:
@@ -1076,7 +1076,7 @@ class Snapshot:
         """
         if self.status != SnapStatus.ACTIVE:
             return False
-        with open("/proc/mounts") as mounts:
+        with open("/proc/mounts", "r", encoding="utf8") as mounts:
             for line in mounts:
                 fields = line.split(" ")
                 if self.mount_point == fields[1]:
