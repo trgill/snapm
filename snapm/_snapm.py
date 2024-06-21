@@ -514,7 +514,7 @@ def is_size_policy(policy):
         except SnapmParseError:
             return False
         return True
-    (percent, policy_type) = policy.rsplit("%", maxsplit=1)
+    (_, policy_type) = policy.rsplit("%", maxsplit=1)
     for ptype in SizePolicyType:
         if ptype.value == policy_type:
             return True
