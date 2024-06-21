@@ -907,6 +907,12 @@ class Manager:
         return changed
 
     def create_snapshot_set_boot_entry(self, name=None, uuid=None):
+        """
+        Create a snapshot boot entry for the specified snapshot set.
+
+        :param name: The name of the snapshot set.
+        :param uuid: The UUID of the snapshot set.
+        """
         if name is not None:
             if name not in self.by_name:
                 raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
@@ -934,6 +940,12 @@ class Manager:
         self._boot_cache.refresh_cache()
 
     def create_snapshot_set_revert_entry(self, name=None, uuid=None):
+        """
+        Create a revert boot entry for the specified snapshot set.
+
+        :param name: The name of the snapshot set.
+        :param uuid: The UUID of the snapshot set.
+        """
         if name is not None:
             if name not in self.by_name:
                 raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
