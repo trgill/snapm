@@ -757,11 +757,11 @@ class Manager:
         :param selection: Selection criteria for snapshot sets to revert.
         """
         if name and uuid:
-            if by_name[name] != by_uuid[uuid]:
+            if self.by_name[name] != self.by_uuid[uuid]:
                 raise SnapmInvalidIdentifierError(
                     f"Conflicting name and UUID: {str(uuid)} does not match '{name}'"
                 )
-            snapset = by_name[name]
+            snapset = self.by_name[name]
         if name is not None:
             if name not in self.by_name:
                 raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
