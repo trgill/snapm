@@ -16,7 +16,9 @@ jobs:
           python3-pytest
           python3-pycodestyle
           python3-coverage
+          python3-flake8
           pycodestyle
+          flake8
           bandit
           lvm2
       - name: Install Snapshot Manager
@@ -42,6 +44,9 @@ jobs:
       - name: Check PyCodestyle
         run: >
           pycodestyle snapm --ignore E501,E203,W503
+      - name: Check Flake8
+        run: >
+          flake8 snapm
       - name: Run bandit
         run: >
           bandit --skip B101,B303,B404,B603 -r snapm
