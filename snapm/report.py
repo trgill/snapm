@@ -30,7 +30,7 @@ mapper reports.
 import logging
 import sys
 import uuid
-import json
+from json import dumps
 
 from snapm import size_fmt
 
@@ -1311,7 +1311,7 @@ class Report:
                 (key, value) = self._output_field_json(field)
                 row_vals[key] = value
             rows[f"{self._title}"].append(row_vals)
-        self.opts.report_file.write(json.dumps(rows, indent=4) + "\n")
+        self.opts.report_file.write(dumps(rows, indent=4) + "\n")
 
     def report_output(self):
         """
