@@ -810,7 +810,7 @@ class SnapshotSet:
                   ``SnapshotSet`` are currently mounted, or ``False``
                   otherwise.
         """
-        return any([s.origin_mounted for s in self.snapshots])
+        return any(s.origin_mounted for s in self.snapshots)
 
     @property
     def snapshot_mounted(self):
@@ -822,7 +822,7 @@ class SnapshotSet:
                   ``SnapshotSet`` are currently mounted, or ``False``
                   otherwise.
         """
-        return any([s.snapshot_mounted for s in self.snapshots])
+        return any(s.snapshot_mounted for s in self.snapshots)
 
     @property
     def mounted(self):
