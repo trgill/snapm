@@ -30,7 +30,6 @@ mapper reports.
 import logging
 import sys
 import uuid
-import math
 import json
 
 from snapm import size_fmt
