@@ -88,7 +88,7 @@ def _get_machine_id():
     with open(path, "r", encoding="utf8") as f:
         try:
             machine_id = f.read().strip()
-        except Exception as e:
+        except OSError as e:
             _log_error("Could not read machine-id from '%s': %s", path, e)
             machine_id = None
     return machine_id
