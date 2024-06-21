@@ -556,7 +556,8 @@ class SizePolicy:
                 if ptype.value == policy_type:
                     if ptype in cap_percent and self._percent > 100.0:
                         raise SnapmNoSpaceError(
-                            f"Size {self._mount}:{self._percent}%{ptype.value} cannot be greater than 100%"
+                            f"Size {self._mount}:{self._percent}%{ptype.value} "
+                            "cannot be greater than 100%"
                         )
                     return ptype
         raise SnapmParseError(f"Could not parse size policy: {policy}")
