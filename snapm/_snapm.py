@@ -547,18 +547,17 @@ class SizePolicy:
         if "%" not in policy:
             self._size = parse_size_with_units(policy)
             return SizePolicyType.FIXED
-        else:
-            (percent, policy_type) = policy.rsplit("%", maxsplit=1)
-            self._percent = float(percent)
-            cap_percent = (SizePolicyType.PERCENT_SIZE, SizePolicyType.PERCENT_FREE)
-            for ptype in SizePolicyType:
-                if ptype.value == policy_type:
-                    if ptype in cap_percent and self._percent > 100.0:
-                        raise SnapmNoSpaceError(
-                            f"Size {self._mount}:{self._percent}%{ptype.value} "
-                            "cannot be greater than 100%"
-                        )
-                    return ptype
+        (percent, policy_type) = policy.rsplit("%", maxsplit=1)
+        self._percent = float(percent)
+        cap_percent = (SizePolicyType.PERCENT_SIZE, SizePolicyType.PERCENT_FREE)
+        for ptype in SizePolicyType:
+            if ptype.value == policy_type:
+                if ptype in cap_percent and self._percent > 100.0:
+                    raise SnapmNoSpaceError(
+                        f"Size {self._mount}:{self._percent}%{ptype.value} "
+                        "cannot be greater than 100%"
+                    )
+                return ptype
         raise SnapmParseError(f"Could not parse size policy: {policy}")
 
     def __init__(self, mount, free_space, fs_used, dev_size, policy):
