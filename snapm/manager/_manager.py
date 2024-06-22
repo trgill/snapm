@@ -14,6 +14,7 @@
 """
 Manager interface and plugin infrastructure.
 """
+from subprocess import run, CalledProcessError
 from uuid import UUID
 import logging
 from time import time
@@ -36,6 +37,7 @@ from snapm.manager.boot import (
 from snapm import (
     SNAPM_DEBUG_MANAGER,
     SnapmError,
+    SnapmCalloutError,
     SnapmNoSpaceError,
     SnapmNoProviderError,
     SnapmExistsError,
@@ -60,6 +62,8 @@ _log_debug_manager = _log.debug_masked
 _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
+
+JOURNALCTL_CMD = "journalctl"
 
 
 class PluginRegistry(type):
@@ -430,6 +434,29 @@ class Manager:
             self.plugins.append(plugin_class())
         self.discover_snapshot_sets()
 
+    def _suspend_journal(self):
+        """
+        Suspend journal writes to /var before creating snapshots.
+        """
+        try:
+            run([JOURNALCTL_CMD, "--flush"], check=True)
+            run([JOURNALCTL_CMD, "--relinquish-var"], check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"Error calling journalctl to flush journal: {err}"
+            ) from err
+
+    def _resume_journal(self):
+        """
+        Resume journal writes to /var after creating snapshots.
+        """
+        try:
+            run([JOURNALCTL_CMD, "--flush"], check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"Error calling journalctl to flush journal: {err}"
+            ) from err
+
     def discover_snapshot_sets(self):
         """
         Discover snapshot sets by calling into each plugin to find
@@ -630,6 +657,7 @@ class Manager:
                     f"Insufficient free space for snapshot set {name}"
                 ) from err
 
+        self._suspend_journal()
         snapshots = []
         for mount in provider_map:
             origin = provider_map[mount].origin_from_mount_point(mount)
@@ -646,6 +674,7 @@ class Manager:
                 raise SnapmPluginError(
                     f"Could not create all snapshots for set {name}"
                 ) from err
+        self._resume_journal()
 
         for provider in set(provider_map.values()):
             provider.end_transaction()
