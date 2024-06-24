@@ -457,6 +457,68 @@ class Manager:
                 f"Error calling journalctl to flush journal: {err}"
             ) from err
 
+    def _parse_mount_point_specs(self, mount_point_specs, default_size_policy):
+        """
+        Parse and normalize mount point paths and size policies.
+
+        :param mount_point_specs: A list of mount points and optional size
+                                  policies.
+        :returns: A tuple (mont_points, size_policies) containing a list of
+                  normalized mount points and a dictionary mapping mount
+                  points to size policies.
+        """
+        mount_points = []
+        size_policies = {}
+
+        # Parse size policies and normalise mount paths
+        for mp_spec in mount_point_specs:
+            if ":" in mp_spec:
+                (mount, policy) = mp_spec.rsplit(":", maxsplit=1)
+                if not is_size_policy(policy):
+                    mount = f"{mount}:{policy}"
+                    policy = default_size_policy
+            else:
+                (mount, policy) = (mp_spec, default_size_policy)
+            mount = normpath(mount)
+            mount_points.append(mount)
+            size_policies[mount] = policy
+        return (mount_points, size_policies)
+
+    def _find_and_verify_plugins(self, mount_points, size_policies):
+        """
+        Find snapshot provider plugins for each mount point in ``mount_points``
+        and verify that a provider exists for each mount present.
+
+        :param mount_points: A list of mount points.
+        :param size_policies: A dictionary mapping mount points to size policies.
+        :returns: A dictionary mapping mount points to plugins.
+        """
+        # Initialise provider mapping.
+        provider_map = {k: None for k in mount_points}
+
+        # Find provider plugins for mount points
+        for mount in mount_points:
+            _log_debug(
+                "Probing plugins for %s with size policy %s",
+                mount,
+                size_policies[mount],
+            )
+
+            if not ismount(mount):
+                raise SnapmPathError(f"Path '{mount}' is not a mount point")
+
+            for plugin in self.plugins:
+                if plugin.can_snapshot(mount):
+                    provider_map[mount] = plugin
+
+        # Verify each mount point has a provider plugin
+        for mount in provider_map:
+            if provider_map[mount] is None:
+                raise SnapmNoProviderError(
+                    f"Could not find snapshot provider for {mount}"
+                )
+        return provider_map
+
     def discover_snapshot_sets(self):
         """
         Discover snapshot sets by calling into each plugin to find
@@ -592,45 +654,13 @@ class Manager:
         """
         self._validate_snapset_name(name)
 
-        mount_points = []
-        size_policies = {}
-
         # Parse size policies and normalise mount paths
-        for mp_spec in mount_point_specs:
-            if ":" in mp_spec:
-                (mount, policy) = mp_spec.rsplit(":", maxsplit=1)
-                if not is_size_policy(policy):
-                    mount = f"{mount}:{policy}"
-                    policy = default_size_policy
-            else:
-                (mount, policy) = (mp_spec, default_size_policy)
-            mount = normpath(mount)
-            mount_points.append(mount)
-            size_policies[mount] = policy
+        (mount_points, size_policies) = self._parse_mount_point_specs(
+            mount_point_specs, default_size_policy
+        )
 
         # Initialise provider mapping.
-        mount_points = [normpath(path) for path in mount_points]
-        provider_map = {k: None for k in mount_points}
-
-        for mount in mount_points:
-            _log_debug(
-                "Probing plugins for %s with size policy %s",
-                mount,
-                size_policies[mount],
-            )
-
-            if not ismount(mount):
-                raise SnapmPathError(f"Path '{mount}' is not a mount point")
-
-            for plugin in self.plugins:
-                if plugin.can_snapshot(mount):
-                    provider_map[mount] = plugin
-
-        for mount in provider_map:
-            if provider_map[mount] is None:
-                raise SnapmNoProviderError(
-                    f"Could not find snapshot provider for {mount}"
-                )
+        provider_map = self._find_and_verify_plugins(mount_points, size_policies)
 
         for provider in set(provider_map.values()):
             provider.start_transaction()
