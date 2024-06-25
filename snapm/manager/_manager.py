@@ -414,6 +414,31 @@ def select_snapshot(select, snapshot):
     return True
 
 
+def _suspend_journal():
+    """
+    Suspend journal writes to /var before creating snapshots.
+    """
+    try:
+        run([JOURNALCTL_CMD, "--flush"], check=True)
+        run([JOURNALCTL_CMD, "--relinquish-var"], check=True)
+    except CalledProcessError as err:
+        raise SnapmCalloutError(
+            f"Error calling journalctl to flush journal: {err}"
+        ) from err
+
+
+def _resume_journal():
+    """
+    Resume journal writes to /var after creating snapshots.
+    """
+    try:
+        run([JOURNALCTL_CMD, "--flush"], check=True)
+    except CalledProcessError as err:
+        raise SnapmCalloutError(
+            f"Error calling journalctl to flush journal: {err}"
+        ) from err
+
+
 class Manager:
     """
     Snapshot Manager high level interface.
@@ -435,29 +460,6 @@ class Manager:
         for plugin_class in PluginRegistry.plugins:
             self.plugins.append(plugin_class())
         self.discover_snapshot_sets()
-
-    def _suspend_journal(self):
-        """
-        Suspend journal writes to /var before creating snapshots.
-        """
-        try:
-            run([JOURNALCTL_CMD, "--flush"], check=True)
-            run([JOURNALCTL_CMD, "--relinquish-var"], check=True)
-        except CalledProcessError as err:
-            raise SnapmCalloutError(
-                f"Error calling journalctl to flush journal: {err}"
-            ) from err
-
-    def _resume_journal(self):
-        """
-        Resume journal writes to /var after creating snapshots.
-        """
-        try:
-            run([JOURNALCTL_CMD, "--flush"], check=True)
-        except CalledProcessError as err:
-            raise SnapmCalloutError(
-                f"Error calling journalctl to flush journal: {err}"
-            ) from err
 
     def _parse_mount_point_specs(self, mount_point_specs, default_size_policy):
         """
@@ -689,7 +691,7 @@ class Manager:
                     f"Insufficient free space for snapshot set {name}"
                 ) from err
 
-        self._suspend_journal()
+        _suspend_journal()
         snapshots = []
         for mount in provider_map:
             origin = provider_map[mount].origin_from_mount_point(mount)
@@ -706,7 +708,7 @@ class Manager:
                 raise SnapmPluginError(
                     f"Could not create all snapshots for set {name}"
                 ) from err
-        self._resume_journal()
+        _resume_journal()
 
         for provider in set(provider_map.values()):
             provider.end_transaction()
