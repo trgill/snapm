@@ -15,6 +15,8 @@ BuildArch:	noarch
 BuildRequires:	make
 BuildRequires:	python3-setuptools
 BuildRequires:	python3-devel
+BuildRequires:  python3-pip
+BuildRequires:  python3-wheel
 %if 0%{?sphinx_docs}
 BuildRequires:	python3-sphinx
 BuildRequires:  boom-boot
