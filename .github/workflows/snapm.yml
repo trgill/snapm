@@ -19,6 +19,7 @@ jobs:
           python3-flake8
           pycodestyle
           flake8
+          pylint
           bandit
           lvm2
       - name: Install Snapshot Manager
@@ -47,6 +48,9 @@ jobs:
       - name: Check Flake8
         run: >
           flake8 snapm
+      - name: Check pylint
+        run: >
+          pylint snapm
       - name: Run bandit
         run: >
           bandit --skip B101,B303,B404,B603 -r snapm
