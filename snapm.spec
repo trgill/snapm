@@ -90,7 +90,7 @@ rm doc/conf.py
 %doc tests
 
 %changelog
-* Thu Jun 20 2023 Bryn M. Reeves <bmr@redhat.com> - 0.3.0
+* Thu Jun 20 2024 Bryn M. Reeves <bmr@redhat.com> - 0.3.0
 - dist: add boom-boot to RPM Recommends
 - snapm: forbid revert if snapset status is SnapStatus.INVALID
 - dist: add pyproject.toml
