@@ -80,7 +80,7 @@ _log.set_debug_mask(SNAPM_DEBUG_COMMAND)
 _log_debug = _log.debug
 _log_debug_command = _log.debug_masked
 _log_info = _log.info
-_log_warn = _log.warn
+_log_warn = _log.warning
 _log_error = _log.error
 
 _DEFAULT_LOG_LEVEL = logging.WARNING
