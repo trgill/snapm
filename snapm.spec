@@ -52,10 +52,18 @@ mv doc/_build/html doc/html
 rm -r doc/_build
 %endif
 
+%if 0%{?centos} || 0%{?rhel}
 %py3_build
+%else
+%pyproject_wheel
+%endif
 
 %install
+%if 0%{?centos} || 0%{?rhel}
 %py3_install
+%else
+%pyproject_install
+%endif
 
 mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
 install -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
