@@ -1030,6 +1030,7 @@ def setup_logging(cmd_args):
     """
     Set up snapm logging.
     """
+    # pylint: disable=global-statement
     global _CONSOLE_HANDLER
     level = _DEFAULT_LOG_LEVEL
     if cmd_args.verbose and cmd_args.verbose > 1:
