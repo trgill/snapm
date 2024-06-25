@@ -490,6 +490,8 @@ class _Lvm2(Plugin):
     Abstract base class for LVM2 snapshot plugins.
     """
 
+    max_name_len = LVM_MAX_NAME_LEN
+
     def discover_snapshots(self):
         """
         Discover snapshots managed by this plugin class.
