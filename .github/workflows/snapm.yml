@@ -26,11 +26,11 @@ jobs:
         run: >
           sudo pip install -v .
       - name: Check out boom
-        run: git clone https://github.com/snapshotmanager/boom
+        run: git clone https://github.com/snapshotmanager/boom-boot
         working-directory: /var/tmp
       - name: Install boom
-        run: sudo python3 setup.py install
-        working-directory: /var/tmp/boom
+        run: sudo pip install -v .
+        working-directory: /var/tmp/boom-boot
       - name: Create boom configuration
         run: |
           sudo mkdir /boot/boom
@@ -38,7 +38,7 @@ jobs:
           sudo mkdir /boot/boom/hosts
           sudo mkdir /boot/boom/profiles
           sudo mkdir -p /boot/loader/entries
-          sudo cp /var/tmp/boom/examples/boom.conf /boot/boom
+          sudo cp /var/tmp/boom-boot/examples/boom.conf /boot/boom
           # Create profiles for kernel variants seen in CI
           sudo boom profile create --from-host --uname-pattern generic --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
           sudo boom profile create --from-host --uname-pattern azure --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
