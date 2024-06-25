@@ -716,7 +716,7 @@ class Lvm2Cow(_Lvm2):
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
             raise SnapmBusyError(
-                f"Snapshot revert is in progress for {vg_name}/{lv_name}"
+                f"Snapshot revert is in progress for {self.name} volume {vg_name}/{lv_name}"
             )
         if lv_attr[0] != LVM_LV_TYPE_DEFAULT and lv_attr[0] != LVM_COW_ORIGIN_ATTR:
             return False
@@ -875,7 +875,7 @@ class Lvm2Thin(_Lvm2):
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
             raise SnapmBusyError(
-                f"Snapshot revert is in progress for {vg_name}/{lv_name}"
+                f"Snapshot revert is in progress for {self.name} volume {vg_name}/{lv_name}"
             )
         if lv_attr[0] != LVM_THIN_VOL_ATTR:
             return False
