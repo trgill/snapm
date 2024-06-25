@@ -1199,31 +1199,12 @@ SNAPSHOT_TYPE = "snapshot"
 PLUGIN_TYPE = "plugin"
 
 
-def main(args):
+def _add_snapset_subparser(type_subparser):
     """
-    Main entry point for snapm.
+    Add subparser for 'snapset' commands.
+
+    :param type_subparser: Command type subparser
     """
-    parser = ArgumentParser(description="Snapshot Manager", prog=basename(args[0]))
-
-    # Global arguments
-    parser.add_argument(
-        "-d",
-        "--debug",
-        metavar="DEBUGOPTS",
-        type=str,
-        help="A list of debug options to enable",
-    )
-    parser.add_argument("-v", "--verbose", help="Enable verbose output", action="count")
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        help="Report the version number of snapm",
-        version=__version__,
-    )
-    # Subparser for command type
-    type_subparser = parser.add_subparsers(dest="type", help="Command type")
-
     # Subparser for snapset commands
     snapset_parser = type_subparser.add_parser(
         SNAPSET_TYPE, help="Snapshot set commands"
@@ -1347,6 +1328,13 @@ def main(args):
     )
     _add_json_arg(snapset_show_parser)
 
+
+def _add_snapshot_subparser(type_subparser):
+    """
+    Add subparser for 'snapshot' commands.
+
+    :param type_subparser: Command type subparser
+    """
     # Subparser for snapshot commands
     snapshot_parser = type_subparser.add_parser(SNAPSHOT_TYPE, help="Snapshot commands")
     snapshot_subparser = snapshot_parser.add_subparsers(dest="command")
@@ -1389,6 +1377,13 @@ def main(args):
     _add_identifier_args(snapshot_show_parser, snapset=True, snapshot=True)
     _add_json_arg(snapshot_show_parser)
 
+
+def _add_plugin_subparser(type_subparser):
+    """
+    Add subparser for 'plugin' commands.
+
+    :param type_subparser: Command type subparser
+    """
     # Subparser for plugin commands
     plugin_parser = type_subparser.add_parser(PLUGIN_TYPE, help="Plugin commands")
     plugin_subparser = plugin_parser.add_subparsers(dest="command")
@@ -1397,6 +1392,38 @@ def main(args):
     plugin_list_parser = plugin_subparser.add_parser(LIST_CMD, help="List plugins")
     plugin_list_parser.set_defaults(func=_plugin_list_cmd)
     _add_report_args(plugin_list_parser)
+
+
+def main(args):
+    """
+    Main entry point for snapm.
+    """
+    parser = ArgumentParser(description="Snapshot Manager", prog=basename(args[0]))
+
+    # Global arguments
+    parser.add_argument(
+        "-d",
+        "--debug",
+        metavar="DEBUGOPTS",
+        type=str,
+        help="A list of debug options to enable",
+    )
+    parser.add_argument("-v", "--verbose", help="Enable verbose output", action="count")
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        help="Report the version number of snapm",
+        version=__version__,
+    )
+    # Subparser for command type
+    type_subparser = parser.add_subparsers(dest="type", help="Command type")
+
+    _add_snapset_subparser(type_subparser)
+
+    _add_snapshot_subparser(type_subparser)
+
+    _add_plugin_subparser(type_subparser)
 
     cmd_args = parser.parse_args(args[1:])
 
