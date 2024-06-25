@@ -249,6 +249,15 @@ def find(file_pattern, top_dir, max_depth=None, path_pattern=None):
             yield os.path.join(path, name)
 
 
+def _plugin_name(path):
+    """
+    Returns the plugin module name given the path.
+    """
+    base = os.path.basename(path)
+    name, _ = os.path.splitext(base)
+    return name
+
+
 class ImporterHelper:
     """
     Provides a list of modules that can be imported in a package.
@@ -266,17 +275,9 @@ class ImporterHelper:
         """
         self.package = package
 
-    def _plugin_name(self, path):
-        """
-        Returns the plugin module name given the path.
-        """
-        base = os.path.basename(path)
-        name, _ = os.path.splitext(base)
-        return name
-
     def _get_plugins_from_list(self, pluglist):
         plugins = [
-            self._plugin_name(plugin)
+            _plugin_name(plugin)
             for plugin in pluglist
             if "__init__" not in plugin and plugin.endswith(".py")
         ]
