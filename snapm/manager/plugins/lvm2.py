@@ -673,6 +673,17 @@ class _Lvm2(Plugin):
             )
 
 
+def _snapshot_min_size(space_used):
+    """
+    Return the minimum snapshot size given the space used by the snapshot
+    mount point.
+
+    :param space_used: The space currently in use on the mount point.
+    :returns: The greater of ``space_used`` and ``MIN_LVM2_COW_SNAPSHOT_SIZE``.
+    """
+    return max(MIN_LVM2_COW_SNAPSHOT_SIZE, space_used)
+
+
 class Lvm2Cow(_Lvm2):
     """
     LVM2 Copy-on-write snapshot plugin.
@@ -742,16 +753,6 @@ class Lvm2Cow(_Lvm2):
             return False
         return True
 
-    def _snapshot_min_size(self, space_used):
-        """
-        Return the minimum snapshot size given the space used by the snapshot
-        mount point.
-
-        :param space_used: The space currently in use on the mount point.
-        :returns: The greater of ``space_used`` and ``MIN_LVM2_COW_SNAPSHOT_SIZE``.
-        """
-        return max(MIN_LVM2_COW_SNAPSHOT_SIZE, space_used)
-
     def _check_free_space(self, vg_name, lv_name, mount_point, size_policy):
         """
         Check for available space in volume group ``vg_name`` for the specified
@@ -767,7 +768,7 @@ class Lvm2Cow(_Lvm2):
         vg_free = vg_free_space(vg_name)
         lv_size = lv_dev_size(vg_name, lv_name)
         policy = SizePolicy(mount_point, vg_free, fs_used, lv_size, size_policy)
-        snapshot_min_size = self._snapshot_min_size(policy.size)
+        snapshot_min_size = _snapshot_min_size(policy.size)
         if vg_free < (sum(self.size_map[vg_name].values()) + snapshot_min_size):
             raise SnapmNoSpaceError(
                 f"Volume group {vg_name} has insufficient free space to snapshot {mount_point}"
