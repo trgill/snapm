@@ -439,6 +439,34 @@ def _resume_journal():
         ) from err
 
 
+def _parse_mount_point_specs(mount_point_specs, default_size_policy):
+    """
+    Parse and normalize mount point paths and size policies.
+
+    :param mount_point_specs: A list of mount points and optional size
+                              policies.
+    :returns: A tuple (mont_points, size_policies) containing a list of
+              normalized mount points and a dictionary mapping mount
+              points to size policies.
+    """
+    mount_points = []
+    size_policies = {}
+
+    # Parse size policies and normalise mount paths
+    for mp_spec in mount_point_specs:
+        if ":" in mp_spec:
+            (mount, policy) = mp_spec.rsplit(":", maxsplit=1)
+            if not is_size_policy(policy):
+                mount = f"{mount}:{policy}"
+                policy = default_size_policy
+        else:
+            (mount, policy) = (mp_spec, default_size_policy)
+        mount = normpath(mount)
+        mount_points.append(mount)
+        size_policies[mount] = policy
+    return (mount_points, size_policies)
+
+
 class Manager:
     """
     Snapshot Manager high level interface.
@@ -460,33 +488,6 @@ class Manager:
         for plugin_class in PluginRegistry.plugins:
             self.plugins.append(plugin_class())
         self.discover_snapshot_sets()
-
-    def _parse_mount_point_specs(self, mount_point_specs, default_size_policy):
-        """
-        Parse and normalize mount point paths and size policies.
-
-        :param mount_point_specs: A list of mount points and optional size
-                                  policies.
-        :returns: A tuple (mont_points, size_policies) containing a list of
-                  normalized mount points and a dictionary mapping mount
-                  points to size policies.
-        """
-        mount_points = []
-        size_policies = {}
-
-        # Parse size policies and normalise mount paths
-        for mp_spec in mount_point_specs:
-            if ":" in mp_spec:
-                (mount, policy) = mp_spec.rsplit(":", maxsplit=1)
-                if not is_size_policy(policy):
-                    mount = f"{mount}:{policy}"
-                    policy = default_size_policy
-            else:
-                (mount, policy) = (mp_spec, default_size_policy)
-            mount = normpath(mount)
-            mount_points.append(mount)
-            size_policies[mount] = policy
-        return (mount_points, size_policies)
 
     def _find_and_verify_plugins(self, mount_points, size_policies):
         """
@@ -659,7 +660,7 @@ class Manager:
         self._validate_snapset_name(name)
 
         # Parse size policies and normalise mount paths
-        (mount_points, size_policies) = self._parse_mount_point_specs(
+        (mount_points, size_policies) = _parse_mount_point_specs(
             mount_point_specs, default_size_policy
         )
 
