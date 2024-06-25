@@ -87,7 +87,11 @@ rm doc/conf.py
 %license COPYING
 %doc README.md
 %{python3_sitelib}/%{name}/*
+%if 0%{?centos} || 0%{?rhel}
 %{python3_sitelib}/%{name}-*.egg-info/
+%else
+%{python3_sitelib}/%{name}*.dist-info/
+%endif
 %doc doc
 %doc tests
 
