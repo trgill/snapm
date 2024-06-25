@@ -513,8 +513,8 @@ def show_snapshots(manager, selection=None, json=False):
         if json:
             snap_list.append(snapshot.as_dict())
             continue
-        ws = "" if first else "\n"
-        print(f"{ws}{snapshot}")
+        wspace = "" if first else "\n"
+        print(f"{wspace}{snapshot}")
         first = False
 
     if json:
@@ -535,15 +535,15 @@ def show_snapsets(manager, selection=None, members=False, json=False):
         if json:
             set_list.append(snapset.as_dict(members=members))
             continue
-        ws = "" if first else "\n"
-        print(f"{ws}{snapset}")
+        wspace = "" if first else "\n"
+        print(f"{wspace}{snapset}")
         first = False
         if members:
             print("Snapshots:")
             first_snapshot = True
             for snapshot in snapset.snapshots:
-                ws = "" if first_snapshot else "\n"
-                print(ws + _str_indent(str(snapshot), 4))
+                wspace = "" if first_snapshot else "\n"
+                print(wspace + _str_indent(str(snapshot), 4))
                 first_snapshot = False
 
     if json:
