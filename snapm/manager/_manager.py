@@ -74,6 +74,7 @@ class PluginRegistry(type):
     plugins = []
 
     def __init__(cls, name, _bases, _attrs):
+        super().__init__(name, _bases, _attrs)
         if name != "Plugin" and not name.startswith("_"):
             _log_debug("Loaded plugin %s version: %s", cls.name, cls.version)
             PluginRegistry.plugins.append(cls)
