@@ -259,6 +259,11 @@ def _plugin_name(path):
 
 
 def _get_plugins_from_list(pluglist):
+    """
+    Get list of plugin names from file list.
+
+    :param pluglist: list of candidate plugin files.
+    """
     plugins = [
         _plugin_name(plugin)
         for plugin in pluglist
@@ -266,6 +271,22 @@ def _get_plugins_from_list(pluglist):
     ]
     plugins.sort()
     return plugins
+
+
+def _find_plugins_in_dir(path):
+    """
+    Find possible plugin files in ``path``.
+
+    :param path: The search directory for plugin files.
+    """
+    _log_debug_manager("Finding plugins in %s", path)
+    if os.path.exists(path):
+        py_files = list(find("[a-zA-Z]*.py", path))
+        pnames = _get_plugins_from_list(py_files)
+        _log_debug_manager("Found plugin modules: %s", ", ".join(pnames))
+        if pnames:
+            return pnames
+    return []
 
 
 class ImporterHelper:
@@ -285,16 +306,6 @@ class ImporterHelper:
         """
         self.package = package
 
-    def _find_plugins_in_dir(self, path):
-        _log_debug_manager("Finding plugins in %s", path)
-        if os.path.exists(path):
-            py_files = list(find("[a-zA-Z]*.py", path))
-            pnames = _get_plugins_from_list(py_files)
-            _log_debug_manager("Found plugin modules: %s", ", ".join(pnames))
-            if pnames:
-                return pnames
-        return []
-
     def get_modules(self):
         """
         Get list of importable modules.
@@ -305,7 +316,7 @@ class ImporterHelper:
         plugins = []
         for path in self.package.__path__:
             if os.path.isdir(path):
-                plugins.extend(self._find_plugins_in_dir(path))
+                plugins.extend(_find_plugins_in_dir(path))
 
         return plugins
 
