@@ -104,7 +104,7 @@ def _find_snapset_root(snapset):
     for snapshot in snapset.snapshots:
         if snapshot.mount_point == "/":
             return snapshot
-    # FIXME: add fstab lookup for non-root snapsets
+    # Note: add fstab lookup for non-root snapsets
     # needs either root=UUID/LABEL support in boom or a lookup to resolve any
     # UUID/LABEL found in the file.
     raise SnapmNotFoundError(f"Could not find root device for snapset {snapset.name}")
