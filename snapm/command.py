@@ -1422,6 +1422,7 @@ def main(args):
     else:
         try:
             status = cmd_args.func(cmd_args)
+        # pylint: disable=broad-except
         except Exception as err:
             _log_error("Command failed: %s", err)
 

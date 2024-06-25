@@ -247,6 +247,7 @@ class SnapmStateError(SnapmError):
 #
 
 
+# pylint: disable=too-many-instance-attributes
 class Selection:
     """
     Selection criteria for snapshot sets and snapshots.
@@ -852,7 +853,7 @@ class SnapshotSet:
         )
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-many-public-methods
 class Snapshot:
     """
     Base class for individual snapshots. Each snapshot plugin should

@@ -485,6 +485,7 @@ class _Lvm2(Plugin):
         """
         raise NotImplementedError
 
+    # pylint: disable=too-many-arguments
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
@@ -500,6 +501,7 @@ class _Lvm2(Plugin):
         """
         raise NotImplementedError
 
+    # pylint: disable=too-many-arguments
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
