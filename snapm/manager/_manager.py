@@ -258,6 +258,16 @@ def _plugin_name(path):
     return name
 
 
+def _get_plugins_from_list(pluglist):
+    plugins = [
+        _plugin_name(plugin)
+        for plugin in pluglist
+        if "__init__" not in plugin and plugin.endswith(".py")
+    ]
+    plugins.sort()
+    return plugins
+
+
 class ImporterHelper:
     """
     Provides a list of modules that can be imported in a package.
@@ -275,20 +285,11 @@ class ImporterHelper:
         """
         self.package = package
 
-    def _get_plugins_from_list(self, pluglist):
-        plugins = [
-            _plugin_name(plugin)
-            for plugin in pluglist
-            if "__init__" not in plugin and plugin.endswith(".py")
-        ]
-        plugins.sort()
-        return plugins
-
     def _find_plugins_in_dir(self, path):
         _log_debug_manager("Finding plugins in %s", path)
         if os.path.exists(path):
             py_files = list(find("[a-zA-Z]*.py", path))
-            pnames = self._get_plugins_from_list(py_files)
+            pnames = _get_plugins_from_list(py_files)
             _log_debug_manager("Found plugin modules: %s", ", ".join(pnames))
             if pnames:
                 return pnames
