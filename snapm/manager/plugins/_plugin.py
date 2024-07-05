@@ -30,10 +30,10 @@ _log_warn = _log.warning
 _log_error = _log.error
 
 
-MOUNT_SEPARATOR = "-"
-ESCAPED_MOUNT_SEPARATOR = "--"
+_MOUNT_SEPARATOR = "-"
+_ESCAPED_MOUNT_SEPARATOR = "--"
 
-PROC_MOUNTS = "/proc/self/mounts"
+_PROC_MOUNTS = "/proc/self/mounts"
 
 # Fields: origin_name-snapset_snapset-name_timestamp_mount-point
 SNAPSHOT_NAME_FORMAT = "%s-snapset_%s_%d_%s"
@@ -118,29 +118,29 @@ def encode_mount_point(mount_point):
     separator with '-'.
     """
     if mount_point == "/":
-        return MOUNT_SEPARATOR
+        return _MOUNT_SEPARATOR
     mount_point = _escape_bad_chars(mount_point)
     parts = [
-        part.replace(MOUNT_SEPARATOR, ESCAPED_MOUNT_SEPARATOR)
+        part.replace(_MOUNT_SEPARATOR, _ESCAPED_MOUNT_SEPARATOR)
         for part in mount_point.split(path_sep)
     ]
-    return MOUNT_SEPARATOR.join(parts)
+    return _MOUNT_SEPARATOR.join(parts)
 
 
 def _split_mount_separators(mount_str):
     """
     Split string by mount separator handling escaped separators.
 
-    Split the mount string ``mount_str`` at ``MOUNT_SEPARATOR`` boundaries,
-    into path components, ignoring ``ESCAPED_MOUNT_SEPARATOR``.
+    Split the mount string ``mount_str`` at ``_MOUNT_SEPARATOR`` boundaries,
+    into path components, ignoring ``_ESCAPED_MOUNT_SEPARATOR``.
     """
     result = []
     current = ""
     i = 0
     while i < len(mount_str):
-        if mount_str[i] == MOUNT_SEPARATOR:
-            if i < len(mount_str) - 1 and mount_str[i + 1] == MOUNT_SEPARATOR:
-                current += ESCAPED_MOUNT_SEPARATOR
+        if mount_str[i] == _MOUNT_SEPARATOR:
+            if i < len(mount_str) - 1 and mount_str[i + 1] == _MOUNT_SEPARATOR:
+                current += _ESCAPED_MOUNT_SEPARATOR
                 i += 1
             else:
                 result.append(current)
@@ -160,7 +160,7 @@ def decode_mount_point(mount_str):
     mount_str = _unescape_bad_chars(mount_str)
     mount_parts = _split_mount_separators(mount_str)
     unescaped_parts = [
-        part.replace(ESCAPED_MOUNT_SEPARATOR, MOUNT_SEPARATOR) for part in mount_parts
+        part.replace(_ESCAPED_MOUNT_SEPARATOR, _MOUNT_SEPARATOR) for part in mount_parts
     ]
     return path_sep.join(unescaped_parts)
 
@@ -210,7 +210,7 @@ def device_from_mount_point(mount_point):
     # Ignore any trailing '/' in mount point path
     if mount_point != path_sep:
         mount_point = mount_point.rstrip(path_sep)
-    with open(PROC_MOUNTS, "r", encoding="utf8") as mounts:
+    with open(_PROC_MOUNTS, "r", encoding="utf8") as mounts:
         for line in mounts.readlines():
             (device, mount_path) = _parse_proc_mounts_line(line)
             if mount_path == mount_point:
