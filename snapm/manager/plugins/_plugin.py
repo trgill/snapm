@@ -18,18 +18,6 @@ import os
 import logging
 from os.path import sep as path_sep
 
-from snapm import SNAPM_DEBUG_PLUGINS
-
-_log = logging.getLogger(__name__)
-_log.set_debug_mask(SNAPM_DEBUG_PLUGINS)
-
-_log_debug = _log.debug
-_log_debug_plugins = _log.debug_masked
-_log_info = _log.info
-_log_warn = _log.warning
-_log_error = _log.error
-
-
 _MOUNT_SEPARATOR = "-"
 _ESCAPED_MOUNT_SEPARATOR = "--"
 

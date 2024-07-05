@@ -22,7 +22,6 @@ from time import time
 import logging
 
 from snapm import (
-    SNAPM_DEBUG_PLUGINS,
     SnapmInvalidIdentifierError,
     SnapmCalloutError,
     SnapmBusyError,
@@ -40,15 +39,6 @@ from snapm.manager.plugins import (
     format_snapshot_name,
     encode_mount_point,
 )
-
-_log = logging.getLogger(__name__)
-_log.set_debug_mask(SNAPM_DEBUG_PLUGINS)
-
-_log_debug = _log.debug
-_log_debug_lvm2 = _log.debug_masked
-_log_info = _log.info
-_log_warn = _log.warning
-_log_error = _log.error
 
 #: Maximum length for LVM2 LV names
 LVM_MAX_NAME_LEN = 127
@@ -626,7 +616,7 @@ class _Lvm2(Plugin):
 
         :param name: The name of the snapshot to be activated.
         """
-        _log_debug("Activating %s snapshot %s", self.name, name)
+        self._log_debug("Activating %s snapshot %s", self.name, name)
         _activate(LVCHANGE_ACTIVE_YES, name)
 
     def deactivate_snapshot(self, name):
@@ -635,7 +625,7 @@ class _Lvm2(Plugin):
 
         :param name: The name of the snapshot to be deactivated.
         """
-        _log_debug("Deactivating %s snapshot %s", self.name, name)
+        self._log_debug("Deactivating %s snapshot %s", self.name, name)
         _activate(LVCHANGE_ACTIVE_NO, name, silent=True)
 
     def set_autoactivate(self, name, auto=False):
@@ -714,7 +704,7 @@ class Lvm2Cow(_Lvm2):
                 if fields is not None:
                     (snapset, timestamp, mount_point) = fields
                     full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_dict[LVS_LV_NAME]}"
-                    _log_debug_lvm2("Found %s snapshot: %s", self.name, full_name)
+                    self._log_debug("Found %s snapshot: %s", self.name, full_name)
                     snapshots.append(
                         Lvm2CowSnapshot(
                             full_name,
@@ -793,7 +783,7 @@ class Lvm2Cow(_Lvm2):
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
         (vg_name, lv_name) = origin.split("/")
-        _log_debug(
+        self._log_debug(
             "Creating CoW snapshot for %s/%s mounted at %s",
             vg_name,
             lv_name,
@@ -855,7 +845,7 @@ class Lvm2Thin(_Lvm2):
                     continue
                 if fields is not None:
                     full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_dict[LVS_LV_NAME]}"
-                    _log_debug_lvm2("Found %s snapshot: %s", self.name, full_name)
+                    self._log_debug("Found %s snapshot: %s", self.name, full_name)
                     (snapset, timestamp, mount_point) = fields
                     snapshots.append(
                         Lvm2ThinSnapshot(
@@ -925,7 +915,7 @@ class Lvm2Thin(_Lvm2):
     ):
         (vg_name, lv_name) = origin.split("/")
         pool_name = pool_name_from_vg_lv(origin)
-        _log_debug(
+        self._log_debug(
             "Creating thin snapshot for %s/%s mounted at %s",
             vg_name,
             lv_name,

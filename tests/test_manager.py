@@ -123,12 +123,12 @@ class ManagerTestsSimple(unittest.TestCase):
         self.assertEqual(len(PluginRegistry.plugins), 2)
 
     def test_plugin_info(self):
-        p = manager.Plugin()
+        p = manager.Plugin(_log)
         info = p.info()
         self.assertEqual(info, {"name": "plugin", "version": "0.1.0"})
 
     def _plugin_base_not_implemented_raises(self, method, args):
-        p = manager.Plugin()
+        p = manager.Plugin(_log)
         with self.assertRaises(NotImplementedError):
             getattr(p, method)(*args)
 

@@ -89,8 +89,33 @@ class Plugin(metaclass=PluginRegistry):
     version = "0.1.0"
     snapshot_class = Snapshot
 
-    def __init__(self):
+    def __init__(self, logger):
         self.size_map = None
+        self.logger = logger
+
+    def _log_error(self, *args):
+        """
+        Log at error level.
+        """
+        self.logger.error(*args)
+
+    def _log_warn(self, *args):
+        """
+        Log at warning level.
+        """
+        self.logger.warning(*args)
+
+    def _log_info(self, *args):
+        """
+        Log at info level.
+        """
+        self.logger.info(*args)
+
+    def _log_debug(self, *args):
+        """
+        Log at debug level.
+        """
+        self.logger.debug(*args)
 
     def info(self):
         """
@@ -498,7 +523,7 @@ class Manager:
         self._boot_cache = BootCache()
         load_plugins()
         for plugin_class in PluginRegistry.plugins:
-            self.plugins.append(plugin_class())
+            self.plugins.append(plugin_class(_log))
         self.discover_snapshot_sets()
 
     def _find_and_verify_plugins(self, mount_points, size_policies):

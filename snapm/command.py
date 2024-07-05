@@ -52,7 +52,6 @@ from snapm import (
     SNAPSHOT_DEV_PATH,
     SNAPM_DEBUG_MANAGER,
     SNAPM_DEBUG_COMMAND,
-    SNAPM_DEBUG_PLUGINS,
     SNAPM_DEBUG_REPORT,
     SNAPM_DEBUG_ALL,
     set_debug_mask,
@@ -1063,7 +1062,6 @@ def set_debug(debug_arg):
     mask_map = {
         "manager": SNAPM_DEBUG_MANAGER,
         "command": SNAPM_DEBUG_COMMAND,
-        "plugins": SNAPM_DEBUG_PLUGINS,
         "report": SNAPM_DEBUG_REPORT,
         "all": SNAPM_DEBUG_ALL,
     }

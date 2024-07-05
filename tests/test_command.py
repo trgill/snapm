@@ -178,7 +178,7 @@ class CommandTestsSimple(unittest.TestCase):
         from snapm import get_debug_mask, SNAPM_DEBUG_ALL
 
         args = MockArgs()
-        args.debug = "manager,command,plugins,report"
+        args.debug = "manager,command,report"
         command.set_debug(args.debug)
         self.assertEqual(get_debug_mask(), SNAPM_DEBUG_ALL)
 

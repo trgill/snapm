@@ -105,13 +105,13 @@ class Lvm2Tests(unittest.TestCase):
                     lvm2.vg_free_space(vg)
 
     def test_lvm2cow_discover_snapshots(self):
-        lvm2cow = lvm2.Lvm2Cow()
+        lvm2cow = lvm2.Lvm2Cow(log)
         snapshots = lvm2cow.discover_snapshots()
         # FIXME: hardcoded value based on test data
         self.assertEqual(len(snapshots), 11)
 
     def test_lvm2thin_discover_snapshots(self):
-        lvm2thin = lvm2.Lvm2Thin()
+        lvm2thin = lvm2.Lvm2Thin(log)
         snapshots = lvm2thin.discover_snapshots()
         # FIXME: hardcoded value based on test data
         self.assertEqual(len(snapshots), 5)
