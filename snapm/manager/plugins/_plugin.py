@@ -23,6 +23,7 @@ _ESCAPED_MOUNT_SEPARATOR = "--"
 _PROC_MOUNTS = "/proc/self/mounts"
 
 DEV_PREFIX = "/dev"
+DEV_MAPPER_PREFIX = "/dev/mapper/"
 
 # Fields: origin_name-snapset_snapset-name_timestamp_mount-point
 SNAPSHOT_NAME_FORMAT = "%s-snapset_%s_%d_%s"
@@ -229,6 +230,7 @@ def format_snapshot_name(origin, snapset_name, timestamp, mount_point):
 
 __all__ = [
     "DEV_PREFIX",
+    "DEV_MAPPER_PREFIX",
     "encode_mount_point",
     "decode_mount_point",
     "parse_snapshot_name",

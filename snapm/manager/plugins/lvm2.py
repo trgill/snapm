@@ -32,6 +32,7 @@ from snapm import (
 from snapm.manager import Plugin
 from snapm.manager.plugins import (
     DEV_PREFIX,
+    DEV_MAPPER_PREFIX,
     parse_snapshot_name,
     device_from_mount_point,
     mount_point_space_used,
@@ -134,8 +135,6 @@ DMSETUP_COLUMNS = "--columns"
 DMSETUP_FIELDS_VG_LV = "-ovg_name,lv_name"
 DMSETUP_FIELDS_UUID = "-ouuid"
 DMSETUP_REPORT_SEP = ":"
-
-DEV_MAPPER_PREFIX = "/dev/mapper/"
 
 # Minimum possible LVM2 CoW snapshot size (512MiB)
 MIN_LVM2_COW_SNAPSHOT_SIZE = 512 * 1024**2
