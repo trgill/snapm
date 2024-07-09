@@ -25,6 +25,17 @@ _PROC_MOUNTS = "/proc/self/mounts"
 DEV_PREFIX = "/dev"
 DEV_MAPPER_PREFIX = "/dev/mapper/"
 
+# dmsetup options
+DMSETUP_CMD = "dmsetup"
+DMSETUP_SPLITNAME = "splitname"
+DMSETUP_INFO = "info"
+DMSETUP_LVM_SUBSYS = "LVM"
+DMSETUP_NO_HEADINGS = "--noheadings"
+DMSETUP_COLUMNS = "--columns"
+DMSETUP_FIELDS_VG_LV = "-ovg_name,lv_name"
+DMSETUP_FIELDS_UUID = "-ouuid"
+DMSETUP_REPORT_SEP = ":"
+
 # Fields: origin_name-snapset_snapset-name_timestamp_mount-point
 SNAPSHOT_NAME_FORMAT = "%s-snapset_%s_%d_%s"
 
@@ -231,6 +242,15 @@ def format_snapshot_name(origin, snapset_name, timestamp, mount_point):
 __all__ = [
     "DEV_PREFIX",
     "DEV_MAPPER_PREFIX",
+    "DMSETUP_CMD",
+    "DMSETUP_SPLITNAME",
+    "DMSETUP_INFO",
+    "DMSETUP_LVM_SUBSYS",
+    "DMSETUP_NO_HEADINGS",
+    "DMSETUP_COLUMNS",
+    "DMSETUP_FIELDS_VG_LV",
+    "DMSETUP_FIELDS_UUID",
+    "DMSETUP_REPORT_SEP",
     "encode_mount_point",
     "decode_mount_point",
     "parse_snapshot_name",
