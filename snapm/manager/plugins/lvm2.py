@@ -19,7 +19,6 @@ from json import loads, JSONDecodeError
 from math import floor
 from os.path import join as path_join
 from time import time
-import logging
 
 from snapm import (
     SnapmInvalidIdentifierError,

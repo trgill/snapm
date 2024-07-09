@@ -15,7 +15,6 @@
 Snapshot manager plugin helpers.
 """
 import os
-import logging
 from os.path import sep as path_sep
 
 _MOUNT_SEPARATOR = "-"
