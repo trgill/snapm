@@ -356,7 +356,12 @@ def import_module(module_fqname, superclasses=None):
     is plural it must be a tuple of classes.
     """
     module_name = module_fqname.rpartition(".")[-1]
-    module = __import__(module_fqname, globals(), locals(), [module_name])
+    try:
+        module = __import__(module_fqname, globals(), locals(), [module_name])
+    # pylint: disable=broad-except
+    except Exception as err:
+        _log_error("Error importing %s plugin module: %s", module_fqname, err)
+        return []
     modules = [
         class_
         for cname, class_ in inspect.getmembers(module, inspect.isclass)
