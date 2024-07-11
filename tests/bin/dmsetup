@@ -27,11 +27,16 @@ def dmsetup_info(args):
     if args.columns:
         if args.noheadings:
             if args.options == "uuid":
-                if args.device_name in dmsetup_info_columns_noheadings_ouuid:
-                    print(dmsetup_info_columns_noheadings_ouuid[args.device_name])
-                    return 0
+                if args.device_name:
+                    if args.device_name in dmsetup_info_columns_noheadings_ouuid:
+                        print(dmsetup_info_columns_noheadings_ouuid[args.device_name])
+                        return 0
+                    else:
+                        return 1
                 else:
-                    return 1
+                    for device_name in dmsetup_info_columns_noheadings_ouuid.keys():
+                        print(dmsetup_info_columns_noheadings_ouuid[device_name])
+                    return 0
 
 
 def dmsetup_splitname(args):
@@ -59,7 +64,7 @@ def main(args):
     parser_info.add_argument(
         "-o", "--options", type=str, help="Specify fields to display"
     )
-    parser_info.add_argument("device_name", type=str, help="Device to act on")
+    parser_info.add_argument("device_name", nargs="?", type=str, help="Device to act on")
 
     # splitname subparser
     parser_splitname = subparsers.add_parser(CMD_SPLITNAME, help="info help")
