@@ -21,6 +21,21 @@ log.addHandler(logging.FileHandler("test.log"))
 import snapm.manager.plugins as plugins
 
 
+def _find_device_mounts():
+    """
+    Find mount points on the running system backed by a device in /dev.
+
+    :returns: A list of device-backed mount points.
+    """
+    mount_points = []
+    with open("/proc/mounts", "r", encoding="utf8") as mounts:
+        for line in mounts.readlines():
+            (device, mount_point, _) = line.split(maxsplit=2)
+            if device.startswith("/dev"):
+                mount_points.append(mount_point)
+    return mount_points
+
+
 class PluginTests(unittest.TestCase):
     """Test plugin helper functions"""
 
@@ -55,6 +70,16 @@ class PluginTests(unittest.TestCase):
         }
         for name, origin in snapshot_names.items():
             self.assertEqual(None, plugins.parse_snapshot_name(name, origin))
+
+    def test_device_from_mount_point(self):
+        mounts = _find_device_mounts()
+        for mount in mounts:
+            dev = plugins.device_from_mount_point(mount)
+            self.assertTrue(dev.startswith("/dev"))
+
+    def test_device_from_mount_point_bad_mount(self):
+        with self.assertRaises(KeyError) as cm:
+            dev = plugins.device_from_mount_point("/quuxfoo")
 
     def test_encode_mount_point(self):
         mounts = {

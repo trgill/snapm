@@ -216,7 +216,7 @@ def device_from_mount_point(mount_point):
             (device, mount_path) = _parse_proc_mounts_line(line)
             if mount_path == mount_point:
                 return device
-    raise ValueError(f"Mount point {mount_point} not found")
+    raise KeyError(f"Mount point {mount_point} not found")
 
 
 def mount_point_space_used(mount_point):
