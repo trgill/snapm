@@ -55,6 +55,7 @@ class PluginTests(unittest.TestCase):
             "/var/tmp": "-var-tmp",
             "/var/foo-bar": "-var-foo--bar",
             "/foo_bar": "-foo_bar",
+            "/data:storage": "-data.3astorage",
         }
         for mount in mounts.keys():
             self.assertEqual(plugins.encode_mount_point(mount), mounts[mount])
@@ -68,6 +69,7 @@ class PluginTests(unittest.TestCase):
             "-var-tmp": "/var/tmp",
             "-var-foo--bar": "/var/foo-bar",
             "-foo_bar": "/foo_bar",
+            "-data.3astorage": "/data:storage",
         }
         for enc_mount in enc_mounts.keys():
             self.assertEqual(
