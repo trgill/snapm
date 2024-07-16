@@ -46,6 +46,16 @@ class PluginTests(unittest.TestCase):
                 snapshot_names[snapshot_name],
             )
 
+    def test_parse_snapshot_name_none(self):
+        snapshot_names = {
+            "some_snapshot_volume": "origin_volume",
+            "somesnapshot": "some",
+            "some_snapshot": "some",
+            "root-notsnapset_backup_1693921253_-": "root",
+        }
+        for name, origin in snapshot_names.items():
+            self.assertEqual(None, plugins.parse_snapshot_name(name, origin))
+
     def test_encode_mount_point(self):
         mounts = {
             "/": "-",
@@ -56,6 +66,7 @@ class PluginTests(unittest.TestCase):
             "/var/foo-bar": "-var-foo--bar",
             "/foo_bar": "-foo_bar",
             "/data:storage": "-data.3astorage",
+            "/data.storage": "-data..storage",
         }
         for mount in mounts.keys():
             self.assertEqual(plugins.encode_mount_point(mount), mounts[mount])
@@ -70,6 +81,7 @@ class PluginTests(unittest.TestCase):
             "-var-foo--bar": "/var/foo-bar",
             "-foo_bar": "/foo_bar",
             "-data.3astorage": "/data:storage",
+            "-data..storage" : "/data.storage",
         }
         for enc_mount in enc_mounts.keys():
             self.assertEqual(
