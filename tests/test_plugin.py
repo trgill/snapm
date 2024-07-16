@@ -81,6 +81,10 @@ class PluginTests(unittest.TestCase):
         with self.assertRaises(KeyError) as cm:
             dev = plugins.device_from_mount_point("/quuxfoo")
 
+    def test_mount_point_space_used(self):
+        used = plugins.mount_point_space_used("/sys")
+        self.assertEqual(0, used)
+
     def test_encode_mount_point(self):
         mounts = {
             "/": "-",
