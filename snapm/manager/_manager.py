@@ -584,7 +584,17 @@ class Manager:
         self._boot_cache = BootCache()
         load_plugins()
         for plugin_class in PluginRegistry.plugins:
-            self.plugins.append(plugin_class(_log))
+            try:
+                plugin = plugin_class(_log)
+                self.plugins.append(plugin)
+            except SnapmNotFoundError as err:
+                _log_debug(
+                    "Plugin dependencies missing: %s (%s), skipping.",
+                    plugin_class.__name__,
+                    err,
+                )
+            except SnapmPluginError as err:
+                _log_error("Disabling plugin %s: %s", plugin_class.__name__, err)
         self.discover_snapshot_sets()
 
     def _find_and_verify_plugins(self, mount_points, size_policies):
