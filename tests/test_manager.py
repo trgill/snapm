@@ -485,6 +485,7 @@ class ManagerTests(unittest.TestCase):
             self.manager.rename_snapshot_set("testset0", "testset1")
 
         self.assertEqual(sset.name, "testset0")
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_find_snapshots(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
