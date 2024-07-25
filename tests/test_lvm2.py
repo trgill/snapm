@@ -30,13 +30,16 @@ class Lvm2Tests(unittest.TestCase):
     _old_path = None
 
     def setUp(self):
+        def cleanup():
+            if hasattr(self, "_old_path"):
+                os.environ["PATH"] = self._old_path
+
+        self.addCleanup(cleanup)
+
         bin_path = os.path.abspath("tests/bin")
         cur_path = os.environ["PATH"]
         self._old_path = cur_path
         os.environ["PATH"] = bin_path + os.pathsep + cur_path
-
-    def tearDown(self):
-        os.environ["PATH"] = self._old_path
 
     def test_is_lvm_device(self):
         devs = {
