@@ -769,11 +769,12 @@ class Manager:
             provider.start_transaction()
 
         timestamp = floor(time())
+        origins = {}
         for mount in provider_map:
-            origin = provider_map[mount].origin_from_mount_point(mount)
+            origins[mount] = provider_map[mount].origin_from_mount_point(mount)
             try:
                 provider_map[mount].check_create_snapshot(
-                    origin, name, timestamp, mount, size_policies[mount]
+                    origins[mount], name, timestamp, mount, size_policies[mount]
                 )
             except SnapmInvalidIdentifierError as err:
                 _log_error(
@@ -793,11 +794,10 @@ class Manager:
         _suspend_journal()
         snapshots = []
         for mount in provider_map:
-            origin = provider_map[mount].origin_from_mount_point(mount)
             try:
                 snapshots.append(
                     provider_map[mount].create_snapshot(
-                        origin, name, timestamp, mount, size_policies[mount]
+                        origins[mount], name, timestamp, mount, size_policies[mount]
                     )
                 )
             except SnapmError as err:
