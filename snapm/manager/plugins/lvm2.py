@@ -646,6 +646,13 @@ class _Lvm2(Plugin):
         new_name = format_snapshot_name(
             origin, snapset_name, timestamp, encode_mount_point(mount_point)
         )
+
+        self._log_debug(
+            "Renaming snapshot from %s to %s",
+            old_name,
+            new_name,
+        )
+
         lvrename_cmd = [
             LVRENAME_CMD,
             vg_name,
