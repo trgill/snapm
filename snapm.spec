@@ -2,7 +2,7 @@
 %global sphinx_docs 1
 
 Name:		snapm
-Version:	0.3.0
+Version:	0.3.1
 Release:	1%{?dist}
 Summary:	%{summary}
 
@@ -96,6 +96,93 @@ rm doc/conf.py
 %doc tests
 
 %changelog
+* Thu Jul 25 2024 Bryn M. Reeves <bmr@redhat.com> - 0.3.1
+- tests: add test for mount_point_space_used()
+- tests: add tests for device_from_mount_point()
+- tests: add invalid snapshot names to parse_snapshot_name() tests
+- tests: add escaped strings to encode/decode_mount_point tests
+- tests: support 'dmsetup info -c --noheadings -ouuid' in mock dmsetup
+- snapm: catch exceptions when importing plugins
+- plugins: move DMSETUP constants to snapm.manager.plugins
+- plugins: move DEV_MAPPER_PREFIX to snapm.manager.plugins
+- snapm: remove unused logging import from plugin modules
+- plugins: fix plugin logging
+- plugins: move DEV_PREFIX constant to snapm.manager.plugins
+- plugins: make plugin internal constants private
+- snapm.manager: convert ImporterHelper._find_plugins_in_dir() to function
+- lvm2: convert Lvm2Cow._snapshot_min_size() into function
+- snapm.manager: convert ImporterHelper._get_plugins_from_list() into function
+- lvm2: define _Lvm2.max_name_len
+- lvm2: generalise _check_lvm_name() between Lvm2CoW/Lvm2Thin
+- lvm2: log plugin type in Lvm2{CoW,Thin}.can_snapshot() error message
+- lvm2: convert _Lvm2._activate() into a function
+- snapm.manager.boot: rename single character locals in _get_machine_id()
+- snapm.manager: convert Manager._parse_mount_point_specs() into function
+- snapm.manager: convert Manager._{suspend,resume}_journal() into functions
+- snapm.manager: convert ImportHelper._plugin_name() into function
+- snapm.manager: call super().__init__() from PluginRegistery.__init__()
+- snapm.command: rename 'ws' local to 'wspace'
+- tests: use pip to install boom-boot in CI
+- test: enable pylint in CI
+- test: add .pylintrc to git
+- snapm.manager.boot: replace FIXME with Note
+- snapm.command: disable global-statement pylint warning
+- snapm.command: factor out subparser addition from snapm.command.main()
+- snapm: disable more pylint checks
+- report: merge comparisons in Report.{__get_field,__key_match}()
+- dist: handle py3_install/pyproject_install differences in files
+- dist: add BuildRequires for python3-pip and python3-wheel
+- dist: fix changelog date in snapm.spec
+- snapm: fix snapm.command._log_warn definition
+- dist: use py3_build/py3_install on RHEL/CentOS
+- snapm: refactor Manager.create_snapshot_set()
+- manager: flush and suspend journal before creating snapshots
+- report: replace open coded comparison with max() in __recalculate_fields()
+- report: use .items() to iterate over SHAs in __recalculate_sha_width()
+- lvm2: add abstract Lvm2Snapshot.free() method definition
+- snapm.manager.boot: add missing docstring to BootCache.refresh_cache()
+- snapm.manager.boot: drop unused arg from create_snapset_boot_entry()
+- snapm: drop unused arg and fix docstring for _create_boom_boot_entry()
+- snapm.manager.boot: change if to bool() in _create_boom_boot_entry()
+- snapm.manager.boot: explicitly re-raise exceptions in _create_boom_boot_entry()
+- snapm.manager.boot: catch OSError instead of Exception in _get_machine_id()
+- snapm.command: mark selection argument as unused in print_plugins()
+- snapm.manager: add missing docstrings to boot entry creation methods
+- snapm.manager: explicitly re-raise exceptions in deactivate_snapshot_sets()
+- snapm.manager: explicitly re-raise exceptions in activate_snapshot_sets()
+- snapm.manager: explicitly re-raise exceptions in revert_snapshot_set()
+- snapm.manager: explicitly re-raise exceptions in delete_snapshot_sets()
+- snapm.manager: explicitly re-raise exceptions in rename_snapshot_set()
+- snapm.manager: explicitly re-raise exceptions in create_snapshot_set()
+- snapm.manager: use lazy formatting in create_snapshot_set() debug
+- snapm: set encoding in open() in Snapshot.{origin,snapshot}_mounted
+- snapm: add missing Snapshot.json() docstring
+- snapm: use generator in SnapshotSet.{origin,snapshot}_mounted
+- snapm: remove unnecessary elif/else in SizePolicy.size()
+- snapm: remove unnecessary else in SizePolicy._parse_size_policy()
+- snapm: mark percent variable unused in snapm.is_size_policy()
+- snapm: remove unnecessary else in snapm.is_size_policy()
+- snapm.report: only import dumps from json
+- snapm.command: remove unnecessary class variables from ReportObj
+- snapm: break up long string in SizePolicy._parse_size_policy()
+- tests: add flake8 to GitHub workflow
+- snapm.report: remove unused math import
+- dist: add E203 to flake8 ignore list
+- snapm: disable flake8 F401, F403 in snapm/manager/plugins/__init__.py imports
+- snapm.manager.boot: remove unused exception variable
+- snapm.manager.boot: remove unused import SnapmInvalidIdentifierError
+- snapm: fix by_name/by_uuid references in Manager.revert_snapshot_set()
+- snapm: disable flake8 F401, F403 in snapm/manager/__init__.py imports
+- snapm: fix UUID handling in snapm.command._revert_cmd()
+- snapm: remove unused variable in snapm.is_size_policy()
+- dist: add flake8 configuration to setup.cfg
+- snapm: disable flake8 F401, F403 in snapm/__init__.py imports
+- snapm.command: remove unnecessary imports
+- dist: add libdbus-1-dev to apt_packages in .readthedocs.yaml
+- dist: enable Python deps in .readthedocs.yaml
+- snapm: generalise revert check for mounted fs to snapshot and origin
+- dist: add boom-boot to RPM Recommends
+
 * Thu Jun 20 2024 Bryn M. Reeves <bmr@redhat.com> - 0.3.0
 - dist: add boom-boot to RPM Recommends
 - snapm: forbid revert if snapset status is SnapStatus.INVALID
