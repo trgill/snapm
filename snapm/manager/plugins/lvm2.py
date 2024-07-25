@@ -587,6 +587,27 @@ class _Lvm2(Plugin):
             lv_name,
         )
 
+    def check_revert_snapshot(self, name, origin):
+        """
+        Check whether this snapshot can be reverted or not. This method returns
+        if the current snapshot can be reverted and raises an exception if not.
+
+        :returns: None
+        :raises: ``NotImplementedError`` if this plugin does not support the
+        revert operation, ``SnapmBusyError`` if the snapshot is already in the
+        process of being reverted to another snapshot state or
+        ``SnapmPluginError`` if another reason prevents the snapshot from being
+        merged.
+        """
+        vg_name, lv_name = origin.removeprefix(DEV_PREFIX + "/").split("/")
+        lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
+        lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
+        lv_attr = lv_report[LVS_LV_ATTR]
+        if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
+            raise SnapmBusyError(
+                f"Snapshot revert is in progress for {name} origin volume {vg_name}/{lv_name}"
+            )
+
     def revert_snapshot(self, name):
         """
         Revert the state of the content of the origin to the content at the
@@ -733,7 +754,7 @@ class Lvm2Cow(_Lvm2):
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
             raise SnapmBusyError(
-                f"Snapshot revert is in progress for {self.name} volume {vg_name}/{lv_name}"
+                f"Snapshot revert is in progress for {self.name} origin volume {vg_name}/{lv_name}"
             )
         if lv_attr[0] != LVM_LV_TYPE_DEFAULT and lv_attr[0] != LVM_COW_ORIGIN_ATTR:
             return False
@@ -868,7 +889,7 @@ class Lvm2Thin(_Lvm2):
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
             raise SnapmBusyError(
-                f"Snapshot revert is in progress for {self.name} volume {vg_name}/{lv_name}"
+                f"Snapshot revert is in progress for {self.name} origin volume {vg_name}/{lv_name}"
             )
         if lv_attr[0] != LVM_THIN_VOL_ATTR:
             return False

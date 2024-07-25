@@ -41,6 +41,7 @@ from snapm import (
     SnapmNoSpaceError,
     SnapmNoProviderError,
     SnapmExistsError,
+    SnapmBusyError,
     SnapmPathError,
     SnapmNotFoundError,
     SnapmInvalidIdentifierError,
@@ -194,6 +195,20 @@ class Plugin(metaclass=PluginRegistry):
         :param snapset_name: The new name of the snapshot set.
         :param timestamp: The snapshot set timestamp.
         :param mount_point: The mount point of the snapshot.
+        """
+        raise NotImplementedError
+
+    def check_revert_snapshot(self, name, origin):
+        """
+        Check whether this snapshot can be reverted or not. This method returns
+        if the current snapshot can be reverted and raises an exception if not.
+
+        :returns: None
+        :raises: ``NotImplementedError`` if this plugin does not support the
+        revert operation, ``SnapmBusyError`` if the snapshot is already in the
+        process of being reverted to another snapshot state or
+        ``SnapmPluginError`` if another reason prevents the snapshot from being
+        merged.
         """
         raise NotImplementedError
 
@@ -507,6 +522,47 @@ def _parse_mount_point_specs(mount_point_specs, default_size_policy):
         mount_points.append(mount)
         size_policies[mount] = policy
     return (mount_points, size_policies)
+
+
+def _check_revert_snapshot_set(snapset):
+    """
+    Check that all snapshots in a snapshot set can be reverted.
+    Returns if all checks pass or raises an exception otherwise.
+
+    :returns: None
+    :raises: ``NotImplementedError``, ``SnapmBusyError`` or
+             ``SnapmPluginError``
+    """
+    if snapset.status == SnapStatus.INVALID:
+        raise SnapmStateError(
+            f"Cannot revert snapset {snapset.name} with invalid snapshots"
+        )
+
+    # Check for ability to revert all snapshots in set
+    for snapshot in snapset.snapshots:
+        try:
+            snapshot.check_revert()
+        except NotImplementedError as err:
+            _log_error(
+                "Snapshot provider %s does not support revert",
+                snapshot.provider,
+            )
+            raise SnapmPluginError from err
+        except SnapmBusyError as err:
+            _log_error(
+                "Revert already in progress for snapshot origin %s",
+                snapshot.origin,
+            )
+            raise SnapmBusyError(
+                f"A revert has already started for snapshot set {snapset.name}"
+            ) from err
+        except SnapmPluginError as err:
+            _log_error(
+                "Revert prechecks failed for snapshot %s (%s)",
+                snapshot.name,
+                snapshot.provider,
+            )
+            raise err
 
 
 class Manager:
@@ -887,14 +943,12 @@ class Manager:
         else:
             raise SnapmNotFoundError("A snapshot set name or UUID is required")
 
-        if snapset.status == SnapStatus.INVALID:
-            raise SnapmStateError(
-                f"Cannot revert snapset {snapset.name} with invalid snapshots"
-            )
+        _check_revert_snapshot_set(snapset)
 
         # Snapshot boot entry becomes invalid as soon as revert is initiated.
         delete_snapset_boot_entry(snapset)
 
+        # Perform revert operation on all snapshots
         for snapshot in snapset.snapshots:
             try:
                 snapshot.revert()

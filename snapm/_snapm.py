@@ -1108,6 +1108,13 @@ class Snapshot:
             self.name, self.origin, new_name, self.timestamp, self.mount_point
         )
 
+    def check_revert(self):
+        """
+        Check whether this snapshot can be reverted or not by calling the
+        provider plugin to verify the state of the snapshot.
+        """
+        self._provider.check_revert_snapshot(self.name, self.origin)
+
     def revert(self):
         """
         Request to revert a snapshot and revert the content of the origin
