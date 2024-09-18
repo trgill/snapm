@@ -127,6 +127,7 @@ SPECS = {
     <property name="Devnode" type="s" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="invalidates" />
     </property>
+    <property name="MergeScheduled" type="b" access="readwrite" />
     <property name="Name" type="s" access="read" />
     <property name="Origin" type="(bs)" access="read" />
     <property name="Pool" type="o" access="read">
@@ -179,6 +180,13 @@ SPECS = {
       <arg name="return_code" type="q" direction="out" />
       <arg name="return_string" type="s" direction="out" />
     </method>
+    <method name="FilesystemMetadata">
+      <arg name="fs_name" type="(bs)" direction="in" />
+      <arg name="current" type="b" direction="in" />
+      <arg name="results" type="s" direction="out" />
+      <arg name="return_code" type="q" direction="out" />
+      <arg name="return_string" type="s" direction="out" />
+    </method>
     <method name="GrowPhysicalDevice">
       <arg name="dev" type="s" direction="in" />
       <arg name="results" type="b" direction="out" />
@@ -188,6 +196,12 @@ SPECS = {
     <method name="InitCache">
       <arg name="devices" type="as" direction="in" />
       <arg name="results" type="(bao)" direction="out" />
+      <arg name="return_code" type="q" direction="out" />
+      <arg name="return_string" type="s" direction="out" />
+    </method>
+    <method name="Metadata">
+      <arg name="current" type="b" direction="in" />
+      <arg name="results" type="s" direction="out" />
       <arg name="return_code" type="q" direction="out" />
       <arg name="return_string" type="s" direction="out" />
     </method>
@@ -234,6 +248,9 @@ SPECS = {
     <property name="FsLimit" type="t" access="readwrite" />
     <property name="HasCache" type="b" access="read" />
     <property name="KeyDescription" type="(b(bs))" access="read" />
+    <property name="MetadataVersion" type="t" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const" />
+    </property>
     <property name="Name" type="s" access="read" />
     <property name="NoAllocSpace" type="b" access="read" />
     <property name="Overprovisioning" type="b" access="readwrite" />
