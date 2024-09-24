@@ -903,6 +903,10 @@ class Manager:
                 f"Could not find snapshot sets matching {selection}"
             )
         for snapset in sets:
+            if any(snapshot.snapshot_mounted for snapshot in snapset.snapshots):
+                raise SnapmBusyError(
+                    f"Snapshots from snapshot set {snapset.name} are mounted: cannot delete"
+                )
             delete_snapset_boot_entry(snapset)
             delete_snapset_revert_entry(snapset)
             for snapshot in snapset.snapshots:
