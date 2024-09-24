@@ -1077,8 +1077,10 @@ class Snapshot:
         with open("/proc/mounts", "r", encoding="utf8") as mounts:
             for line in mounts:
                 fields = line.split(" ")
-                if self.mount_point == fields[1]:
-                    return os.path.samefile(self.devpath, fields[0])
+                devpath = fields[0]
+                if os.path.exists(devpath):
+                    if os.path.samefile(self.devpath, devpath):
+                        return True
         return False
 
     @property
