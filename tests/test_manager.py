@@ -24,6 +24,14 @@ from tests import have_root, BOOT_ROOT_TEST
 from ._util import LvmLoopBacked, StratisLoopBacked
 
 
+import snapm
+import snapm.manager as manager
+import boom
+
+from tests import have_root, BOOT_ROOT_TEST
+from ._util import LvmLoopBacked, StratisLoopBacked
+
+
 _log = logging.getLogger()
 _log.level = logging.DEBUG
 _log.addHandler(logging.FileHandler("test.log"))
