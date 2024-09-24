@@ -16,6 +16,14 @@ import logging
 import os
 from uuid import UUID
 
+import snapm
+import snapm.manager as manager
+import boom
+
+from tests import have_root, BOOT_ROOT_TEST
+from ._util import LvmLoopBacked, StratisLoopBacked
+
+
 _log = logging.getLogger()
 _log.level = logging.DEBUG
 _log.addHandler(logging.FileHandler("test.log"))
@@ -24,14 +32,6 @@ _log_debug = _log.debug
 _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
-
-import snapm
-import snapm.manager as manager
-import boom
-
-from tests import have_root, BOOT_ROOT_TEST
-from ._util import LvmLoopBacked, StratisLoopBacked
-
 
 boom.set_boot_path(BOOT_ROOT_TEST)
 
