@@ -710,7 +710,7 @@ class _Lvm2(Plugin):
             name,
         ]
         try:
-            run(lvconvert_cmd, capture_output=True, check=True)
+            run(lvconvert_cmd, capture_output=False, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(f"{LVCONVERT_CMD} failed with: {err}") from err
 
