@@ -790,8 +790,6 @@ def _revert_cmd(cmd_args):
         raise SnapmInvalidIdentifierError("Revert requires a snapset name or UUID")
 
     snapset = revert_snapset(manager, name=name, uuid=uuid)
-    if snapset.mounted and snapset.revert_entry:
-        print(f"Boot into '{snapset.revert_entry.title}' to continue")
     _log_info("Started revert for snapset %s", snapset.name)
     return 0
 
