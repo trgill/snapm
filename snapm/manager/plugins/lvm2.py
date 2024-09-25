@@ -644,7 +644,7 @@ class _Lvm2(Plugin):
         """
         (_, _, vg_name, lv_name) = origin.split("/")
         new_name = format_snapshot_name(
-            origin, snapset_name, timestamp, encode_mount_point(mount_point)
+            lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
 
         self._log_debug(
@@ -663,15 +663,16 @@ class _Lvm2(Plugin):
             run(lvrename_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(f"{LVRENAME_CMD} failed with: {err}") from err
-        return Lvm2Snapshot(
-            new_name,
+
+        return self._build_snapshot(
+            f"{vg_name}/{new_name}",
             snapset_name,
-            origin,
+            lv_name,
             timestamp,
             mount_point,
             self,
             vg_name,
-            lv_name,
+            new_name,
         )
 
     def check_revert_snapshot(self, name, origin):
@@ -765,6 +766,23 @@ class _Lvm2(Plugin):
             raise SnapmInvalidIdentifierError(
                 f"Logical volume name {full_name} exceeds maximum LVM2 name length"
             )
+
+    def _build_snapshot(
+        self,
+        name,
+        snapset_name,
+        origin,
+        timestamp,
+        mount_point,
+        provider,
+        vg_name,
+        lv_name,
+        lv_dict=None,
+    ):
+        """
+        Build an instance of this plugin's snapshot class and return it.
+        """
+        raise NotImplementedError
 
 
 def _snapshot_min_size(space_used):
@@ -924,6 +942,33 @@ class Lvm2Cow(_Lvm2):
             snapshot_name,
         )
 
+    def _build_snapshot(
+        self,
+        name,
+        snapset_name,
+        origin,
+        timestamp,
+        mount_point,
+        provider,
+        vg_name,
+        lv_name,
+        lv_dict=None,
+    ):
+        """
+        Build an instance of `Lvm2CowSnapshot` and return it.
+        """
+        return Lvm2CowSnapshot(
+            name,
+            snapset_name,
+            origin,
+            timestamp,
+            mount_point,
+            provider,
+            vg_name,
+            lv_name,
+            lv_dict=lv_dict,
+        )
+
 
 class Lvm2Thin(_Lvm2):
     """
@@ -1050,4 +1095,31 @@ class Lvm2Thin(_Lvm2):
             self,
             vg_name,
             snapshot_name,
+        )
+
+    def _build_snapshot(
+        self,
+        name,
+        snapset_name,
+        origin,
+        timestamp,
+        mount_point,
+        provider,
+        vg_name,
+        lv_name,
+        lv_dict=None,
+    ):
+        """
+        Build an instance of `Lvm2CowSnapshot` and return it.
+        """
+        return Lvm2ThinSnapshot(
+            name,
+            snapset_name,
+            origin,
+            timestamp,
+            mount_point,
+            provider,
+            vg_name,
+            lv_name,
+            lv_dict=lv_dict,
         )
