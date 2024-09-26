@@ -17,6 +17,7 @@ import logging
 import os
 from subprocess import run
 from shutil import rmtree
+from uuid import UUID
 
 log = logging.getLogger()
 log.level = logging.DEBUG
@@ -182,25 +183,25 @@ class BootTests(unittest.TestCase):
     def test_create_snapshot_boot_entry_bad_uuid(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.create_snapshot_set_boot_entry(
-                uuid="00000000-0000-0000-0000-000000000000"
+                uuid=UUID("00000000-0000-0000-0000-000000000000")
             )
 
     def test_create_snapshot_revert_entry_bad_uuid(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.create_snapshot_set_revert_entry(
-                uuid="00000000-0000-0000-0000-000000000000"
+                uuid=UUID("00000000-0000-0000-0000-000000000000")
             )
 
     def test_create_snapshot_boot_entry_uuid(self):
         sset = self.manager.find_snapshot_sets(snapm.Selection(name="bootset0"))[0]
-        self.manager.create_snapshot_set_boot_entry(uuid=str(sset.uuid))
+        self.manager.create_snapshot_set_boot_entry(uuid=sset.uuid)
 
         # Clean up boot entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 
     def test_create_snapshot_revert_entry_uuid(self):
         sset = self.manager.find_snapshot_sets(snapm.Selection(name="bootset0"))[0]
-        self.manager.create_snapshot_set_revert_entry(uuid=str(sset.uuid))
+        self.manager.create_snapshot_set_revert_entry(uuid=sset.uuid)
 
         # Clean up revert entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
@@ -235,7 +236,7 @@ class BootTests(unittest.TestCase):
         boom.bootloader.load_entries()
         self.addCleanup(self._cleanup_boom_root_path, boot_dir)
         sset = self.manager.find_snapshot_sets(snapm.Selection(name="bootset0"))[0]
-        self.manager.create_snapshot_set_boot_entry(uuid=str(sset.uuid))
+        self.manager.create_snapshot_set_boot_entry(uuid=sset.uuid)
 
         # Clean up boot entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))

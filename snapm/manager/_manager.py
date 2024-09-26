@@ -680,7 +680,7 @@ class Manager:
 
             self.snapshot_sets.append(snapset)
             self.by_name[snapset.name] = snapset
-            self.by_uuid[str(snapset.uuid)] = snapset
+            self.by_uuid[snapset.uuid] = snapset
             for snapshot in snapset.snapshots:
                 snapshot.snapshot_set = snapset
 
@@ -825,7 +825,7 @@ class Manager:
         for snapshot in snapset.snapshots:
             snapshot.snapshot_set = snapset
         self.by_name[snapset.name] = snapset
-        self.by_uuid[str(snapset.uuid)] = snapset
+        self.by_uuid[snapset.uuid] = snapset
         self.snapshot_sets.append(snapset)
         return snapset
 
@@ -851,7 +851,7 @@ class Manager:
         # Remove references to old set
         self.snapshot_sets.remove(snapset)
         self.by_name.pop(snapset.name)
-        self.by_uuid.pop(str(snapset.uuid))
+        self.by_uuid.pop(snapset.uuid)
 
         for snapshot in snapshots.copy():
             snapshots.remove(snapshot)
@@ -875,7 +875,7 @@ class Manager:
                     old_name, timestamp, snapshots + rollback_snapshots
                 )
                 self.by_name[old_snapset.name] = old_snapset
-                self.by_uuid[str(old_snapset.uuid)] = old_snapset
+                self.by_uuid[old_snapset.uuid] = old_snapset
                 self.snapshot_sets.append(old_snapset)
                 raise SnapmPluginError(
                     f"Could not rename all snapshots for set {old_name}"
@@ -885,7 +885,7 @@ class Manager:
         for snapshot in new_snapset.snapshots:
             snapshot.snapshot_set = new_snapset
         self.by_name[new_snapset.name] = new_snapset
-        self.by_uuid[str(new_snapset.uuid)] = new_snapset
+        self.by_uuid[new_snapset.uuid] = new_snapset
         self.snapshot_sets.append(new_snapset)
         return new_snapset
 
@@ -923,7 +923,7 @@ class Manager:
 
             self.snapshot_sets.remove(snapset)
             self.by_name.pop(snapset.name)
-            self.by_uuid.pop(str(snapset.uuid))
+            self.by_uuid.pop(snapset.uuid)
             deleted += 1
         self._boot_cache.refresh_cache()
         return deleted
