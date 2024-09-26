@@ -13,6 +13,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 import unittest
 import logging
+from uuid import UUID
 
 import snapm
 
@@ -75,7 +76,7 @@ class SnapmTests(unittest.TestCase):
         self.assertTrue(s.is_single())
 
     def test_Selection_is_single_uuid(self):
-        s = snapm.Selection(uuid="2a6fd226-b400-577f-afe7-0c1a39c78488")
+        s = snapm.Selection(uuid=UUID("2a6fd226-b400-577f-afe7-0c1a39c78488"))
         self.assertTrue(s.is_single())
 
     def test_Selection_is_not_single(self):
@@ -96,7 +97,7 @@ class SnapmTests(unittest.TestCase):
         cmd_args = MockArgs()
         cmd_args.identifier = "2a6fd226-b400-577f-afe7-0c1a39c78488"
         s = snapm.Selection.from_cmd_args(cmd_args)
-        self.assertEqual(cmd_args.identifier, s.uuid)
+        self.assertEqual(UUID(cmd_args.identifier), s.uuid)
 
     def test_Selection_from_cmd_args_name(self):
         cmd_args = MockArgs()
@@ -106,15 +107,9 @@ class SnapmTests(unittest.TestCase):
 
     def test_Selection_from_cmd_args_uuid(self):
         cmd_args = MockArgs()
-        cmd_args.uuid = "2a6fd226-b400-577f-afe7-0c1a39c78488"
+        cmd_args.uuid = UUID("2a6fd226-b400-577f-afe7-0c1a39c78488")
         s = snapm.Selection.from_cmd_args(cmd_args)
         self.assertEqual(cmd_args.uuid, s.uuid)
-
-    def test_Selection_from_cmd_args_bad_uuid(self):
-        cmd_args = MockArgs()
-        cmd_args.uuid = "not-a-uuid"
-        with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
-            s = snapm.Selection.from_cmd_args(cmd_args)
 
     def test_valid_selection_snapset(self):
         s = snapm.Selection(name="testset0", timestamp=1693921253)

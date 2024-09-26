@@ -355,21 +355,14 @@ class Selection:
         snapshot_uuid = None
         if cmd_args.identifier:
             try:
-                UUID(cmd_args.identifier)
-                uuid = cmd_args.identifier
+                uuid = UUID(cmd_args.identifier)
             except (TypeError, ValueError):
                 name = cmd_args.identifier
         else:
             if cmd_args.name:
                 name = cmd_args.name
             elif cmd_args.uuid:
-                try:
-                    UUID(cmd_args.uuid)
-                    uuid = cmd_args.uuid
-                except (TypeError, ValueError) as err:
-                    raise SnapmInvalidIdentifierError(
-                        f"Invalid UUID: '{cmd_args.uuid}'"
-                    ) from err
+                uuid = cmd_args.uuid
 
         if hasattr(cmd_args, "snapshot_name"):
             snapshot_name = cmd_args.snapshot_name

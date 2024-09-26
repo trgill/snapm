@@ -23,6 +23,7 @@ in the snapm object API.
 from argparse import ArgumentParser
 from os.path import basename
 from json import dumps
+from uuid import UUID
 import logging
 
 from snapm import (
@@ -1088,7 +1089,7 @@ def _add_identifier_args(parser, snapset=False, snapshot=False):
             "-u",
             "--uuid",
             metavar="UUID",
-            type=str,
+            type=UUID,
             help="A snapset UUID",
         )
     if snapshot:
@@ -1103,7 +1104,7 @@ def _add_identifier_args(parser, snapset=False, snapshot=False):
             "-U",
             "--snapshot-uuid",
             metavar="SNAPSHOT_UUID",
-            type=str,
+            type=UUID,
             help="A snapshot UUID",
         )
     parser.add_argument(

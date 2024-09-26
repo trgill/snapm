@@ -15,7 +15,6 @@
 Manager interface and plugin infrastructure.
 """
 from subprocess import run, CalledProcessError
-from uuid import UUID
 import logging
 from time import time
 from math import floor
@@ -432,7 +431,7 @@ def select_snapshot_set(select, snapshot_set):
     """
     if select.name and select.name != snapshot_set.name:
         return False
-    if select.uuid and UUID(select.uuid) != snapshot_set.uuid:
+    if select.uuid and select.uuid != snapshot_set.uuid:
         return False
     if select.timestamp and select.timestamp != snapshot_set.timestamp:
         return False
@@ -463,7 +462,7 @@ def select_snapshot(select, snapshot):
     """
     if not select_snapshot_set(select, snapshot.snapshot_set):
         return False
-    if select.snapshot_uuid and UUID(select.snapshot_uuid) != snapshot.uuid:
+    if select.snapshot_uuid and select.snapshot_uuid != snapshot.uuid:
         return False
     if select.snapshot_name and select.snapshot_name != snapshot.name:
         return False

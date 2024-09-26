@@ -234,7 +234,7 @@ class ManagerTests(unittest.TestCase):
     def test_find_snapshot_sets_with_selection_uuid(self):
         set1 = self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
         self.manager.create_snapshot_set("testset1", self._lvm.mount_points())
-        s = snapm.Selection(uuid=str(set1.uuid))
+        s = snapm.Selection(uuid=set1.uuid)
         sets = self.manager.find_snapshot_sets(selection=s)
         self.assertEqual(len(sets), 1)
 
