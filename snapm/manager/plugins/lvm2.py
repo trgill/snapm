@@ -436,6 +436,8 @@ class Lvm2Snapshot(Snapshot):
     def status(self):
         lv_dict = self._get_lv_dict_cache()
         lv_attr = lv_dict[LVS_LV_ATTR]
+        if lv_attr.startswith(LVM_MERGE_SNAP_ATTR):
+            return SnapStatus.REVERTING
         if lv_attr[LVM_LV_STATE_ATTR_IDX] == LVM_ACTIVE_ATTR:
             return SnapStatus.ACTIVE
         if lv_attr[LVM_LV_STATE_ATTR_IDX] == LVM_INVALID_ATTR:
