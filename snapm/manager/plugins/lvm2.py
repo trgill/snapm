@@ -93,6 +93,7 @@ LVS_FIELD_OPTIONS = (
 
 # lv_attr flag values
 LVM_COW_SNAP_ATTR = "s"
+LVM_MERGE_SNAP_ATTR = "S"
 LVM_THIN_VOL_ATTR = "V"
 LVM_COW_ORIGIN_ATTR = "o"
 LVM_ACTIVE_ATTR = "a"
@@ -492,6 +493,19 @@ class Lvm2ThinSnapshot(Lvm2Snapshot):
         return pool_free_space(self.vg_name, lv_dict[LVS_POOL_LV])
 
 
+def _volume_type_or_merging(lv_dict, lv_type):
+    """
+    Return ``True`` if the logical volume represented by ``lv_dict`` is either
+    the specified ``lv_type``, or a merging snapshot volume, or ``False``
+    otherwise.
+    """
+    if lv_dict[LVS_LV_ATTR].startswith(lv_type):
+        return True
+    if lv_dict[LVS_LV_ATTR].startswith(LVM_MERGE_SNAP_ATTR):
+        return True
+    return False
+
+
 def filter_cow_snapshot(lv_dict):
     """
     Filter LVM2 CoW snapshots.
@@ -500,7 +514,7 @@ def filter_cow_snapshot(lv_dict):
     COW snapshot or ``False`` otherwise. The ``lv_dict`` argument must be a
     dictionary representing the output of the ``lvs`` reporting command.
     """
-    if not lv_dict[LVS_LV_ATTR].startswith(LVM_COW_SNAP_ATTR):
+    if not _volume_type_or_merging(lv_dict, LVM_COW_SNAP_ATTR):
         return False
     if LVM_COW_SNAPSHOT_ROLE not in lv_dict[LVS_LV_ROLE]:
         return False
@@ -517,7 +531,7 @@ def filter_thin_snapshot(lv_dict):
     thin snapshot or ``False`` otherwise. The ``lv_dict`` argument must be a
     dictionary representing the output of the ``lvs`` reporting command.
     """
-    if not lv_dict[LVS_LV_ATTR].startswith(LVM_THIN_VOL_ATTR):
+    if not _volume_type_or_merging(lv_dict, LVM_THIN_VOL_ATTR):
         return False
     if LVM_THIN_SNAPSHOT_ROLE not in lv_dict[LVS_LV_ROLE]:
         return False
