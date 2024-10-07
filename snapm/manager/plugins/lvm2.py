@@ -77,6 +77,7 @@ LVM_VERSION_STR = "LVM version"
 # lvs report options
 LVS_CMD = "lvs"
 LVS_REPORT = "report"
+LVS_ALL = "--all"
 LVS_LV = "lv"
 LVS_LV_NAME = "lv_name"
 LVS_VG_NAME = "vg_name"
@@ -216,7 +217,7 @@ def _check_lvm_version():
         )
 
 
-def get_lvs_json_report(vg_lv=None):
+def get_lvs_json_report(vg_lv=None, lvs_all=False):
     """
     Call out to the ``lvs`` program and return a report in JSON format.
     """
@@ -231,6 +232,8 @@ def get_lvs_json_report(vg_lv=None):
     ]
     if vg_lv:
         lvs_cmd_args.append(vg_lv)
+    if lvs_all:
+        lvs_cmd_args.append(LVS_ALL)
     try:
         lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:
