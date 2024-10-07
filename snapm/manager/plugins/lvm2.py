@@ -87,6 +87,8 @@ LVS_LV_ORIGIN = "origin"
 LVS_POOL_LV = "pool_lv"
 LVS_LV_SIZE = "lv_size"
 LVS_DATA_PERCENT = "data_percent"
+LVS_LV_HIDDEN_START = "["
+LVS_LV_HIDDEN_END = "]"
 LVS_FIELD_OPTIONS = (
     "vg_name,lv_name,lv_attr,origin,pool_lv,lv_size,data_percent,lv_role"
 )
@@ -831,18 +833,19 @@ class Lvm2Cow(_Lvm2):
         :returns: A list of ``Lvm2Snapshot`` objects discovered by this plugin.
         """
         snapshots = []
-        lvs_dict = get_lvs_json_report()
+        lvs_dict = get_lvs_json_report(lvs_all=True)
         for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
             if filter_cow_snapshot(lv_dict):
                 try:
-                    fields = parse_snapshot_name(
-                        lv_dict[LVS_LV_NAME], lv_dict[LVS_LV_ORIGIN]
-                    )
+                    lv_name = lv_dict[LVS_LV_NAME]
+                    if lv_name.startswith(LVS_LV_HIDDEN_START):
+                        lv_name = lv_name[1:-1]
+                    fields = parse_snapshot_name(lv_name, lv_dict[LVS_LV_ORIGIN])
                 except ValueError:
                     continue
                 if fields is not None:
                     (snapset, timestamp, mount_point) = fields
-                    full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_dict[LVS_LV_NAME]}"
+                    full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_name}"
                     self._log_debug("Found %s snapshot: %s", self.name, full_name)
                     snapshots.append(
                         Lvm2CowSnapshot(
@@ -853,7 +856,7 @@ class Lvm2Cow(_Lvm2):
                             mount_point,
                             self,
                             f"{lv_dict[LVS_VG_NAME]}",
-                            f"{lv_dict[LVS_LV_NAME]}",
+                            f"{lv_name}",
                             lv_dict=lv_dict,
                         )
                     )
@@ -1000,17 +1003,18 @@ class Lvm2Thin(_Lvm2):
 
     def discover_snapshots(self):
         snapshots = []
-        lvs_dict = get_lvs_json_report()
+        lvs_dict = get_lvs_json_report(lvs_all=True)
         for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
             if filter_thin_snapshot(lv_dict):
                 try:
-                    fields = parse_snapshot_name(
-                        lv_dict[LVS_LV_NAME], lv_dict[LVS_LV_ORIGIN]
-                    )
+                    lv_name = lv_dict[LVS_LV_NAME]
+                    if lv_name.startswith(LVS_LV_HIDDEN_START):
+                        lv_name = lv_name[1:-1]
+                    fields = parse_snapshot_name(lv_name, lv_dict[LVS_LV_ORIGIN])
                 except ValueError:
                     continue
                 if fields is not None:
-                    full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_dict[LVS_LV_NAME]}"
+                    full_name = f"{lv_dict[LVS_VG_NAME]}/{lv_name}"
                     self._log_debug("Found %s snapshot: %s", self.name, full_name)
                     (snapset, timestamp, mount_point) = fields
                     snapshots.append(
@@ -1022,7 +1026,7 @@ class Lvm2Thin(_Lvm2):
                             mount_point,
                             self,
                             f"{lv_dict[LVS_VG_NAME]}",
-                            f"{lv_dict[LVS_LV_NAME]}",
+                            f"{lv_name}",
                             lv_dict=lv_dict,
                         )
                     )
