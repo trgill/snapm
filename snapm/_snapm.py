@@ -765,10 +765,10 @@ class SnapshotSet:
         if any members are inactive, or ``SnapStatus.INVALID`` if any member
         of the set is invalid.
         """
-        if any(s.status == SnapStatus.REVERTING for s in self.snapshots):
-            return SnapStatus.REVERTING
         if any(s.status == SnapStatus.INVALID for s in self.snapshots):
             return SnapStatus.INVALID
+        if any(s.status == SnapStatus.REVERTING for s in self.snapshots):
+            return SnapStatus.REVERTING
         if any(s.status == SnapStatus.INACTIVE for s in self.snapshots):
             return SnapStatus.INACTIVE
         return SnapStatus.ACTIVE
