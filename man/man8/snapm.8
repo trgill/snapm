@@ -1,4 +1,4 @@
-.TH SNAPM 8 "Jun 6 2024" "Linux" "MAINTENANCE COMMANDS"
+.TH SNAPM 8 "Oct 14 2024" "Linux" "MAINTENANCE COMMANDS"
 
 .de ARG_GLOBAL
 .  RI [ global_args ]
@@ -489,6 +489,10 @@ providers allow snapshots to be in an \fIactive\fP or \fIinactive\fP state and
 snapshots for some providers (for example LVM2 Copy-on-Write snapshots) have a
 specific size for the snapshot data store. If this space is completely consumed
 the snapshot becomes \fIinvalid\fP and can no longer be accessed.
+
+When a revert is executed for a snapshot set that is currently mounted the
+status of the snapshot set is \fIreverting\fP. The revert will take place the
+next time the volumes making up the snapshot set are activated.
 
 The status of a snapset is an aggregation of the status of the individual
 snapshots it contains: if any snapshots are \fIinactive\fP then the overall
