@@ -95,12 +95,12 @@ class LoopBackDevices(object):
         self.count = 0
         self.devices = []
 
-    def create_devices(self, count):
+    def create_devices(self, count, dev_size=_LOOP_DEVICE_SIZE):
         for index in range(count):
             backing_file = os.path.join(self.dir, f"image{index}")
 
             with open(backing_file, "ab") as file:
-                file.truncate(_LOOP_DEVICE_SIZE)
+                file.truncate(dev_size)
 
             device = str.strip(
                 subprocess.check_output(
