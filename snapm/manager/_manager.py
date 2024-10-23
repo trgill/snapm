@@ -945,12 +945,13 @@ class Manager:
 
     def revert_snapshot_set(self, name=None, uuid=None):
         """
-        Revert snapshot sets matching selection criteria ``selection``.
+        Revert snapshot set named ``name`` or having UUID ``uuid``.
 
         Request to revert each snapshot origin within each snapshot set
         to the state at the time the snapshot was taken.
 
-        :param selection: Selection criteria for snapshot sets to revert.
+        :param name: The name of the snapshot set to revert.
+        :param uuid: The UUID of the snapshot set to revert.
         """
         if name and uuid:
             if self.by_name[name] != self.by_uuid[uuid]:
