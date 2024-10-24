@@ -874,8 +874,8 @@ class Snapshot:
         self._origin = origin
         self._timestamp = timestamp
         self._mount_point = mount_point
-        self._provider = provider
         self._snapshot_set = None
+        self.provider = provider
 
     def __str__(self):
         """
@@ -889,7 +889,7 @@ class Snapshot:
             f"{SNAPSHOT_ORIGIN}:         {self.origin}\n"
             f"{SNAPSET_TIME}:           {datetime.fromtimestamp(self.timestamp)}\n"
             f"{SNAPSHOT_MOUNT_POINT}:     {self.mount_point}\n"
-            f"{SNAPSHOT_PROVIDER}:       {self.provider}\n"
+            f"{SNAPSHOT_PROVIDER}:       {self.provider.name}\n"
             f"{SNAPSHOT_UUID}:           {self.uuid}\n"
             f"{SNAPSHOT_STATUS}:         {str(self.status)}\n"
             f"{SNAPSHOT_SIZE}:           {size_fmt(self.size)}\n"
@@ -909,7 +909,7 @@ class Snapshot:
         pmap[SNAPSET_TIMESTAMP] = self.timestamp
         pmap[SNAPSET_TIME] = self.time
         pmap[SNAPSHOT_MOUNT_POINT] = self.mount_point
-        pmap[SNAPSHOT_PROVIDER] = self.provider
+        pmap[SNAPSHOT_PROVIDER] = self.provider.name
         pmap[SNAPSHOT_UUID] = str(self.uuid)
         pmap[SNAPSHOT_STATUS] = str(self.status)
         pmap[SNAPSHOT_SIZE] = size_fmt(self.size)
@@ -981,13 +981,6 @@ class Snapshot:
         The mount point of this snapshot.
         """
         return self._mount_point
-
-    @property
-    def provider(self):
-        """
-        The name of the plugin managing this snapshot.
-        """
-        return self._provider.name
 
     @property
     def snapshot_set(self):
@@ -1097,7 +1090,7 @@ class Snapshot:
         """
         Delete this snapshot.
         """
-        self._provider.delete_snapshot(self.name)
+        self.provider.delete_snapshot(self.name)
 
     def rename(self, new_name):
         """
@@ -1105,7 +1098,7 @@ class Snapshot:
 
         :param new_name: The new name for the snapshot.
         """
-        return self._provider.rename_snapshot(
+        return self.provider.rename_snapshot(
             self.name, self.origin, new_name, self.timestamp, self.mount_point
         )
 
@@ -1114,7 +1107,7 @@ class Snapshot:
         Check whether this snapshot can be reverted or not by calling the
         provider plugin to verify the state of the snapshot.
         """
-        self._provider.check_revert_snapshot(self.name, self.origin)
+        self.provider.check_revert_snapshot(self.name, self.origin)
 
     def revert(self):
         """
@@ -1124,7 +1117,7 @@ class Snapshot:
         This may be deferred until the next device activation or mount
         operation for the respective volume.
         """
-        self._provider.revert_snapshot(self.name)
+        self.provider.revert_snapshot(self.name)
 
     def invalidate_cache(self):
         """
@@ -1136,14 +1129,14 @@ class Snapshot:
         """
         Activate this snapshot.
         """
-        self._provider.activate_snapshot(self.name)
+        self.provider.activate_snapshot(self.name)
         self.invalidate_cache()
 
     def deactivate(self):
         """
         Deactivate this snapshot.
         """
-        self._provider.deactivate_snapshot(self.name)
+        self.provider.deactivate_snapshot(self.name)
         self.invalidate_cache()
 
     def set_autoactivate(self, auto=False):
@@ -1152,7 +1145,7 @@ class Snapshot:
 
         :param auto: ``True`` to enable autoactivation or ``False`` otherwise.
         """
-        self._provider.set_autoactivate(self.name, auto=auto)
+        self.provider.set_autoactivate(self.name, auto=auto)
         self.invalidate_cache()
 
 

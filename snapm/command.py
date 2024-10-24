@@ -288,7 +288,7 @@ _snapshot_fields = [
         "Snapshot provider plugin",
         8,
         REP_STR,
-        lambda f, d: f.report_str(d.provider),
+        lambda f, d: f.report_str(d.provider.name),
     ),
     FieldType(
         PR_SNAPSHOT,

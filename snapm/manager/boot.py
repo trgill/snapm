@@ -231,7 +231,7 @@ def create_snapset_boot_entry(snapset, title=None):
     title = title or f"Snapshot {snapset.name} {snapset.time} ({version})"
     root_snapshot = _find_snapset_root(snapset)
     root_device = root_snapshot.devpath
-    if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
+    if root_snapshot.provider.name in ("lvm2-cow", "lvm2-thin"):
         lvm_root_lv = root_snapshot.name
     else:
         lvm_root_lv = None
@@ -263,7 +263,7 @@ def create_snapset_revert_entry(snapset, title=None):
     title = title or f"Revert {snapset.name} {snapset.time} ({version})"
     root_snapshot = _find_snapset_root(snapset)
     root_device = root_snapshot.origin
-    if root_snapshot.provider in ("lvm2-cow", "lvm2-thin"):
+    if root_snapshot.provider.name in ("lvm2-cow", "lvm2-thin"):
         lvm_root_lv = root_device.removeprefix(_DEV_PREFIX)
     else:
         lvm_root_lv = None

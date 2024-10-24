@@ -544,7 +544,7 @@ def _check_revert_snapshot_set(snapset):
         except NotImplementedError as err:
             _log_error(
                 "Snapshot provider %s does not support revert",
-                snapshot.provider,
+                snapshot.provider.name,
             )
             raise SnapmPluginError from err
         except SnapmBusyError as err:
@@ -559,7 +559,7 @@ def _check_revert_snapshot_set(snapset):
             _log_error(
                 "Revert prechecks failed for snapshot %s (%s)",
                 snapshot.name,
-                snapshot.provider,
+                snapshot.provider.name,
             )
             raise err
 
