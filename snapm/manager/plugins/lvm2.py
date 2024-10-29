@@ -1147,6 +1147,21 @@ class Lvm2Thin(_Lvm2):
             snapshot_name,
         )
 
+    def check_resize_snapshot(self, name, origin, mount_point, size_policy):
+        origin = origin.removeprefix(DEV_PREFIX + "/")
+        vg_name, lv_name = origin.split("/")
+        pool_name = pool_name_from_vg_lv(origin)
+        if vg_name not in self.size_map:
+            self.size_map[vg_name] = {}
+        if pool_name not in self.size_map[vg_name]:
+            self.size_map[vg_name][pool_name] = {}
+        self.size_map[vg_name][mount_point] = self._check_free_space(
+            vg_name, lv_name, pool_name, mount_point, size_policy
+        )
+
+    def resize_snapshot(self, name, origin, mount_point, size_policy):
+        pass
+
     def _build_snapshot(
         self,
         name,
