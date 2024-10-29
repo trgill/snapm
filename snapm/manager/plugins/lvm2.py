@@ -150,6 +150,9 @@ LVCONVERT_CMD = "lvconvert"
 # lvconvert command options
 LVCONVERT_MERGE = "--merge"
 
+# lvresize command
+LVRESIZE_CMD = "lvresize"
+
 # Minimum possible LVM2 CoW snapshot size (512MiB)
 MIN_LVM2_COW_SNAPSHOT_SIZE = 512 * 1024**2
 
@@ -963,6 +966,31 @@ class Lvm2Cow(_Lvm2):
             vg_name,
             snapshot_name,
         )
+
+    def check_resize_snapshot(self, name, origin, mount_point, size_policy):
+        vg_name, lv_name = origin.removeprefix(DEV_PREFIX + "/").split("/")
+        if vg_name not in self.size_map:
+            self.size_map[vg_name] = {}
+        self.size_map[vg_name][mount_point] = self._check_free_space(
+            vg_name, lv_name, mount_point, size_policy
+        )
+
+    def resize_snapshot(self, name, origin, mount_point, size_policy):
+        vg_name, _ = origin.removeprefix(DEV_PREFIX + "/").split("/")
+        snapshot_size = self.size_map[vg_name][mount_point]
+
+        lvresize_cmd = [
+            LVRESIZE_CMD,
+            LVCREATE_SIZE,
+            f"{snapshot_size}b",
+            name,
+        ]
+        try:
+            run(lvresize_cmd, capture_output=True, check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"{LVRESIZE_CMD} failed with: {err.stderr.decode('utf8')}"
+            ) from err
 
     def _build_snapshot(
         self,
