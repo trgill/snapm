@@ -969,6 +969,92 @@ class Manager:
         self._boot_cache.refresh_cache()
         return deleted
 
+    # pylint: disable=too-many-branches
+    def resize_snapshot_set(
+        self, mount_point_specs, name=None, uuid=None, default_size_policy=None
+    ):
+        """
+        Resize snapshot set named ``name`` or having UUID ``uuid``.
+
+        Request to resize each snapshot included in ``mount_point_specs``
+        according to the given size policy, or apply ``default_size_policy``
+        if set.
+
+        :param name: The name of the snapshot set to resize.
+        :param uuid: The UUID of the snapshot set to resize.
+        :param mount_point_specs: A list of mount points and optional size
+                                  policies.
+        :param default_size_policy: A default size policy to apply to the
+                                    resize.
+        """
+        if name and uuid:
+            if self.by_name[name] != self.by_uuid[uuid]:
+                raise SnapmInvalidIdentifierError(
+                    f"Conflicting name and UUID: {str(uuid)} does not match '{name}'"
+                )
+            snapset = self.by_name[name]
+        if name is not None:
+            if name not in self.by_name:
+                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
+            snapset = self.by_name[name]
+        elif uuid is not None:
+            if uuid not in self.by_uuid:
+                raise SnapmNotFoundError(
+                    f"Could not find snapshot set with uuid {uuid}"
+                )
+            snapset = self.by_uuid[uuid]
+        else:
+            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+
+        if mount_point_specs:
+            # Parse size policies and normalise mount paths
+            (mount_points, size_policies) = _parse_mount_point_specs(
+                mount_point_specs, default_size_policy
+            )
+        else:
+            mount_points = [snapshot.mount_point for snapshot in snapset.snapshots]
+            size_policies = {mount: default_size_policy for mount in mount_points}
+
+        for mount in mount_points:
+            try:
+                _ = snapset.snapshot_by_mount_point(mount)
+            except SnapmNotFoundError as err:
+                _log_error(
+                    "Cannot resize %s: mount point not a member of snapset %s",
+                    mount,
+                    snapset.name,
+                )
+                raise err
+
+        providers = set(snapshot.provider for snapshot in snapset.snapshots)
+        for provider in providers:
+            provider.start_transaction()
+
+        for mount in mount_points:
+            snapshot = snapset.snapshot_by_mount_point(mount)
+            size_policy = size_policies[mount]
+            try:
+                snapshot.check_resize(size_policy)
+            except SnapmNoSpaceError as err:
+                _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
+                raise SnapmNoSpaceError(
+                    f"Insufficient free space to resize snapshot set {snapset.name}"
+                ) from err
+
+        for mount in mount_points:
+            snapshot = snapset.snapshot_by_mount_point(mount)
+            size_policy = size_policies[mount]
+            try:
+                snapshot.resize(size_policy)
+            except SnapmNoSpaceError as err:
+                _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
+                raise SnapmNoSpaceError(
+                    f"Insufficient free space to resize snapshot set {snapset.name}"
+                ) from err
+
+        for provider in providers:
+            provider.end_transaction()
+
     def revert_snapshot_set(self, name=None, uuid=None):
         """
         Revert snapshot set named ``name`` or having UUID ``uuid``.
