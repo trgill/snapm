@@ -1102,6 +1102,26 @@ class Snapshot:
             self.name, self.origin, new_name, self.timestamp, self.mount_point
         )
 
+    def check_resize(self, size_policy):
+        """
+        Check whether this snapshot can be resized or not by calling the
+        provider plugin with the updated ``size_policy``.
+        """
+        self.invalidate_cache()
+        self.provider.check_resize_snapshot(
+            self.name, self.origin, self.mount_point, size_policy
+        )
+
+    def resize(self, size_policy):
+        """
+        Attempt to resize this snapshot according to the updated
+        ``size_policy``.
+        """
+        self.invalidate_cache()
+        self.provider.resize_snapshot(
+            self.name, self.origin, self.mount_point, size_policy
+        )
+
     def check_revert(self):
         """
         Check whether this snapshot can be reverted or not by calling the
