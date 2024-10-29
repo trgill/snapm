@@ -489,6 +489,20 @@ def rename_snapset(manager, old_name, new_name):
     return manager.rename_snapshot_set(old_name, new_name)
 
 
+def resize_snapset(
+    manager, mount_points, name=None, uuid=None, default_size_policy=None
+):
+    """
+    Revert snapshot set matching selection criteria.
+
+    :param manager: The manager context to use
+    :param selection: Selection criteria for the snapshot set to resize.
+    """
+    return manager.resize_snapshot_set(
+        mount_points, name=name, uuid=uuid, default_size_policy=default_size_policy
+    )
+
+
 def revert_snapset(manager, name=None, uuid=None):
     """
     Revert snapshot set matching selection criteria.
@@ -764,6 +778,40 @@ def _rename_cmd(cmd_args):
     manager = Manager()
     rename_snapset(manager, cmd_args.old_name, cmd_args.new_name)
     _log_info("Renamed snapshot set '%s' to '%s'", cmd_args.old_name, cmd_args.new_name)
+    return 0
+
+
+def _resize_cmd(cmd_args):
+    """
+    Resize snapshot set command handler.
+
+    Attempt to resize the snapshots contained in the given snapshot set
+    according to the corresponding size policy.
+
+    :param cmd_args: Command line arguments for the command
+    :returns: integer status code returned from ``main()``
+    """
+    manager = Manager()
+    name = None
+    uuid = None
+
+    selection = Selection.from_cmd_args(cmd_args)
+    if not selection.is_single():
+        raise SnapmInvalidIdentifierError("Resize requires unique selection criteria")
+    if selection.name:
+        name = selection.name
+    elif selection.uuid:
+        uuid = selection.uuid
+    else:
+        raise SnapmInvalidIdentifierError("Resize requires a snapset name or UUID")
+
+    resize_snapset(
+        manager,
+        cmd_args.mount_points,
+        name=name,
+        uuid=uuid,
+        default_size_policy=cmd_args.size_policy,
+    )
     return 0
 
 
@@ -1185,6 +1233,7 @@ def _add_json_arg(parser):
 CREATE_CMD = "create"
 DELETE_CMD = "delete"
 RENAME_CMD = "rename"
+RESIZE_CMD = "resize"
 REVERT_CMD = "revert"
 ACTIVATE_CMD = "activate"
 DEACTIVATE_CMD = "deactivate"
@@ -1273,6 +1322,27 @@ def _add_snapset_subparser(type_subparser):
         type=str,
         action="store",
         help="The new name of the snapshot set to be renamed",
+    )
+
+    # snapset resize command
+    snapset_resize_parser = snapset_subparser.add_parser(
+        RESIZE_CMD, help="Resize snapshot sets"
+    )
+    snapset_resize_parser.set_defaults(func=_resize_cmd)
+    _add_identifier_args(snapset_resize_parser, snapset=True)
+    snapset_resize_parser.add_argument(
+        "mount_points",
+        metavar="MOUNT_POINT",
+        type=str,
+        nargs="*",
+        help="A list of mount points to include in this snapshot set",
+    )
+    snapset_resize_parser.add_argument(
+        "-s",
+        "--size-policy",
+        type=str,
+        action="store",
+        help="A default size policy for fixed size snapshots",
     )
 
     # snapset revert command
