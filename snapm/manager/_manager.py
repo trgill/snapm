@@ -197,6 +197,32 @@ class Plugin(metaclass=PluginRegistry):
         """
         raise NotImplementedError
 
+    def check_resize_snapshot(self, name, origin, mount_point, size_policy):
+        """
+        Chcek whether this snapshot can be resized to the requested
+        ``size_policy``. This method returns if the resize can be satisfied and
+        raises an exception if not.
+
+        :returns: None
+        :raises: ``SnapmNoSpaceError`` if insufficient space is available to
+        satisfy the requested size policy or ``SnapmPluginError`` if another
+        reason prevents the snapshot from being resized.
+        """
+        raise NotImplementedError
+
+    def resize_snapshot(self, name, origin, mount_point, size_policy):
+        """
+        Attempt to resize the snapshot ``name`` to the requested
+        ``size_policy``. This method returns if the resize can be satisfied and
+        raises an exception if not.
+
+        :returns: None
+        :raises: ``SnapmNoSpaceError`` if insufficient space is available to
+        satisfy the requested size policy or ``SnapmPluginError`` if another
+        reason prevents the snapshot from being resized.
+        """
+        raise NotImplementedError
+
     def check_revert_snapshot(self, name, origin):
         """
         Check whether this snapshot can be reverted or not. This method returns
