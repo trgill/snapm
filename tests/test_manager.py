@@ -448,3 +448,38 @@ class ManagerTests(unittest.TestCase):
         # Test that only the origin file exists
         self.assertEqual(self._lvm.test_path(origin_file), True)
         self.assertEqual(self._lvm.test_path(snapshot_file), False)
+
+    def test_resize_snapshot_set_mount_specs(self):
+        testset = "testset0"
+        mount_specs = [f"{mp}:512MiB" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set(testset, mount_specs)
+
+        snapset = self.manager.find_snapshot_sets(snapm.Selection(name=testset))[0]
+        for snapshot in snapset.snapshots:
+            if snapshot.provider.name == "lvm2cow":
+                self.assertEqual(snapshot.size, 512 * 1024 ** 2)
+
+        resize_specs = [f"{self._lvm.mount_root}/{name}:1GiB" for name in self._lvm.volumes]
+        self.manager.resize_snapshot_set(resize_specs, name=testset)
+
+        snapset = self.manager.find_snapshot_sets(snapm.Selection(name=testset))[0]
+        for snapshot in snapset.snapshots:
+            if snapshot.provider.name == "lvm2cow":
+                self.assertEqual(snapshot.size, 1024 ** 3)
+
+    def test_resize_snapshot_set_default_size_policy(self):
+        testset = "testset0"
+        mount_specs = [f"{mp}:512MiB" for mp in self._lvm.mount_points()]
+        self.manager.create_snapshot_set(testset, mount_specs)
+
+        snapset = self.manager.find_snapshot_sets(snapm.Selection(name=testset))[0]
+        for snapshot in snapset.snapshots:
+            if snapshot.provider.name == "lvm2cow":
+                self.assertEqual(snapshot.size, 512 * 1024 ** 2)
+
+        self.manager.resize_snapshot_set(None, name=testset, default_size_policy="1G")
+
+        snapset = self.manager.find_snapshot_sets(snapm.Selection(name=testset))[0]
+        for snapshot in snapset.snapshots:
+            if snapshot.provider.name == "lvm2cow":
+                self.assertEqual(snapshot.size, 1024 ** 3)
