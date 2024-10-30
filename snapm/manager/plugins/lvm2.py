@@ -1086,7 +1086,6 @@ class Lvm2Thin(_Lvm2):
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
         (vg_name, lv_name) = origin.split("/")
-        pool_name = pool_name_from_vg_lv(origin)
         self._log_debug(
             "Creating thin snapshot for %s/%s mounted at %s",
             vg_name,
@@ -1096,7 +1095,6 @@ class Lvm2Thin(_Lvm2):
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
-        self._check_free_space(vg_name, lv_name, pool_name, mount_point, size_policy)
 
         lvcreate_cmd = [
             LVCREATE_CMD,
