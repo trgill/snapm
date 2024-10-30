@@ -1095,6 +1095,7 @@ class Lvm2Thin(_Lvm2):
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
+        self._check_lvm_name(vg_name, snapshot_name)
 
         lvcreate_cmd = [
             LVCREATE_CMD,
