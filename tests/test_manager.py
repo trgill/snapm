@@ -190,6 +190,35 @@ class ManagerTestsSimple(unittest.TestCase):
         args = ["/mount"]
         self._plugin_base_not_implemented_raises("origin_from_mount_point", args)
 
+    def test_plugin_base_check_resize_snapshot_raises(self):
+        args = [
+            "aname",
+            "/dev/fedora/aname-orig",
+            "/mount",
+            "1G",
+        ]
+        self._plugin_base_not_implemented_raises("check_resize_snapshot", args)
+
+    def test_plugin_base_resize_snapshot_raises(self):
+        args = [
+            "aname",
+            "/dev/fedora/aname-orig",
+            "/mount",
+            "1G",
+        ]
+        self._plugin_base_not_implemented_raises("resize_snapshot", args)
+
+    def test_plugin_base_check_revert_snapshot_raises(self):
+        args = [
+            "aname",
+            "/dev/fedora/aname-orig",
+        ]
+        self._plugin_base_not_implemented_raises("check_revert_snapshot", args)
+
+    def test_plugin_base_revert_snapshot_raises(self):
+        args = ["aname"]
+        self._plugin_base_not_implemented_raises("revert_snapshot", args)
+
     def test_plugins_find(self):
         from snapm.manager._manager import find as plugin_find
 
