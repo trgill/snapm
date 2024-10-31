@@ -9,7 +9,7 @@
 ..
 .
 .de ARG_SNAPSET_COMMANDS
-.  RI [ create | delete | rename | revert | activate | deactivate | autoactivate | list | show ]
+.  RI [ create | delete | rename | revert | resize | activate | deactivate | autoactivate | list | show ]
 ..
 .
 .de ARG_SNAPSHOT_TYPE
@@ -126,6 +126,24 @@ Snapm \(em Linux snapshot manager
 .  ad b
 ..
 .CMD_SNAPSET_REVERT
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_RESIZE
+.  ad l
+.  BR snapset
+.  BR \fBresize
+.  IR [ name | uuid ]
+.  RB [ --name
+.  IR name ]
+.  RB [ --uuid
+.  IR uuid ]
+.  RB [ -s | --size-policy
+.  IR policy ]
+.  IR \fImount_point[size_policy]\fP ...
+.  ad b
+..
+.CMD_SNAPSET_RESIZE
 .
 .HP
 .B snapm
@@ -620,6 +638,26 @@ Rolling back a snapshot set with mounted and in-use origin volumes will
 schedule the revert to take place the next time that the volumes are
 activated, for example by booting into a configured revert boot entry for
 the snapshot set.
+.
+.HP
+.B snapm
+.CMD_SNAPSET_RESIZE
+.br
+Resize the members of an existing snapshot set, re-applying size policies to
+one or more of the snapshots making up the set. The snapshot set to resize may
+be specified by either its \fBname\fP or \fBuuid\fP.
+
+For snapshot providers that require a fixed space to be allocated to the
+snapshot this command will physically resize the corresponding snapshot
+according to the given size policy (lvm2cow). For snapshot providers that
+dynamically allocate space the command will check that the requested space is
+available at the time of the resize command. An error is returned if the
+specified size policies cannot be satisfied.
+
+Size policies may be specified on a per-mount basis using the same syntax as
+the \fBsnapset create\fP command. A default size policy can be set using the
+\fB--size-policy\fP argument. If no mount points are specified the command
+applies the default size policy to each member of the snapshot set.
 .
 .HP
 .B snapm
