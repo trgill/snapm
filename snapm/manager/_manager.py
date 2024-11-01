@@ -503,7 +503,7 @@ def _suspend_journal():
     try:
         run([JOURNALCTL_CMD, "--flush"], check=True)
         run([JOURNALCTL_CMD, "--relinquish-var"], check=True)
-    except CalledProcessError as err:
+    except CalledProcessError as err:  # pragma: no cover
         raise SnapmCalloutError(
             f"Error calling journalctl to flush journal: {err}"
         ) from err
@@ -515,7 +515,7 @@ def _resume_journal():
     """
     try:
         run([JOURNALCTL_CMD, "--flush"], check=True)
-    except CalledProcessError as err:
+    except CalledProcessError as err:  # pragma: no cover
         raise SnapmCalloutError(
             f"Error calling journalctl to flush journal: {err}"
         ) from err
