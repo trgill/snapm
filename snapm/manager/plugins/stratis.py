@@ -14,8 +14,10 @@
 """
 Stratis snapshot manager plugin
 """
+from os import stat
 from os.path import join as path_join
 from subprocess import run, CalledProcessError
+from stat import S_ISBLK
 from time import time
 from uuid import UUID
 
@@ -512,6 +514,9 @@ class Stratis(Plugin):
         :returns: ``True`` if this plugin can snapshot the file system mounted
                   at ``mount_point``, or ``False`` otherwise.
         """
+        if S_ISBLK(stat(mount_point).st_mode):
+            return False
+
         device = device_from_mount_point(mount_point)
         if not is_stratis_device(device):
             return False

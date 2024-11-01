@@ -22,6 +22,7 @@ from os.path import ismount, normpath
 import fnmatch
 import inspect
 import os
+import stat
 
 import snapm.manager.plugins
 from snapm.manager.boot import (
@@ -635,7 +636,7 @@ class Manager:
                 _log_error("Disabling plugin %s: %s", plugin_class.__name__, err)
         self.discover_snapshot_sets()
 
-    def _find_and_verify_plugins(self, mount_points, size_policies):
+    def _find_and_verify_plugins(self, mount_points, size_policies, requested_provider=None):
         """
         Find snapshot provider plugins for each mount point in ``mount_points``
         and verify that a provider exists for each mount present.
@@ -655,8 +656,9 @@ class Manager:
                 size_policies[mount],
             )
 
-            if not ismount(mount):
-                raise SnapmPathError(f"Path '{mount}' is not a mount point")
+            if not os.path.exists(mount):
+                raise SnapmPathError(
+                    f"Path '{mount}' does not exist")
 
             for plugin in self.plugins:
                 if plugin.can_snapshot(mount):
@@ -827,7 +829,7 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
-    def create_snapshot_set(self, name, mount_point_specs, default_size_policy=None):
+    def create_snapshot_set(self, name, source_point_specs, default_size_policy=None, requested_provider=None):
         """
         Create a snapshot set of the supplied mount points with the name
         ``name``.
@@ -841,11 +843,12 @@ class Manager:
 
         # Parse size policies and normalise mount paths
         (mount_points, size_policies) = _parse_mount_point_specs(
-            mount_point_specs, default_size_policy
+            source_point_specs, default_size_policy
         )
 
         # Initialise provider mapping.
-        provider_map = self._find_and_verify_plugins(mount_points, size_policies)
+        provider_map = self._find_and_verify_plugins(
+            mount_points, size_policies, requested_provider)
 
         for provider in set(provider_map.values()):
             provider.start_transaction()
