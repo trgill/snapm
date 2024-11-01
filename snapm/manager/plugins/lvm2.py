@@ -18,6 +18,8 @@ from subprocess import run, CalledProcessError
 from json import loads, JSONDecodeError
 from math import floor
 from os.path import join as path_join
+from os import stat
+from stat import S_ISBLK
 from time import time
 from shutil import which
 
@@ -89,6 +91,13 @@ LVS_DATA_PERCENT = "data_percent"
 LVS_FIELD_OPTIONS = (
     "vg_name,lv_name,lv_attr,origin,pool_lv,lv_size,data_percent,lv_role"
 )
+
+# lvs options for devpath to vg/lv name
+LVS_FIELD_MIN_OPTIONS = ("vg_name,lv_name")
+LVS_DEV_SELECTOR = "-S"
+LVS_DEV_PATH = "lv_path="
+LVS_NO_HEADINGS = "--noheadings"
+
 
 # lv_attr flag values
 LVM_COW_SNAP_ATTR = "s"
@@ -279,9 +288,12 @@ def is_lvm_device(devpath):
     Return ``True`` if the device at ``devpath`` is an LVM device or
     ``False`` otherwise.
     """
-    if not devpath.startswith(DEV_MAPPER_PREFIX):
-        return False
-    dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
+
+    if devpath.startswith(DEV_MAPPER_PREFIX):
+        dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
+    else:
+        dm_name = devpath
+
     dmsetup_cmd_args = [
         DMSETUP_CMD,
         DMSETUP_INFO,
@@ -298,11 +310,32 @@ def is_lvm_device(devpath):
     return uuid.startswith(LVM_UUID_PREFIX)
 
 
+def vg_lv_from_blockdev(devpath):
+    """
+    Return a ``(vg_name, lv_name)`` tuple for the LVM device at
+    ``devpath``.
+    """
+    lvs_cmd_args = [
+        LVS_CMD,
+        LVS_NO_HEADINGS,
+        devpath,
+        "-o",
+        LVS_FIELD_MIN_OPTIONS,
+    ]
+    try:
+        lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
+    except CalledProcessError as err:
+        raise SnapmCalloutError(f"Error calling {DMSETUP_CMD}") from err
+    name = lvs_cmd.stdout.decode("utf8").strip()
+    name_parts = name.split(" ")
+    return (name_parts[0], name_parts[1])
+
 def vg_lv_from_device_path(devpath):
     """
     Return a ``(vg_name, lv_name)`` tuple for the LVM device at
     ``devpath``.
     """
+
     dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
     dmsetup_cmd_args = [
         DMSETUP_CMD,
@@ -612,7 +645,10 @@ class _Lvm2(Plugin):
         """
         Return a string representing the origin from a given mount point path.
         """
-        device = device_from_mount_point(mount_point)
+        if S_ISBLK(stat(mount_point).st_mode):
+            device = mount_point
+        else:
+            device = device_from_mount_point(mount_point)
         if not is_lvm_device(device):
             return None
         (vg_name, lv_name) = vg_lv_from_device_path(device)
@@ -850,10 +886,18 @@ class Lvm2Cow(_Lvm2):
         :returns: ``True`` if this plugin can snapshot the file system mounted
                   at ``mount_point``, or ``False`` otherwise.
         """
-        device = device_from_mount_point(mount_point)
+
+        if S_ISBLK(stat(mount_point).st_mode):
+            device = mount_point
+        else:
+            device = device_from_mount_point(mount_point)
+
         if not is_lvm_device(device):
             return False
-        (vg_name, lv_name) = vg_lv_from_device_path(device)
+        if S_ISBLK(stat(mount_point).st_mode):
+            (vg_name, lv_name) = vg_lv_from_blockdev(device)
+        else:
+            (vg_name, lv_name) = vg_lv_from_device_path(device)
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
@@ -1012,10 +1056,17 @@ class Lvm2Thin(_Lvm2):
         return snapshots
 
     def can_snapshot(self, mount_point):
-        device = device_from_mount_point(mount_point)
+        if S_ISBLK(stat(mount_point).st_mode):
+            device = mount_point
+        else:
+            device = device_from_mount_point(mount_point)
+
         if not is_lvm_device(device):
             return False
-        (vg_name, lv_name) = vg_lv_from_device_path(device)
+        if S_ISBLK(stat(mount_point).st_mode):
+            (vg_name, lv_name) = vg_lv_from_blockdev(device)
+        else:
+            (vg_name, lv_name) = vg_lv_from_device_path(device)
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
