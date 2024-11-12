@@ -39,14 +39,10 @@ from snapm.manager.plugins import (
     DEV_PREFIX,
     DEV_MAPPER_PREFIX,
     DMSETUP_CMD,
-    DMSETUP_SPLITNAME,
     DMSETUP_INFO,
-    DMSETUP_LVM_SUBSYS,
     DMSETUP_NO_HEADINGS,
     DMSETUP_COLUMNS,
-    DMSETUP_FIELDS_VG_LV,
     DMSETUP_FIELDS_UUID,
-    DMSETUP_REPORT_SEP,
     parse_snapshot_name,
     device_from_mount_point,
     mount_point_space_used,
@@ -96,9 +92,7 @@ LVS_FIELD_OPTIONS = (
 )
 
 # lvs options for devpath to vg/lv name
-LVS_FIELD_MIN_OPTIONS = ("vg_name,lv_name")
-LVS_DEV_SELECTOR = "-S"
-LVS_DEV_PATH = "lv_path="
+LVS_FIELD_MIN_OPTIONS = "vg_name,lv_name"
 LVS_NO_HEADINGS = "--noheadings"
 
 
@@ -319,7 +313,7 @@ def is_lvm_device(devpath):
     return uuid.startswith(LVM_UUID_PREFIX)
 
 
-def vg_lv_from_blockdev(devpath):
+def vg_lv_from_device_path(devpath):
     """
     Return a ``(vg_name, lv_name)`` tuple for the LVM device at
     ``devpath``.
@@ -327,39 +321,16 @@ def vg_lv_from_blockdev(devpath):
     lvs_cmd_args = [
         LVS_CMD,
         LVS_NO_HEADINGS,
-        devpath,
         "-o",
         LVS_FIELD_MIN_OPTIONS,
+        devpath,
     ]
     try:
         lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:
-        raise SnapmCalloutError(f"Error calling {DMSETUP_CMD}") from err
+        raise SnapmCalloutError(f"Error calling {LVS_CMD}") from err
     name = lvs_cmd.stdout.decode("utf8").strip()
     name_parts = name.split(" ")
-    return (name_parts[0], name_parts[1])
-
-def vg_lv_from_device_path(devpath):
-    """
-    Return a ``(vg_name, lv_name)`` tuple for the LVM device at
-    ``devpath``.
-    """
-
-    dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
-    dmsetup_cmd_args = [
-        DMSETUP_CMD,
-        DMSETUP_SPLITNAME,
-        DMSETUP_NO_HEADINGS,
-        DMSETUP_FIELDS_VG_LV,
-        dm_name,
-        DMSETUP_LVM_SUBSYS,
-    ]
-    try:
-        dmsetup_cmd = run(dmsetup_cmd_args, capture_output=True, check=True)
-    except CalledProcessError as err:
-        raise SnapmCalloutError(f"Error calling {DMSETUP_CMD}") from err
-    name = dmsetup_cmd.stdout.decode("utf8").strip()
-    name_parts = name.split(DMSETUP_REPORT_SEP)
     return (name_parts[0], name_parts[1])
 
 
@@ -919,10 +890,7 @@ class Lvm2Cow(_Lvm2):
 
         if not is_lvm_device(device):
             return False
-        if S_ISBLK(stat(mount_point).st_mode):
-            (vg_name, lv_name) = vg_lv_from_blockdev(device)
-        else:
-            (vg_name, lv_name) = vg_lv_from_device_path(device)
+        (vg_name, lv_name) = vg_lv_from_device_path(device)
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
@@ -1114,10 +1082,7 @@ class Lvm2Thin(_Lvm2):
 
         if not is_lvm_device(device):
             return False
-        if S_ISBLK(stat(mount_point).st_mode):
-            (vg_name, lv_name) = vg_lv_from_blockdev(device)
-        else:
-            (vg_name, lv_name) = vg_lv_from_device_path(device)
+        (vg_name, lv_name) = vg_lv_from_device_path(device)
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]

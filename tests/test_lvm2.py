@@ -60,6 +60,12 @@ class Lvm2Tests(unittest.TestCase):
             "/dev/mapper/appdata-datavol1--test": ("appdata", "datavol1-test"),
             "/dev/mapper/vg_test0-lv_test0": ("vg_test0", "lv_test0"),
             "/dev/mapper/notadev": None,
+            "/dev/fedora/home": ("fedora", "home"),
+            "/dev/fedora/root": ("fedora", "root"),
+            "/dev/fedora/var": ("fedora", "var"),
+            "/dev/appdata/datavol1-test": ("appdata", "datavol1-test"),
+            "/dev/vg_test0/lv_test0": ("vg_test0", "lv_test0"),
+            "/dev/not/a/dev": None,
         }
         for dev in devs.keys():
             if devs[dev] is not None:
