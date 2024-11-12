@@ -637,7 +637,9 @@ class Manager:
                 _log_error("Disabling plugin %s: %s", plugin_class.__name__, err)
         self.discover_snapshot_sets()
 
-    def _find_and_verify_plugins(self, mount_points, size_policies, requested_provider=None):
+    def _find_and_verify_plugins(
+        self, mount_points, size_policies, _requested_provider=None
+    ):
         """
         Find snapshot provider plugins for each mount point in ``mount_points``
         and verify that a provider exists for each mount present.
@@ -831,7 +833,7 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
-    def create_snapshot_set(self, name, source_point_specs, default_size_policy=None, requested_provider=None):
+    def create_snapshot_set(self, name, source_point_specs, default_size_policy=None):
         """
         Create a snapshot set of the supplied mount points with the name
         ``name``.
@@ -849,8 +851,7 @@ class Manager:
         )
 
         # Initialise provider mapping.
-        provider_map = self._find_and_verify_plugins(
-            mount_points, size_policies, requested_provider)
+        provider_map = self._find_and_verify_plugins(mount_points, size_policies, None)
 
         for provider in set(provider_map.values()):
             provider.start_transaction()
