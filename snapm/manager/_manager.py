@@ -18,11 +18,12 @@ from subprocess import run, CalledProcessError
 import logging
 from time import time
 from math import floor
+from stat import S_ISBLK
+from os import stat
 from os.path import ismount, normpath
 import fnmatch
 import inspect
 import os
-import stat
 
 import snapm.manager.plugins
 from snapm.manager.boot import (
@@ -656,9 +657,10 @@ class Manager:
                 size_policies[mount],
             )
 
-            if not os.path.exists(mount):
+            if not ismount(mount) and not S_ISBLK(stat(mount).st_mode):
                 raise SnapmPathError(
-                    f"Path '{mount}' does not exist")
+                    f"Path '{mount}' is not a block device or mount point"
+                )
 
             for plugin in self.plugins:
                 if plugin.can_snapshot(mount):
