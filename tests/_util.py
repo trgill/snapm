@@ -44,6 +44,9 @@ _FILESYSTEM_CMD = "filesystem"
 _CREATE_CMD = "create"
 _DESTROY_CMD = "destroy"
 _LIST_CMD = "list"
+_START_CMD = "start"
+_STOP_CMD = "stop"
+_NAME_ARG = "--name"
 _SIZE_ARG = "--size"
 
 _POOL_NAME = "pool1"
@@ -413,6 +416,12 @@ class StratisLoopBacked(object):
 
     def dump_pools(self):
         subprocess.check_call([_STRATIS_CMD, _POOL_CMD])
+
+    def start_pool(self):
+        subprocess.check_call([_STRATIS_CMD, _POOL_CMD, _START_CMD, _NAME_ARG, _POOL_NAME])
+
+    def stop_pool(self):
+        subprocess.check_call([_STRATIS_CMD, _POOL_CMD, _STOP_CMD, _NAME_ARG, _POOL_NAME])
 
     def _destroy_one_filesystem(self, pool, filesystem):
         subprocess.check_call(
