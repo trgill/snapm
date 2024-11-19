@@ -14,6 +14,7 @@
 import unittest
 import logging
 import os
+from uuid import UUID
 
 _log = logging.getLogger()
 _log.level = logging.DEBUG
@@ -552,6 +553,36 @@ class ManagerTests(unittest.TestCase):
 
         with self.assertRaises(snapm.SnapmBusyError) as cm:
             self.manager.delete_snapshot_sets(selection)
+
+    def test_revert_snapshot_set_bad_name_raises(self):
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            self.manager.revert_snapshot_set(name="nosuchset")
+
+    def test_revert_snapshot_set_bad_uuid_raises(self):
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            self.manager.revert_snapshot_set(uuid=UUID("00000000-0000-0000-0000-000000000000"))
+
+    def test_revert_snapshot_set_name_uuid_conflict_raises(self):
+        sset1 = self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+        sset2 = self.manager.create_snapshot_set("testset1", self._lvm.mount_points())
+
+        with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
+            self.manager.revert_snapshot_set(name=sset1.name, uuid=sset2.uuid)
+
+    def test_resize_snapshot_set_bad_name_raises(self):
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            self.manager.resize_snapshot_set([], name="nosuchset")
+
+    def test_resize_snapshot_set_bad_uuid_raises(self):
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            self.manager.resize_snapshot_set([], uuid=UUID("00000000-0000-0000-0000-000000000000"))
+
+    def test_resize_snapshot_set_name_uuid_conflict_raises(self):
+        sset1 = self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+        sset2 = self.manager.create_snapshot_set("testset1", self._lvm.mount_points())
+
+        with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
+            self.manager.resize_snapshot_set([], name=sset1.name, uuid=sset2.uuid)
 
     def test_resize_snapshot_set_mount_specs(self):
         testset = "testset0"
