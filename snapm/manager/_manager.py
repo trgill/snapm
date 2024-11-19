@@ -947,6 +947,11 @@ class Manager:
                 raise SnapmBusyError(
                     f"Snapshots from snapshot set {snapset.name} are mounted: cannot delete"
                 )
+            if snapset.status == SnapStatus.REVERTING:
+                _log_error("Cannot operate on reverting snapshot set '%s'", snapset.name)
+                raise SnapmBusyError(
+                    f"Failed to delete snapshot set {snapset.name}"
+                )
             delete_snapset_boot_entry(snapset)
             delete_snapset_revert_entry(snapset)
             for snapshot in snapset.snapshots:
