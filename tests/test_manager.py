@@ -429,6 +429,19 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmExistsError) as cm:
             self.manager.rename_snapshot_set("testset0", "testset1")
 
+    def test_rename_err_and_rollback(self):
+        sset = self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+
+        def fail_rename(_new_name):
+            raise snapm.SnapmError("Error renaming snapshot")
+
+        sset.snapshots[1].rename = fail_rename
+
+        with self.assertRaises(snapm.SnapmPluginError) as cm:
+            self.manager.rename_snapshot_set("testset0", "testset1")
+
+        self.assertEqual(sset.name, "testset0")
+
     def test_find_snapshots(self):
         self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
         snaps = self.manager.find_snapshots()
