@@ -232,6 +232,9 @@ class LvmLoopBacked(object):
     def format(self, name):
         subprocess.check_call([_MKFS_EXT4_CMD, f"/dev/{_VG_NAME}/{name}"])
 
+    def make_mount_point(self, name):
+        os.makedirs(os.path.join(self.mount_root, name))
+
     def mount(self, name):
         subprocess.check_call(
             [_MOUNT_CMD, f"/dev/{_VG_NAME}/{name}", f"{self.mount_root}/{name}"]
@@ -275,6 +278,8 @@ class LvmLoopBacked(object):
         self.umount_all()
         for lv in self.all_volumes():
             os.rmdir(f"{self.mount_root}/{lv}")
+        for subdir in os.listdir(self.mount_root):
+            os.rmdir(os.path.join(self.mount_root, subdir))
         os.rmdir(self.mount_root)
 
         subprocess.check_call([_VGREMOVE_CMD, "--force", "--yes", _VG_NAME])

@@ -358,6 +358,22 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.delete_snapshot_sets(s)
 
+    def test_delete_snapshot_set_mounted(self):
+        sset = self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+        s = snapm.Selection(name="testset0")
+
+        mnt_snap = sset.snapshots[0]
+        mnt_name = mnt_snap.name.split("/")[1]
+
+        self._lvm.make_mount_point(mnt_name)
+        self._lvm.mount(mnt_name)
+
+        with self.assertRaises(snapm.SnapmBusyError) as cm:
+            self.manager.delete_snapshot_sets(s)
+
+        self._lvm.umount(mnt_name)
+        self.manager.delete_snapshot_sets(s)
+
     def test_create_snapshot_set_duplicate(self):
         self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
         with self.assertRaises(snapm.SnapmExistsError) as cm:
