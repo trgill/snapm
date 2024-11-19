@@ -954,9 +954,10 @@ class Manager:
                 )
             delete_snapset_boot_entry(snapset)
             delete_snapset_revert_entry(snapset)
-            for snapshot in snapset.snapshots:
+            for snapshot in snapset.snapshots.copy():
                 try:
                     snapshot.delete()
+                    snapset.snapshots.remove(snapshot)
                 except SnapmError as err:
                     _log_error(
                         "Failed to delete snapshot set member %s: %s",
