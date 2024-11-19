@@ -590,6 +590,12 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.resize_snapshot_set(["/home:1G"], name="testset0")
 
+    def test_resize_snapshot_set_no_space_raises(self):
+        self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+
+        with self.assertRaises(snapm.SnapmNoSpaceError) as cm:
+            self.manager.resize_snapshot_set([], name="testset0", default_size_policy="20G")
+
     def test_resize_snapshot_set_mount_specs(self):
         testset = "testset0"
         mount_specs = [f"{mp}:512MiB" for mp in self._lvm.mount_points()]
