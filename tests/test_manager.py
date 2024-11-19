@@ -478,6 +478,36 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(self._lvm.test_path(origin_file), True)
         self.assertEqual(self._lvm.test_path(snapshot_file), False)
 
+    def test_revert_reverting_snapshot_set_raises(self):
+        testset = "testset0"
+        self.manager.create_snapshot_set(testset, self._lvm.mount_points())
+
+        selection = snapm.Selection(name=testset)
+        self.manager.revert_snapshot_sets(selection)
+
+        with self.assertRaises(snapm.SnapmBusyError) as cm:
+            self.manager.revert_snapshot_sets(selection)
+
+    def test_rename_reverting_snapshot_set_raises(self):
+        testset = "testset0"
+        self.manager.create_snapshot_set(testset, self._lvm.mount_points())
+
+        selection = snapm.Selection(name=testset)
+        self.manager.revert_snapshot_sets(selection)
+
+        with self.assertRaises(snapm.SnapmStateError) as cm:
+            self.manager.rename_snapshot_set(testset, "testset1")
+
+    def test_delete_reverting_snapshot_set_raises(self):
+        testset = "testset0"
+        self.manager.create_snapshot_set(testset, self._lvm.mount_points())
+
+        selection = snapm.Selection(name=testset)
+        self.manager.revert_snapshot_sets(selection)
+
+        with self.assertRaises(snapm.SnapmBusyError) as cm:
+            self.manager.delete_snapshot_sets(selection)
+
     def test_resize_snapshot_set_mount_specs(self):
         testset = "testset0"
         mount_specs = [f"{mp}:512MiB" for mp in self._lvm.mount_points()]
