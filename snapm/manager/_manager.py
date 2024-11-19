@@ -670,6 +670,40 @@ class Manager:
                 )
         return provider_map
 
+    def _snapset_from_name_or_uuid(self, name=None, uuid=None):
+        """
+        Look a snapshot set up by ``name`` or ``uuid``. Returns a
+        ``SnapshotSet`` correponding to either ``name`` or ``uuid`,
+        or raises ``SnapmError`` on error.
+
+        :param name: The name of the snapshot set to look up.
+        :param uuid: The UUID of the snapshot set to look up.
+        :returns: A ``SnapshotSet`` corresponding to the given name or UUID.
+        :raises: ``SnapmNotFoundError`` is the name or UUID cannot be found.
+                 ``SnapmInvalidIdentifierError`` if the name and UUID do not
+                 match.
+        """
+        if name is not None:
+            if name not in self.by_name:
+                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
+            snapset = self.by_name[name]
+        elif uuid is not None:
+            if uuid not in self.by_uuid:
+                raise SnapmNotFoundError(
+                    f"Could not find snapshot set with uuid {uuid}"
+                )
+            snapset = self.by_uuid[uuid]
+        else:
+            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+
+        if name and uuid:
+            if self.by_name[name] != self.by_uuid[uuid]:
+                raise SnapmInvalidIdentifierError(
+                    f"Conflicting name and UUID: {str(uuid)} does not match '{name}'"
+                )
+
+        return snapset
+
     def discover_snapshot_sets(self):
         """
         Discover snapshot sets by calling into each plugin to find
@@ -993,24 +1027,7 @@ class Manager:
         :param default_size_policy: A default size policy to apply to the
                                     resize.
         """
-        if name and uuid:
-            if self.by_name[name] != self.by_uuid[uuid]:
-                raise SnapmInvalidIdentifierError(
-                    f"Conflicting name and UUID: {str(uuid)} does not match '{name}'"
-                )
-            snapset = self.by_name[name]
-        if name is not None:
-            if name not in self.by_name:
-                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
-            snapset = self.by_name[name]
-        elif uuid is not None:
-            if uuid not in self.by_uuid:
-                raise SnapmNotFoundError(
-                    f"Could not find snapshot set with uuid {uuid}"
-                )
-            snapset = self.by_uuid[uuid]
-        else:
-            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+        snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
         if mount_point_specs:
             # Parse size policies and normalise mount paths
@@ -1071,24 +1088,7 @@ class Manager:
         :param name: The name of the snapshot set to revert.
         :param uuid: The UUID of the snapshot set to revert.
         """
-        if name and uuid:
-            if self.by_name[name] != self.by_uuid[uuid]:
-                raise SnapmInvalidIdentifierError(
-                    f"Conflicting name and UUID: {str(uuid)} does not match '{name}'"
-                )
-            snapset = self.by_name[name]
-        if name is not None:
-            if name not in self.by_name:
-                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
-            snapset = self.by_name[name]
-        elif uuid is not None:
-            if uuid not in self.by_uuid:
-                raise SnapmNotFoundError(
-                    f"Could not find snapshot set with uuid {uuid}"
-                )
-            snapset = self.by_uuid[uuid]
-        else:
-            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+        snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
         _check_revert_snapshot_set(snapset)
 
@@ -1234,18 +1234,7 @@ class Manager:
         :param name: The name of the snapshot set.
         :param uuid: The UUID of the snapshot set.
         """
-        if name is not None:
-            if name not in self.by_name:
-                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
-            snapset = self.by_name[name]
-        elif uuid is not None:
-            if uuid not in self.by_uuid:
-                raise SnapmNotFoundError(
-                    f"Could not find snapshot set with uuid {uuid}"
-                )
-            snapset = self.by_uuid[uuid]
-        else:
-            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+        snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
         snapset.autoactivate = True
         if not snapset.autoactivate:
@@ -1267,18 +1256,7 @@ class Manager:
         :param name: The name of the snapshot set.
         :param uuid: The UUID of the snapshot set.
         """
-        if name is not None:
-            if name not in self.by_name:
-                raise SnapmNotFoundError(f"Could not find snapshot set named {name}")
-            snapset = self.by_name[name]
-        elif uuid is not None:
-            if uuid not in self.by_uuid:
-                raise SnapmNotFoundError(
-                    f"Could not find snapshot set with uuid {uuid}"
-                )
-            snapset = self.by_uuid[uuid]
-        else:
-            raise SnapmNotFoundError("A snapshot set name or UUID is required")
+        snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
         if snapset.revert_entry is not None:
             raise SnapmExistsError(
