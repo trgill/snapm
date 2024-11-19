@@ -884,6 +884,7 @@ class Manager:
                 )
             except SnapmError as err:
                 _log_error("Error creating snapshot set member %s: %s", name, err)
+                _resume_journal()
                 for snapshot in snapshots:
                     snapshot.delete()
                 raise SnapmPluginError(
