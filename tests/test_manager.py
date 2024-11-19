@@ -374,6 +374,22 @@ class ManagerTests(unittest.TestCase):
         self._lvm.umount(mnt_name)
         self.manager.delete_snapshot_sets(s)
 
+    def test_delete_err_raises(self):
+        sset = self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
+        selection = snapm.Selection(name="testset0")
+
+        def fail_delete():
+            raise snapm.SnapmError("Error deleting snapshot")
+
+        orig_delete = sset.snapshots[1].delete
+        sset.snapshots[1].delete = fail_delete
+
+        with self.assertRaises(snapm.SnapmPluginError) as cm:
+            self.manager.delete_snapshot_sets(selection)
+
+        sset.snapshots[0].delete = orig_delete
+        self.manager.delete_snapshot_sets(selection)
+
     def test_create_snapshot_set_duplicate(self):
         self.manager.create_snapshot_set("testset0", self._lvm.mount_points())
         with self.assertRaises(snapm.SnapmExistsError) as cm:
