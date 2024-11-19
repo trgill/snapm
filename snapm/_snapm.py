@@ -1137,6 +1137,7 @@ class Snapshot:
         This may be deferred until the next device activation or mount
         operation for the respective volume.
         """
+        self.invalidate_cache()
         self.provider.revert_snapshot(self.name)
 
     def invalidate_cache(self):
