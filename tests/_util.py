@@ -266,7 +266,7 @@ class LvmLoopBacked(object):
         return path.exists()
 
     def dump_lvs(self):
-        subprocess.check_call([_LVS_CMD])
+        subprocess.check_call([_LVS_CMD, "-a"])
 
     def dump_vgs(self):
         subprocess.check_call([_VGS_CMD])
