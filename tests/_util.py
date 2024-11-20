@@ -418,10 +418,10 @@ class StratisLoopBacked(object):
         subprocess.check_call([_STRATIS_CMD, _POOL_CMD])
 
     def start_pool(self):
-        subprocess.check_call([_STRATIS_CMD, _POOL_CMD, _START_CMD, _NAME_ARG, _POOL_NAME])
+        subprocess.run([_STRATIS_CMD, _POOL_CMD, _START_CMD, _NAME_ARG, _POOL_NAME], check=True)
 
     def stop_pool(self):
-        subprocess.check_call([_STRATIS_CMD, _POOL_CMD, _STOP_CMD, _NAME_ARG, _POOL_NAME])
+        subprocess.run([_STRATIS_CMD, _POOL_CMD, _STOP_CMD, _NAME_ARG, _POOL_NAME], check=True)
 
     def _destroy_one_filesystem(self, pool, filesystem):
         subprocess.check_call(
