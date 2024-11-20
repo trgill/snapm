@@ -787,6 +787,40 @@ class Stratis(Plugin):
             new_name,
         )
 
+    def check_resize_snapshot(self, name, origin, mount_point, size_policy):
+        """
+        Check whether this snapshot can be resized or not. This method returns
+        if the current snapshot can be resized and raises an exception if not.
+
+        :returns: None
+        :raises: ``SnapmNoSpaceError`` if there is insufficient space to resize
+                 the snapshot according to ``size_policy`` or ``SnapmPluginError``
+                 if another error occurs.
+        """
+        origin = origin.removeprefix(DEV_STRATIS_PREFIX)
+        try:
+            proxy = get_object(TOP_OBJECT)
+            managed_objects = ObjectManager.Methods.GetManagedObjects(proxy, {})
+        except DBusException as err:
+            raise SnapmPluginError(
+                f"Failed to communicate with stratisd: {err}"
+            ) from err
+
+        (pool_name, fs_name) = origin.split("/")
+        if pool_name not in self.size_map:
+            self.size_map[pool_name] = {}
+            self.size_map[pool_name][fs_name] = self._check_free_space(
+                managed_objects, pool_name, fs_name, mount_point, size_policy
+            )
+
+    def resize_snapshot(self, name, origin, mount_point, size_policy):
+        """
+        Perform any necessary resize operation on this snapshot. Since Stratis
+        snapshots use space allocated dynamically from the thin pool this is a
+        no-op for Stratis devices.
+        """
+        return
+
     def check_revert_snapshot(self, name, origin):
         """
         Check whether this snapshot can be reverted or not. This method returns
