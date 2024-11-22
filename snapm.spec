@@ -79,12 +79,14 @@ rm doc/conf.py
 
 %files
 %license COPYING
+%license COPYING.stratislib
 %doc README.md
 %{_bindir}/snapm
 %doc %{_mandir}/man*/snapm.*
 
 %files -n python3-snapm
 %license COPYING
+%license COPYING.stratislib
 %doc README.md
 %{python3_sitelib}/%{name}/*
 %if 0%{?centos} || 0%{?rhel}
