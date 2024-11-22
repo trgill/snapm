@@ -419,6 +419,7 @@ class StratisLoopBacked(object):
 
     def start_pool(self):
         subprocess.run([_STRATIS_CMD, _POOL_CMD, _START_CMD, _NAME_ARG, _POOL_NAME], check=True)
+        subprocess.run(["udevadm", "settle"], check=True)
 
     def stop_pool(self):
         subprocess.run([_STRATIS_CMD, _POOL_CMD, _STOP_CMD, _NAME_ARG, _POOL_NAME], check=True)
