@@ -178,6 +178,18 @@ _LVM_CMDS = [
 MINIMUM_LVM_VERSION = (2, 3, 11)
 
 
+def _decode_stderr(err):
+    """
+    Decode and strip the stderr member of a ``CalledProcessError`` and
+    return the result as a string.
+
+    :param err: A ``CalledProcessError`` like exception.
+    :returns: A stripped string representation of the exception's stderr
+              member.
+    """
+    return err.stderr.decode("utf8").strip()
+
+
 def _check_lvm_present():
     """
     Check for the presence of the required LVM2 commands.
@@ -218,7 +230,9 @@ def _check_lvm_version():
     try:
         lvm_version = _get_lvm_version()
     except CalledProcessError as err:
-        raise SnapmPluginError(f"Error getting LVM2 version: {err}") from err
+        raise SnapmPluginError(
+            f"Error getting LVM2 version: {_decode_stderr(err)}"
+        ) from err
     if lvm_version < MINIMUM_LVM_VERSION:
         raise SnapmPluginError(
             f"Unsupported LVM2 version: {_version_string(lvm_version)} "
@@ -246,7 +260,9 @@ def get_lvs_json_report(vg_lv=None, lvs_all=False):
     try:
         lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:
-        raise SnapmCalloutError(f"Error calling {LVS_CMD}: {err}") from err
+        raise SnapmCalloutError(
+            f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
+        ) from err
     try:
         lvs_dict = loads(lvs_cmd.stdout)
     except JSONDecodeError as err:
@@ -274,7 +290,9 @@ def get_vgs_json_report(vg_name=None):
     try:
         vgs_cmd = run(vgs_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:
-        raise SnapmCalloutError(f"Error calling {VGS_CMD}: {err}") from err
+        raise SnapmCalloutError(
+            f"Error calling {VGS_CMD}: {_decode_stderr(err)}"
+        ) from err
     try:
         vgs_dict = loads(vgs_cmd.stdout)
     except JSONDecodeError as err:
@@ -308,7 +326,9 @@ def is_lvm_device(devpath):
     try:
         dmsetup_cmd = run(dmsetup_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:
-        raise SnapmCalloutError(f"Error calling {DMSETUP_CMD}") from err
+        raise SnapmCalloutError(
+            f"Error calling {DMSETUP_CMD}: {_decode_stderr(err)}"
+        ) from err
     uuid = dmsetup_cmd.stdout.decode("utf8").strip()
     return uuid.startswith(LVM_UUID_PREFIX)
 
@@ -328,7 +348,9 @@ def vg_lv_from_device_path(devpath):
     try:
         lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:
-        raise SnapmCalloutError(f"Error calling {LVS_CMD}") from err
+        raise SnapmCalloutError(
+            f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
+        ) from err
     name = lvs_cmd.stdout.decode("utf8").strip()
     name_parts = name.split(" ")
     return (name_parts[0], name_parts[1])
@@ -571,7 +593,9 @@ def _activate(active, name, silent=False):
         run(lvchange_cmd, capture_output=True, check=True)
     except CalledProcessError as err:
         if not silent:
-            raise SnapmCalloutError(f"{LVCHANGE_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVCHANGE_CMD} failed with: {_decode_stderr(err)}"
+            ) from err
 
 
 class _Lvm2(Plugin):
@@ -659,7 +683,9 @@ class _Lvm2(Plugin):
         try:
             run(lvremove_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
-            raise SnapmCalloutError(f"{LVREMOVE_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVREMOVE_CMD} failed with: {_decode_stderr(err)}"
+            ) from err
 
     # pylint: disable=too-many-arguments
     def rename_snapshot(self, old_name, origin, snapset_name, timestamp, mount_point):
@@ -693,7 +719,9 @@ class _Lvm2(Plugin):
         try:
             run(lvrename_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
-            raise SnapmCalloutError(f"{LVRENAME_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVRENAME_CMD} failed with: {_decode_stderr(err)}"
+            ) from err
 
         return self._build_snapshot(
             f"{vg_name}/{new_name}",
@@ -744,7 +772,9 @@ class _Lvm2(Plugin):
         try:
             run(lvconvert_cmd, capture_output=False, check=True)
         except CalledProcessError as err:
-            raise SnapmCalloutError(f"{LVCONVERT_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVCONVERT_CMD} failed with: {_decode_stderr(err)}"
+            ) from err
 
     def activate_snapshot(self, name):
         """
@@ -780,7 +810,9 @@ class _Lvm2(Plugin):
         try:
             run(lvchange_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
-            raise SnapmCalloutError(f"{LVCHANGE_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVCHANGE_CMD} failed with: {_decode_stderr(err)}"
+            ) from err
 
     def _check_lvm_name(self, vg_name, lv_name):
         """
@@ -966,7 +998,7 @@ class Lvm2Cow(_Lvm2):
             run(lvcreate_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
-                f"{LVCREATE_CMD} failed with: {err.stderr.decode('utf8')}"
+                f"{LVCREATE_CMD} failed with: {_decode_stderr(err)}"
             ) from err
         return Lvm2CowSnapshot(
             f"{vg_name}/{snapshot_name}",
@@ -1001,7 +1033,7 @@ class Lvm2Cow(_Lvm2):
             run(lvresize_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
-                f"{LVRESIZE_CMD} failed with: {err.stderr.decode('utf8')}"
+                f"{LVRESIZE_CMD} failed with: {_decode_stderr(err)}"
             ) from err
 
     def _build_snapshot(
@@ -1151,7 +1183,9 @@ class Lvm2Thin(_Lvm2):
         try:
             run(lvcreate_cmd, capture_output=True, check=True)
         except CalledProcessError as err:
-            raise SnapmCalloutError(f"{LVCREATE_CMD} failed with: {err}") from err
+            raise SnapmCalloutError(
+                f"{LVCREATE_CMD} failed with: {_decode_stderr(err)}"
+            ) from err
         return Lvm2ThinSnapshot(
             f"{vg_name}/{snapshot_name}",
             snapset_name,
