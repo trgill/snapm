@@ -189,6 +189,12 @@ class SnapmNoProviderError(SnapmError):
     """
 
 
+class SnapmSizePolicyError(SnapmError):
+    """
+    An invalid size policy was specified.
+    """
+
+
 class SnapmExistsError(SnapmError):
     """
     The named snapshot set already exists.
@@ -205,7 +211,7 @@ class SnapmBusyError(SnapmError):
 class SnapmPathError(SnapmError):
     """
     An invalid path was supplied, for example attempting to snapshot
-    something that is not a mount point.
+    something that is not a mount point or block device.
     """
 
 
@@ -541,6 +547,10 @@ class SizePolicy:
         (percent, policy_type) = policy.rsplit("%", maxsplit=1)
         self._percent = float(percent)
         cap_percent = (SizePolicyType.PERCENT_SIZE, SizePolicyType.PERCENT_FREE)
+        if policy_type == SizePolicyType.PERCENT_USED and not self._mount:
+            raise SnapmSizePolicyError(
+                f"Cannot apply %USED size policy to unmounted block device {self._source}"
+            )
         for ptype in SizePolicyType:
             if ptype.value == policy_type:
                 if ptype in cap_percent and self._percent > 100.0:
@@ -551,16 +561,21 @@ class SizePolicy:
                 return ptype
         raise SnapmParseError(f"Could not parse size policy: {policy}")
 
-    def __init__(self, mount, free_space, fs_used, dev_size, policy):
+    def __init__(self, source, mount, free_space, fs_used, dev_size, policy):
         """
         Initialise a new `SizePolicy` object using the supplied parameters.
 
+        :param source: The source for this SizePolicy: a mount point or block
+                       device path.
+        :param mount: The mount point path if mounted.
         :param free_space: The free space available to provision the snapshot
                            in bytes.
         :param fs_used: The current file system occupancy in bytes.
         :param dev_size: The origin device size in bytes.
+        :param policy: A size policy string.
         :returns: A `SizePolicy` object configured for the specified size.
         """
+        self._source = source
         self._mount = mount
         self._free_space = free_space
         self._fs_used = fs_used

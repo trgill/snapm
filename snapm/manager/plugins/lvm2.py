@@ -958,7 +958,7 @@ class Lvm2Cow(_Lvm2):
         fs_used = mount_point_space_used(mount_point)
         vg_free = vg_free_space(vg_name)
         lv_size = lv_dev_size(vg_name, lv_name)
-        policy = SizePolicy(mount_point, vg_free, fs_used, lv_size, size_policy)
+        policy = SizePolicy(origin, mount_point, vg_free, fs_used, lv_size, size_policy)
         snapshot_min_size = _snapshot_min_size(policy.size)
         if vg_free < (sum(self.size_map[vg_name].values()) + snapshot_min_size):
             raise SnapmNoSpaceError(
@@ -1141,7 +1141,9 @@ class Lvm2Thin(_Lvm2):
         fs_used = mount_point_space_used(mount_point)
         lv_size = lv_dev_size(vg_name, lv_name)
         pool_free = pool_free_space(vg_name, pool_name)
-        policy = SizePolicy(mount_point, pool_free, fs_used, lv_size, size_policy)
+        policy = SizePolicy(
+            origin, mount_point, pool_free, fs_used, lv_size, size_policy
+        )
         snapshot_min_size = policy.size
         if pool_free < (
             sum(self.size_map[vg_name][pool_name].values()) + snapshot_min_size

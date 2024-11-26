@@ -534,9 +534,7 @@ class Stratis(Plugin):
         return True
 
     # pylint: disable=too-many-arguments
-    def _check_free_space(
-        self, managed_objects, origin, mount_point, size_policy
-    ):
+    def _check_free_space(self, managed_objects, origin, mount_point, size_policy):
         """
         Check for available space in volume group ``vg_name`` for the specified
         mount point.
@@ -551,7 +549,9 @@ class Stratis(Plugin):
         fs_used = mount_point_space_used(mount_point)
         pool_free = _pool_free_space_bytes(managed_objects, pool_name)
         fs_size = _fs_size_bytes(managed_objects, pool_name, fs_name)
-        policy = SizePolicy(mount_point, pool_free, fs_used, fs_size, size_policy)
+        policy = SizePolicy(
+            origin, mount_point, pool_free, fs_used, fs_size, size_policy
+        )
         snapshot_min_size = _snapshot_min_size(policy.size)
         if pool_free < (sum(self.size_map[pool_name].values()) + snapshot_min_size):
             raise SnapmNoSpaceError(
@@ -616,9 +616,7 @@ class Stratis(Plugin):
                 f"Failed to communicate with stratisd: {err}"
             ) from err
 
-        self._check_free_space(
-            managed_objects, origin, mount_point, size_policy
-        )
+        self._check_free_space(managed_objects, origin, mount_point, size_policy)
 
         self._log_debug(
             "Creating Stratis snapshot for %s/%s mounted at %s",
