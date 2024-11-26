@@ -71,6 +71,16 @@ class StratisTestsSimple(unittest.TestCase):
         for dev in devs.keys():
             self.assertEqual(stratis.is_stratis_device(dev), devs[dev])
 
+    def pool_fs_from_origin(self):
+        devs = {
+            "/dev/stratis/p1/fs1": ("p1", "fs1"),
+            "/dev/stratis/p1/fs2": ("p1", "fs2"),
+            "/dev/stratis/pool0/fs0": ("pool0", "fs0"),
+            "/dev/stratis/data/vol0": ("data", "vol0"),
+        }
+        for dev in devs.keys():
+            self.assertEqual(stratis.pool_fs_from_origin(dev), devs[dev])
+
     def test_is_stratisd_running(self):
         running = False
         for proc in psutil.process_iter():

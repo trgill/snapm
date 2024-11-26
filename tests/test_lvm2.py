@@ -74,6 +74,16 @@ class Lvm2Tests(unittest.TestCase):
                 with self.assertRaises(SnapmCalloutError) as cm:
                     lvm2.vg_lv_from_device_path(dev)
 
+    def test_vg_lv_from_origin(self):
+        devs = {
+            "/dev/fedora/root": ("fedora", "root"),
+            "/dev/fedora/home": ("fedora", "home"),
+            "/dev/rhel/var": ("rhel", "var"),
+            "/dev/vg00/lvol00": ("vg00", "lvol00"),
+        }
+        for dev in devs.keys():
+            self.assertEqual(lvm2.vg_lv_from_origin(dev), devs[dev])
+
     def test_pool_name_from_vg_lv(self):
         devs = {
             "fedora/srv": "pool0",

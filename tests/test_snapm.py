@@ -80,7 +80,7 @@ class SnapmTests(unittest.TestCase):
         self.assertTrue(s.is_single())
 
     def test_Selection_is_not_single(self):
-        s = snapm.Selection(origin="fedora/root")
+        s = snapm.Selection(origin="/dev/fedora/root")
         self.assertFalse(s.is_single())
 
     def test_Selection_is_not_null(self):
@@ -116,11 +116,11 @@ class SnapmTests(unittest.TestCase):
         s.check_valid_selection(snapshot_set=True)
 
     def test_valid_selection_snapshot(self):
-        s = snapm.Selection(origin="home", mount_point="/home")
+        s = snapm.Selection(origin="/dev/fedora/home", mount_point="/home")
         s.check_valid_selection(snapshot=True)
 
     def test_valid_selection_snapset_invalid(self):
-        s = snapm.Selection(origin="home")
+        s = snapm.Selection(origin="/dev/fedora/home")
         with self.assertRaises(ValueError) as cm:
             s.check_valid_selection(snapshot_set=True)
 

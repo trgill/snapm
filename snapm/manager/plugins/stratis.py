@@ -170,6 +170,14 @@ def pool_fs_from_device_path(devpath):
     return symlink.removeprefix(DEV_STRATIS_PREFIX).split("/")
 
 
+def pool_fs_from_origin(origin):
+    """
+    Return a ``(pool_name, fs_name)`` tuple for the Stratis device with
+    origin path ``origin``.
+    """
+    return origin.removeprefix(DEV_STRATIS_PREFIX).split("/")
+
+
 class StratisSnapshot(Snapshot):
     """
     Class for Stratis snapshot objects.
@@ -564,6 +572,7 @@ class Stratis(Plugin):
         :raises: ``SnapmNoSpaceError`` if there is insufficient free space to
                  create the snapshot.
         """
+        pool_name, fs_name = pool_fs_from_origin(origin)
         try:
             proxy = get_object(TOP_OBJECT)
             managed_objects = ObjectManager.Methods.GetManagedObjects(proxy, {})
@@ -572,7 +581,6 @@ class Stratis(Plugin):
                 f"Failed to communicate with stratisd: {err}"
             ) from err
 
-        (pool_name, fs_name) = origin.split("/")
         if pool_name not in self.size_map:
             self.size_map[pool_name] = {}
             self.size_map[pool_name][fs_name] = self._check_free_space(
@@ -593,7 +601,7 @@ class Stratis(Plugin):
         :raises: ``SnapmNoSpaceError`` if there is insufficient free space to
                  create the snapshot.
         """
-        (pool_name, fs_name) = origin.split("/")
+        pool_name, fs_name = pool_fs_from_origin(origin)
 
         snapshot_name = format_snapshot_name(
             fs_name, snapset_name, timestamp, encode_mount_point(mount_point)
@@ -660,7 +668,7 @@ class Stratis(Plugin):
         if not is_stratis_device(device):
             return None
         (pool_name, fs_name) = pool_fs_from_device_path(device)
-        return f"{pool_name}/{fs_name}"
+        return path_join(DEV_STRATIS_PREFIX, pool_name, fs_name)
 
     def delete_snapshot(self, name):
         """
@@ -740,7 +748,7 @@ class Stratis(Plugin):
         :param mount_point: The mount point of the snapshot.
         """
         (pool_name, fs_name) = old_name.split("/")
-        origin = origin.removeprefix(DEV_STRATIS_PREFIX).split("/")[1]
+        _, origin = pool_fs_from_origin(origin)
         new_name = format_snapshot_name(
             origin, snapset_name, timestamp, encode_mount_point(mount_point)
         )
@@ -802,7 +810,7 @@ class Stratis(Plugin):
                  the snapshot according to ``size_policy`` or ``SnapmPluginError``
                  if another error occurs.
         """
-        origin = origin.removeprefix(DEV_STRATIS_PREFIX)
+        pool_name, fs_name = pool_fs_from_origin(origin)
         try:
             proxy = get_object(TOP_OBJECT)
             managed_objects = ObjectManager.Methods.GetManagedObjects(proxy, {})
@@ -811,7 +819,6 @@ class Stratis(Plugin):
                 f"Failed to communicate with stratisd: {err}"
             ) from err
 
-        (pool_name, fs_name) = origin.split("/")
         if pool_name not in self.size_map:
             self.size_map[pool_name] = {}
             self.size_map[pool_name][fs_name] = self._check_free_space(
@@ -838,8 +845,7 @@ class Stratis(Plugin):
         ``SnapmPluginError`` if another reason prevents the snapshot from being
         merged.
         """
-        (pool_name, _) = name.split("/")
-        origin = origin.removeprefix(DEV_STRATIS_PREFIX + pool_name + "/")
+        pool_name, origin = pool_fs_from_origin(origin)
 
         try:
             proxy = get_object(TOP_OBJECT)

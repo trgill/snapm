@@ -356,6 +356,15 @@ def vg_lv_from_device_path(devpath):
     return (name_parts[0], name_parts[1])
 
 
+def vg_lv_from_origin(origin):
+    """
+    Return a ``(vg_name, lv_name)`` tuple for the LVM device with origin
+    path ``origin``.
+    """
+    name_parts = origin.removeprefix(DEV_PREFIX + "/").split("/")
+    return (name_parts[0], name_parts[1])
+
+
 def pool_name_from_vg_lv(vg_lv):
     """
     Return the thin pool associated with the logical volume identified by
@@ -671,7 +680,7 @@ class _Lvm2(Plugin):
         if not is_lvm_device(device):
             return None
         (vg_name, lv_name) = vg_lv_from_device_path(device)
-        return f"{vg_name}/{lv_name}"
+        return path_join(DEV_PREFIX, vg_name, lv_name)
 
     def delete_snapshot(self, name):
         """
@@ -699,7 +708,7 @@ class _Lvm2(Plugin):
         :param timestamp: The snapshot set timestamp.
         :param mount_point: The mount point of the snapshot.
         """
-        (_, _, vg_name, lv_name) = origin.split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         new_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
@@ -746,7 +755,7 @@ class _Lvm2(Plugin):
         ``SnapmPluginError`` if another reason prevents the snapshot from being
         merged.
         """
-        vg_name, lv_name = origin.removeprefix(DEV_PREFIX + "/").split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
@@ -959,7 +968,7 @@ class Lvm2Cow(_Lvm2):
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
-        (vg_name, lv_name) = origin.split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
@@ -973,7 +982,7 @@ class Lvm2Cow(_Lvm2):
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
-        (vg_name, lv_name) = origin.split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         self._log_debug(
             "Creating CoW snapshot for %s/%s mounted at %s",
             vg_name,
@@ -1012,7 +1021,7 @@ class Lvm2Cow(_Lvm2):
         )
 
     def check_resize_snapshot(self, name, origin, mount_point, size_policy):
-        vg_name, lv_name = origin.removeprefix(DEV_PREFIX + "/").split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
         self.size_map[vg_name][mount_point] = self._check_free_space(
@@ -1020,7 +1029,7 @@ class Lvm2Cow(_Lvm2):
         )
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):
-        vg_name, _ = origin.removeprefix(DEV_PREFIX + "/").split("/")
+        vg_name, _ = vg_lv_from_origin(origin)
         snapshot_size = self.size_map[vg_name][mount_point]
 
         lvresize_cmd = [
@@ -1144,7 +1153,7 @@ class Lvm2Thin(_Lvm2):
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
-        (vg_name, lv_name) = origin.split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         pool_name = pool_name_from_vg_lv(origin)
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
@@ -1161,7 +1170,7 @@ class Lvm2Thin(_Lvm2):
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
-        (vg_name, lv_name) = origin.split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         self._log_debug(
             "Creating thin snapshot for %s/%s mounted at %s",
             vg_name,
@@ -1198,8 +1207,7 @@ class Lvm2Thin(_Lvm2):
         )
 
     def check_resize_snapshot(self, name, origin, mount_point, size_policy):
-        origin = origin.removeprefix(DEV_PREFIX + "/")
-        vg_name, lv_name = origin.split("/")
+        vg_name, lv_name = vg_lv_from_origin(origin)
         pool_name = pool_name_from_vg_lv(origin)
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
