@@ -976,7 +976,7 @@ class Lvm2Cow(_Lvm2):
         self._check_lvm_name(vg_name, snapshot_name)
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
-        self.size_map[vg_name][mount_point] = self._check_free_space(
+        self.size_map[vg_name][lv_name] = self._check_free_space(
             origin, mount_point, size_policy
         )
 
@@ -985,16 +985,17 @@ class Lvm2Cow(_Lvm2):
     ):
         vg_name, lv_name = vg_lv_from_origin(origin)
         self._log_debug(
-            "Creating CoW snapshot for %s/%s mounted at %s",
+            "Creating CoW snapshot for %s/%s %s %s",
             vg_name,
             lv_name,
+            "mounted at" if mount_point else "",
             mount_point,
         )
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        snapshot_size = self.size_map[vg_name][mount_point]
+        snapshot_size = self.size_map[vg_name][lv_name]
         lvcreate_cmd = [
             LVCREATE_CMD,
             LVCREATE_SNAPSHOT,
@@ -1167,7 +1168,7 @@ class Lvm2Thin(_Lvm2):
             self.size_map[vg_name] = {}
         if pool_name not in self.size_map[vg_name]:
             self.size_map[vg_name][pool_name] = {}
-        self.size_map[vg_name][pool_name][mount_point] = self._check_free_space(
+        self.size_map[vg_name][pool_name][lv_name] = self._check_free_space(
             origin, pool_name, mount_point, size_policy
         )
 
