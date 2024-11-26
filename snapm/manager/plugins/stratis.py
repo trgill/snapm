@@ -536,12 +536,14 @@ class Stratis(Plugin):
     # pylint: disable=too-many-arguments
     def _check_free_space(self, managed_objects, origin, mount_point, size_policy):
         """
-        Check for available space in volume group ``vg_name`` for the specified
+        Check for available space in pool ``pool_name`` for the specified
         mount point.
 
-        :param vg_name: The name of the volume group to check.
+        :param pool_name: The name of the pool to check.
+        :param fs_name: The name of the filesystem to check.
         :param mount_point: The mount point path to check.
-        :returns: The space used on the mount point.
+        :param size_policy: The size policy to be applied.
+        :returns: The minimum size required for the snapshot.
         :raises: ``SnapmNoSpaceError`` if the minimum snapshot size exceeds the
                  available space.
         """
