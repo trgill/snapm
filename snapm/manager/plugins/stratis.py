@@ -535,7 +535,7 @@ class Stratis(Plugin):
 
     # pylint: disable=too-many-arguments
     def _check_free_space(
-        self, managed_objects, pool_name, fs_name, mount_point, size_policy
+        self, managed_objects, origin, mount_point, size_policy
     ):
         """
         Check for available space in volume group ``vg_name`` for the specified
@@ -547,6 +547,7 @@ class Stratis(Plugin):
         :raises: ``SnapmNoSpaceError`` if the minimum snapshot size exceeds the
                  available space.
         """
+        pool_name, fs_name = pool_fs_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
         pool_free = _pool_free_space_bytes(managed_objects, pool_name)
         fs_size = _fs_size_bytes(managed_objects, pool_name, fs_name)
@@ -584,7 +585,7 @@ class Stratis(Plugin):
         if pool_name not in self.size_map:
             self.size_map[pool_name] = {}
             self.size_map[pool_name][fs_name] = self._check_free_space(
-                managed_objects, pool_name, fs_name, mount_point, size_policy
+                managed_objects, origin, mount_point, size_policy
             )
 
     # pylint: disable=too-many-arguments
@@ -616,7 +617,7 @@ class Stratis(Plugin):
             ) from err
 
         self._check_free_space(
-            managed_objects, pool_name, fs_name, mount_point, size_policy
+            managed_objects, origin, mount_point, size_policy
         )
 
         self._log_debug(
@@ -822,7 +823,7 @@ class Stratis(Plugin):
         if pool_name not in self.size_map:
             self.size_map[pool_name] = {}
             self.size_map[pool_name][fs_name] = self._check_free_space(
-                managed_objects, pool_name, fs_name, mount_point, size_policy
+                managed_objects, origin, mount_point, size_policy
             )
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):

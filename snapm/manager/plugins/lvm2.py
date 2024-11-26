@@ -943,7 +943,7 @@ class Lvm2Cow(_Lvm2):
             return False
         return True
 
-    def _check_free_space(self, vg_name, lv_name, mount_point, size_policy):
+    def _check_free_space(self, origin, mount_point, size_policy):
         """
         Check for available space in volume group ``vg_name`` for the specified
         mount point.
@@ -954,6 +954,7 @@ class Lvm2Cow(_Lvm2):
         :raises: ``SnapmNoSpaceError`` if the minimum snapshot size exceeds the
                  available space.
         """
+        vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
         vg_free = vg_free_space(vg_name)
         lv_size = lv_dev_size(vg_name, lv_name)
@@ -976,7 +977,7 @@ class Lvm2Cow(_Lvm2):
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
         self.size_map[vg_name][mount_point] = self._check_free_space(
-            vg_name, lv_name, mount_point, size_policy
+            origin, mount_point, size_policy
         )
 
     def create_snapshot(
@@ -1025,7 +1026,7 @@ class Lvm2Cow(_Lvm2):
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
         self.size_map[vg_name][mount_point] = self._check_free_space(
-            vg_name, lv_name, mount_point, size_policy
+            origin, mount_point, size_policy
         )
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):
@@ -1135,7 +1136,8 @@ class Lvm2Thin(_Lvm2):
             return False
         return True
 
-    def _check_free_space(self, vg_name, lv_name, pool_name, mount_point, size_policy):
+    def _check_free_space(self, origin, pool_name, mount_point, size_policy):
+        vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
         lv_size = lv_dev_size(vg_name, lv_name)
         pool_free = pool_free_space(vg_name, pool_name)
@@ -1164,7 +1166,7 @@ class Lvm2Thin(_Lvm2):
         if pool_name not in self.size_map[vg_name]:
             self.size_map[vg_name][pool_name] = {}
         self.size_map[vg_name][pool_name][mount_point] = self._check_free_space(
-            vg_name, lv_name, pool_name, mount_point, size_policy
+            origin, pool_name, mount_point, size_policy
         )
 
     def create_snapshot(
@@ -1214,7 +1216,7 @@ class Lvm2Thin(_Lvm2):
         if pool_name not in self.size_map[vg_name]:
             self.size_map[vg_name][pool_name] = {}
         self.size_map[vg_name][mount_point] = self._check_free_space(
-            vg_name, lv_name, pool_name, mount_point, size_policy
+            origin, pool_name, mount_point, size_policy
         )
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):
