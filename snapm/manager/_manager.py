@@ -848,6 +848,7 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
+    # pylint: disable=too-many-branches,too-many-locals
     def create_snapshot_set(self, name, source_specs, default_size_policy=None):
         """
         Create a snapshot set of the supplied mount points with the name
