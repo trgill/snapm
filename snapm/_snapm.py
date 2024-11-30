@@ -773,6 +773,13 @@ class SnapshotSet:
         return [s.mount_point for s in self.snapshots]
 
     @property
+    def sources(self):
+        """
+        The list of souce mount points and block devices in this snapshot set.
+        """
+        return [s.source for s in self.snapshots]
+
+    @property
     def status(self):
         """
         The overall status of this snapshot set. Returns ``SnapStatus.ACTIVE``
@@ -996,6 +1003,14 @@ class Snapshot:
         The mount point of this snapshot.
         """
         return self._mount_point
+
+    @property
+    def source(self):
+        """
+        The block device or mount point from which this ``Snapshot``
+        was created.
+        """
+        return self.mount_point if self.mount_point else self.origin
 
     @property
     def snapshot_set(self):
