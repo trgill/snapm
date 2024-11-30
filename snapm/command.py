@@ -367,7 +367,7 @@ _snapshot_fields = [
 ]
 
 _DEFAULT_SNAPSHOT_FIELDS = (
-    "snapset_name,name,origin,mountpoint,status,size,free,autoactivate,provider"
+    "snapset_name,name,origin,source,status,size,free,autoactivate,provider"
 )
 
 _plugin_fields = [
