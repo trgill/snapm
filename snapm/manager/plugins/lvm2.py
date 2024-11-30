@@ -627,13 +627,14 @@ class _Lvm2(Plugin):
         """
         raise NotImplementedError
 
-    def can_snapshot(self, mount_point):
+    def can_snapshot(self, source):
         """
-        Test whether this plugin can snapshot the specified mount point.
+        Test whether this plugin can snapshot the specified block device or
+        mount point path.
 
-        :param mount_point: The mount point path to test.
-        :returns: ``True`` if this plugin can snapshot the file system mounted
-                  at ``mount_point``, or ``False`` otherwise.
+        :param source: The mount point or block device path to test.
+        :returns: ``True`` if this plugin can snapshot the file system or
+                  block device at ``source``, or ``False`` otherwise.
         """
         raise NotImplementedError
 
@@ -915,19 +916,19 @@ class Lvm2Cow(_Lvm2):
                     )
         return snapshots
 
-    def can_snapshot(self, mount_point):
+    def can_snapshot(self, source):
         """
-        Test whether the lvm2-cow plugin can snapshot the specified ``mount_point``.
+        Test whether the lvm2-cow plugin can snapshot the specified ``source``.
 
-        :param mount_point: The mount point path to test.
-        :returns: ``True`` if this plugin can snapshot the file system mounted
-                  at ``mount_point``, or ``False`` otherwise.
+        :param source: The mount point or block device path to test.
+        :returns: ``True`` if this plugin can snapshot the file system or block
+                  device found at ``source``, or ``False`` otherwise.
         """
 
-        if S_ISBLK(stat(mount_point).st_mode):
-            device = mount_point
+        if S_ISBLK(stat(source).st_mode):
+            device = source
         else:
-            device = device_from_mount_point(mount_point)
+            device = device_from_mount_point(source)
 
         if not is_lvm_device(device):
             return False
@@ -1117,11 +1118,18 @@ class Lvm2Thin(_Lvm2):
                     )
         return snapshots
 
-    def can_snapshot(self, mount_point):
-        if S_ISBLK(stat(mount_point).st_mode):
-            device = mount_point
+    def can_snapshot(self, source):
+        """
+        Test whether the lvm2-thin plugin can snapshot the specified ``source``.
+
+        :param source: The mount point or block device path to test.
+        :returns: ``True`` if this plugin can snapshot the file system or block
+                  device found at ``source``, or ``False`` otherwise.
+        """
+        if S_ISBLK(stat(source).st_mode):
+            device = source
         else:
-            device = device_from_mount_point(mount_point)
+            device = device_from_mount_point(source)
 
         if not is_lvm_device(device):
             return False

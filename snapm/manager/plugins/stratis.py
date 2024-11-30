@@ -514,22 +514,23 @@ class Stratis(Plugin):
 
         return snapshots
 
-    def can_snapshot(self, mount_point):
+    def can_snapshot(self, source):
         """
         Test whether this plugin can snapshot the specified mount point.
 
-        :param mount_point: The mount point path to test.
+        :param source: The mount point path to test.
         :returns: ``True`` if this plugin can snapshot the file system mounted
                   at ``mount_point``, or ``False`` otherwise.
         """
-        if S_ISBLK(stat(mount_point).st_mode):
-            return False
+        if S_ISBLK(stat(source).st_mode):
+            device = source
+        else:
+            device = device_from_mount_point(source)
 
-        device = device_from_mount_point(mount_point)
         if not is_stratis_device(device):
             return False
         if not is_stratisd_running():
-            self._log_error("Stratis mount point specified but stratisd is not running")
+            self._log_error("Stratis source specified but stratisd is not running")
             return False
         return True
 

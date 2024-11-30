@@ -146,11 +146,12 @@ class Plugin(metaclass=PluginRegistry):
         """
         raise NotImplementedError
 
-    def can_snapshot(self, mount_point):
+    def can_snapshot(self, source):
         """
-        Test whether this plugin can snapshot the specified mount point.
+        Test whether this plugin can snapshot the specified mount point or
+        block device.
 
-        :param mount_point: The mount point path to test.
+        :param source: The block device or mount point path to test.
         :returns: ``True`` if this plugin can snapshot the file system mounted
                   at ``mount_point``, or ``False`` otherwise.
         """
