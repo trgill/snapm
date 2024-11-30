@@ -42,6 +42,7 @@ from snapm import (
     SNAPSET_REVERT_ENTRY,
     SNAPSHOT_NAME,
     SNAPSHOT_ORIGIN,
+    SNAPSHOT_SOURCE,
     SNAPSHOT_MOUNT_POINT,
     SNAPSHOT_PROVIDER,
     SNAPSHOT_UUID,
@@ -272,6 +273,15 @@ _snapshot_fields = [
         16,
         REP_STR,
         lambda f, d: f.report_str(d.origin),
+    ),
+    FieldType(
+        PR_SNAPSHOT,
+        "source",
+        SNAPSHOT_SOURCE,
+        "Snapshot source",
+        7,
+        REP_STR,
+        lambda f, d: f.report_str(d.source),
     ),
     FieldType(
         PR_SNAPSHOT,
