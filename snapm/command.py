@@ -244,7 +244,7 @@ _snapshot_set_fields = [
     ),
 ]
 
-_DEFAULT_SNAPSET_FIELDS = "name,time,nr_snapshots,status,mountpoints"
+_DEFAULT_SNAPSET_FIELDS = "name,time,nr_snapshots,status,sources"
 
 _snapshot_fields = [
     FieldType(
