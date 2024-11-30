@@ -1027,13 +1027,13 @@ class Lvm2Cow(_Lvm2):
         vg_name, lv_name = vg_lv_from_origin(origin)
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
-        self.size_map[vg_name][mount_point] = self._check_free_space(
+        self.size_map[vg_name][lv_name] = self._check_free_space(
             origin, mount_point, size_policy
         )
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):
-        vg_name, _ = vg_lv_from_origin(origin)
-        snapshot_size = self.size_map[vg_name][mount_point]
+        vg_name, lv_name = vg_lv_from_origin(origin)
+        snapshot_size = self.size_map[vg_name][lv_name]
 
         lvresize_cmd = [
             LVRESIZE_CMD,
@@ -1226,7 +1226,7 @@ class Lvm2Thin(_Lvm2):
             self.size_map[vg_name] = {}
         if pool_name not in self.size_map[vg_name]:
             self.size_map[vg_name][pool_name] = {}
-        self.size_map[vg_name][mount_point] = self._check_free_space(
+        self.size_map[vg_name][pool_name][lv_name] = self._check_free_space(
             origin, pool_name, mount_point, size_policy
         )
 
