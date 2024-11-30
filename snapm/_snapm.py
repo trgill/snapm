@@ -66,6 +66,7 @@ DEFAULT_PERCENT_USED = 200.0
 SNAPSET_NAME = "SnapsetName"
 SNAPSET_SOURCES = "Sources"
 SNAPSET_MOUNT_POINTS = "MountPoints"
+SNAPSET_DEVICES = "Devices"
 SNAPSET_NR_SNAPSHOTS = "NrSnapshots"
 SNAPSET_TIME = "Time"
 SNAPSET_TIMESTAMP = "Timestamp"
@@ -671,6 +672,7 @@ class SnapshotSet:
             f"{SNAPSET_NAME}:      {self.name}\n"
             f"{SNAPSET_SOURCES}:          {', '.join(self.sources)}\n"
             f"{SNAPSET_MOUNT_POINTS}:      {', '.join(self.mount_points)}\n"
+            f"{SNAPSET_DEVICES}:          {', '.join(self.devices)}\n"
             f"{SNAPSET_NR_SNAPSHOTS}:      {self.nr_snapshots}\n"
             f"{SNAPSET_TIME}:             {datetime.fromtimestamp(self.timestamp)}\n"
             f"{SNAPSET_UUID}:             {self.uuid}\n"
@@ -698,6 +700,7 @@ class SnapshotSet:
         pmap[SNAPSET_NAME] = self.name
         pmap[SNAPSET_SOURCES] = self.sources
         pmap[SNAPSET_MOUNT_POINTS] = self.mount_points
+        pmap[SNAPSET_DEVICES] = self.devices
         pmap[SNAPSET_NR_SNAPSHOTS] = self.nr_snapshots
         pmap[SNAPSET_TIMESTAMP] = self.timestamp
         pmap[SNAPSET_TIME] = self.time
@@ -1238,6 +1241,7 @@ __all__ = [
     "SNAPSET_NAME",
     "SNAPSET_SOURCES",
     "SNAPSET_MOUNT_POINTS",
+    "SNAPSET_DEVICES",
     "SNAPSET_NR_SNAPSHOTS",
     "SNAPSET_TIME",
     "SNAPSET_TIMESTAMP",
