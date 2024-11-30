@@ -524,32 +524,32 @@ def _resume_journal():
         ) from err
 
 
-def _parse_mount_point_specs(mount_point_specs, default_size_policy):
+def _parse_source_specs(source_specs, default_size_policy):
     """
-    Parse and normalize mount point paths and size policies.
+    Parse and normalize source paths and size policies.
 
-    :param mount_point_specs: A list of mount points and optional size
-                              policies.
-    :returns: A tuple (mont_points, size_policies) containing a list of
-              normalized mount points and a dictionary mapping mount
-              points to size policies.
+    :param source_specs: A list of mount point or block device paths and
+                         optional size policy strings.
+    :returns: A tuple (sources, size_policies) containing a list of
+              normalized mount point and block device paths and a dictionary
+              mapping source paths to size policies.
     """
-    mount_points = []
+    sources = []
     size_policies = {}
 
     # Parse size policies and normalise mount paths
-    for mp_spec in mount_point_specs:
-        if ":" in mp_spec:
-            (mount, policy) = mp_spec.rsplit(":", maxsplit=1)
+    for spec in source_specs:
+        if ":" in spec:
+            (source, policy) = spec.rsplit(":", maxsplit=1)
             if not is_size_policy(policy):
-                mount = f"{mount}:{policy}"
+                source = f"{source}:{policy}"
                 policy = default_size_policy
         else:
-            (mount, policy) = (mp_spec, default_size_policy)
-        mount = normpath(mount)
-        mount_points.append(mount)
-        size_policies[mount] = policy
-    return (mount_points, size_policies)
+            (source, policy) = (spec, default_size_policy)
+        source = normpath(source)
+        sources.append(source)
+        size_policies[source] = policy
+    return (sources, size_policies)
 
 
 def _check_revert_snapshot_set(snapset):
@@ -861,7 +861,7 @@ class Manager:
         self._validate_snapset_name(name)
 
         # Parse size policies and normalise mount paths
-        (mount_points, size_policies) = _parse_mount_point_specs(
+        (mount_points, size_policies) = _parse_source_specs(
             source_point_specs, default_size_policy
         )
 
