@@ -653,41 +653,41 @@ class Manager:
         self.discover_snapshot_sets()
 
     def _find_and_verify_plugins(
-        self, mount_points, size_policies, _requested_provider=None
+        self, sources, size_policies, _requested_provider=None
     ):
         """
-        Find snapshot provider plugins for each mount point in ``mount_points``
-        and verify that a provider exists for each mount present.
+        Find snapshot provider plugins for each source in ``sources``
+        and verify that a provider exists for each source present.
 
-        :param mount_points: A list of mount points.
-        :param size_policies: A dictionary mapping mount points to size policies.
-        :returns: A dictionary mapping mount points to plugins.
+        :param sources: A list of source mount point or block device paths.
+        :param size_policies: A dictionary mapping sources to size policies.
+        :returns: A dictionary mapping sources to plugins.
         """
         # Initialise provider mapping.
-        provider_map = {k: None for k in mount_points}
+        provider_map = {k: None for k in sources}
 
-        # Find provider plugins for mount points
-        for mount in mount_points:
+        # Find provider plugins for sources
+        for source in sources:
             _log_debug(
                 "Probing plugins for %s with size policy %s",
-                mount,
-                size_policies[mount],
+                source,
+                size_policies[source],
             )
 
-            if not ismount(mount) and not S_ISBLK(stat(mount).st_mode):
+            if not ismount(source) and not S_ISBLK(stat(source).st_mode):
                 raise SnapmPathError(
-                    f"Path '{mount}' is not a block device or mount point"
+                    f"Path '{source}' is not a block device or mount point"
                 )
 
             for plugin in self.plugins:
-                if plugin.can_snapshot(mount):
-                    provider_map[mount] = plugin
+                if plugin.can_snapshot(source):
+                    provider_map[source] = plugin
 
         # Verify each mount point has a provider plugin
-        for mount in provider_map:
-            if provider_map[mount] is None:
+        for source in provider_map:
+            if provider_map[source] is None:
                 raise SnapmNoProviderError(
-                    f"Could not find snapshot provider for {mount}"
+                    f"Could not find snapshot provider for {source}"
                 )
         return provider_map
 
