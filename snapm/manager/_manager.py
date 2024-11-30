@@ -1050,40 +1050,40 @@ class Manager:
 
     # pylint: disable=too-many-branches
     def resize_snapshot_set(
-        self, mount_point_specs, name=None, uuid=None, default_size_policy=None
+        self, source_specs, name=None, uuid=None, default_size_policy=None
     ):
         """
         Resize snapshot set named ``name`` or having UUID ``uuid``.
 
-        Request to resize each snapshot included in ``mount_point_specs``
+        Request to resize each snapshot included in ``source_specs``
         according to the given size policy, or apply ``default_size_policy``
         if set.
 
         :param name: The name of the snapshot set to resize.
         :param uuid: The UUID of the snapshot set to resize.
-        :param mount_point_specs: A list of mount points and optional size
+        :param source_specs: A list of mount points and optional size
                                   policies.
         :param default_size_policy: A default size policy to apply to the
                                     resize.
         """
         snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
-        if mount_point_specs:
+        if source_specs:
             # Parse size policies and normalise mount paths
-            (mount_points, size_policies) = _parse_mount_point_specs(
-                mount_point_specs, default_size_policy
+            (sources, size_policies) = _parse_source_specs(
+                source_specs, default_size_policy
             )
         else:
-            mount_points = [snapshot.mount_point for snapshot in snapset.snapshots]
-            size_policies = {mount: default_size_policy for mount in mount_points}
+            sources = [snapshot.source for snapshot in snapset.snapshots]
+            size_policies = {source: default_size_policy for source in sources}
 
-        for mount in mount_points:
+        for source in sources:
             try:
-                _ = snapset.snapshot_by_mount_point(mount)
+                _ = snapset.snapshot_by_source(source)
             except SnapmNotFoundError as err:
                 _log_error(
-                    "Cannot resize %s: mount point not a member of snapset %s",
-                    mount,
+                    "Cannot resize %s: source path not a member of snapset %s",
+                    source,
                     snapset.name,
                 )
                 raise err
@@ -1092,9 +1092,9 @@ class Manager:
         for provider in providers:
             provider.start_transaction()
 
-        for mount in mount_points:
-            snapshot = snapset.snapshot_by_mount_point(mount)
-            size_policy = size_policies[mount]
+        for source in sources:
+            snapshot = snapset.snapshot_by_source(source)
+            size_policy = size_policies[source]
             try:
                 snapshot.check_resize(size_policy)
             except SnapmNoSpaceError as err:
@@ -1103,9 +1103,9 @@ class Manager:
                     f"Insufficient free space to resize snapshot set {snapset.name}"
                 ) from err
 
-        for mount in mount_points:
-            snapshot = snapset.snapshot_by_mount_point(mount)
-            size_policy = size_policies[mount]
+        for source in sources:
+            snapshot = snapset.snapshot_by_source(source)
+            size_policy = size_policies[source]
             try:
                 snapshot.resize(size_policy)
             except SnapmNoSpaceError as err:
