@@ -64,6 +64,7 @@ DEFAULT_PERCENT_USED = 200.0
 
 # Constants for SnapshotSet property names
 SNAPSET_NAME = "SnapsetName"
+SNAPSET_SOURCES = "Sources"
 SNAPSET_MOUNT_POINTS = "MountPoints"
 SNAPSET_NR_SNAPSHOTS = "NrSnapshots"
 SNAPSET_TIME = "Time"
@@ -667,7 +668,8 @@ class SnapshotSet:
         """
         snapset_str = (
             f"{SNAPSET_NAME}:      {self.name}\n"
-            f"{SNAPSET_MOUNT_POINTS}:      {', '.join([s.mount_point for s in self.snapshots])}\n"
+            f"{SNAPSET_SOURCES}:          {', '.join(self.sources)}\n"
+            f"{SNAPSET_MOUNT_POINTS}:      {', '.join(self.mount_points)}\n"
             f"{SNAPSET_NR_SNAPSHOTS}:      {self.nr_snapshots}\n"
             f"{SNAPSET_TIME}:             {datetime.fromtimestamp(self.timestamp)}\n"
             f"{SNAPSET_UUID}:             {self.uuid}\n"
@@ -693,7 +695,8 @@ class SnapshotSet:
         """
         pmap = {}
         pmap[SNAPSET_NAME] = self.name
-        pmap[SNAPSET_MOUNT_POINTS] = [s.mount_point for s in self.snapshots]
+        pmap[SNAPSET_SOURCES] = self.sources
+        pmap[SNAPSET_MOUNT_POINTS] = self.mount_points
         pmap[SNAPSET_NR_SNAPSHOTS] = self.nr_snapshots
         pmap[SNAPSET_TIMESTAMP] = self.timestamp
         pmap[SNAPSET_TIME] = self.time
@@ -773,7 +776,7 @@ class SnapshotSet:
         """
         The list of mount points in this snapshot set.
         """
-        return [s.mount_point for s in self.snapshots]
+        return [s.mount_point for s in self.snapshots if s.mount_point]
 
     @property
     def sources(self):
@@ -1223,6 +1226,7 @@ class Snapshot:
 __all__ = [
     "ETC_FSTAB",
     "SNAPSET_NAME",
+    "SNAPSET_SOURCES",
     "SNAPSET_MOUNT_POINTS",
     "SNAPSET_NR_SNAPSHOTS",
     "SNAPSET_TIME",
