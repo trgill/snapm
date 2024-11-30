@@ -651,10 +651,13 @@ class SnapshotSet:
         self._timestamp = timestamp
         self._snapshots = snapshots
         self._by_mount_point = {}
+        self._by_origin = {}
         self.boot_entry = None
         self.revert_entry = None
         for snapshot in self._snapshots:
-            self._by_mount_point[snapshot.mount_point] = snapshot
+            if snapshot.mount_point:
+                self._by_mount_point[snapshot.mount_point] = snapshot
+            self._by_origin[snapshot.origin] = snapshot
 
     def __str__(self):
         """
@@ -868,6 +871,23 @@ class SnapshotSet:
             return self._by_mount_point[mount_point]
         raise SnapmNotFoundError(
             f"Mount point {mount_point} not found in snapset {self.name}"
+        )
+
+    def snapshot_by_source(self, source):
+        """
+        Return the snapshot corresponding to ``source``.
+
+        :param source: The block device or mount point path to search for.
+        :returns: A ``Snapshot`` object for the given source path.
+        :raises: ``SnapmNotFoundError`` if the specified source path
+                 is not present in this ``SnapshotSet``.
+        """
+        if source in self._by_mount_point:
+            return self._by_mount_point[source]
+        if source in self._by_origin:
+            return self._by_origin[source]
+        raise SnapmNotFoundError(
+            f"Source path {source} not found in snapset {self.name}"
         )
 
 
