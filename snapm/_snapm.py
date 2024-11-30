@@ -773,18 +773,18 @@ class SnapshotSet:
         return len(self._snapshots)
 
     @property
-    def mount_points(self):
-        """
-        The list of mount points in this snapshot set.
-        """
-        return [s.mount_point for s in self.snapshots if s.mount_point]
-
-    @property
     def sources(self):
         """
         The list of souce mount points and block devices in this snapshot set.
         """
         return [s.source for s in self.snapshots]
+
+    @property
+    def mount_points(self):
+        """
+        The list of mount points in this snapshot set.
+        """
+        return [s.mount_point for s in self.snapshots if s.mount_point]
 
     @property
     def status(self):
