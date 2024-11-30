@@ -31,6 +31,7 @@ from snapm import (
     SNAPSET_NAME,
     SNAPSET_SOURCES,
     SNAPSET_MOUNT_POINTS,
+    SNAPSET_DEVICES,
     SNAPSET_NR_SNAPSHOTS,
     SNAPSET_TIME,
     SNAPSET_TIMESTAMP,
@@ -196,6 +197,15 @@ _snapshot_set_fields = [
         24,
         REP_STR_LIST,
         lambda f, d: f.report_str_list(d.mount_points),
+    ),
+    FieldType(
+        PR_SNAPSET,
+        "devices",
+        SNAPSET_DEVICES,
+        "Snapshot set devices",
+        9,
+        REP_STR_LIST,
+        lambda f, d: f.report_str_list(d.devices),
     ),
     FieldType(
         PR_SNAPSET,
