@@ -848,59 +848,75 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
-    def create_snapshot_set(self, name, source_point_specs, default_size_policy=None):
+    def create_snapshot_set(self, name, source_specs, default_size_policy=None):
         """
         Create a snapshot set of the supplied mount points with the name
         ``name``.
 
         :param name: The name of the snapshot set.
-        :param mount_points: A list of mount point paths to include in the set.
+        :param source_specs: A list of mount point and block device paths to
+                             include in the set.
+        :param default_size_policy: A default size policy to use for the set.
         :raises: ``SnapmExistsError`` if the name is already in use, or
                  ``SnapmInvalidIdentifierError`` if the name fails validation.
         """
         self._validate_snapset_name(name)
 
         # Parse size policies and normalise mount paths
-        (mount_points, size_policies) = _parse_source_specs(
-            source_point_specs, default_size_policy
+        (sources, size_policies) = _parse_source_specs(
+            source_specs, default_size_policy
         )
 
         # Initialise provider mapping.
-        provider_map = self._find_and_verify_plugins(mount_points, size_policies, None)
+        provider_map = self._find_and_verify_plugins(sources, size_policies, None)
 
         for provider in set(provider_map.values()):
             provider.start_transaction()
 
         timestamp = floor(time())
         origins = {}
-        for mount in provider_map:
-            origins[mount] = provider_map[mount].origin_from_mount_point(mount)
+        mounts = {}
+
+        for source in provider_map:
+            if S_ISBLK(stat(source).st_mode):
+                mounts[source] = _find_mount_point_for_devpath(source)
+                origins[source] = source
+                mount = mounts[source]
+            else:
+                mount = source
+                origins[source] = provider_map[source].origin_from_mount_point(mount)
+
             try:
-                provider_map[mount].check_create_snapshot(
-                    origins[mount], name, timestamp, mount, size_policies[mount]
+                provider_map[source].check_create_snapshot(
+                    origins[source], name, timestamp, mount, size_policies[source]
                 )
             except SnapmInvalidIdentifierError as err:
                 _log_error(
-                    "Error creating %s snapshot: %s", provider_map[mount].name, err
+                    "Error creating %s snapshot: %s", provider_map[source].name, err
                 )
                 raise SnapmInvalidIdentifierError(
                     f"Snapset name {name} too long"
                 ) from err
             except SnapmNoSpaceError as err:
                 _log_error(
-                    "Error creating %s snapshot: %s", provider_map[mount].name, err
+                    "Error creating %s snapshot: %s", provider_map[source].name, err
                 )
                 raise SnapmNoSpaceError(
                     f"Insufficient free space for snapshot set {name}"
                 ) from err
 
         _suspend_journal()
+
         snapshots = []
-        for mount in provider_map:
+        for source in provider_map:
+            if S_ISBLK(stat(source).st_mode):
+                mount = mounts[source]
+            else:
+                mount = source
             try:
                 snapshots.append(
-                    provider_map[mount].create_snapshot(
-                        origins[mount], name, timestamp, mount, size_policies[mount]
+                    provider_map[source].create_snapshot(
+                        origins[source], name, timestamp, mount, size_policies[source]
                     )
                 )
             except SnapmError as err:
@@ -911,6 +927,7 @@ class Manager:
                 raise SnapmPluginError(
                     f"Could not create all snapshots for set {name}"
                 ) from err
+
         _resume_journal()
 
         for provider in set(provider_map.values()):
