@@ -464,18 +464,20 @@ def _do_print_type(
     return report.report_output()
 
 
-def create_snapset(
-    manager, name, mount_points, size_policy=None, boot=False, revert=False
-):
+def create_snapset(manager, name, sources, size_policy=None, boot=False, revert=False):
     """
-    Create a new snapshot set from a list of mount points.
+    Create a new snapshot set from a list of mount point and block device
+    source paths.
 
     :param manager: The manager context to use
     :param name: The name of the new snapshot set
-    :param mount_points: A list of mount points to snapshot
+    :param sources: A list of mount point or block devices to snapshot
+    :param size_policy: The default size policy for this snapshot set.
+    :param boot: Create a boot entry for this snapshot set.
+    :param revert: Create a revert boot entry for this snapshot set.
     """
     snapset = manager.create_snapshot_set(
-        name, mount_points, default_size_policy=size_policy
+        name, sources, default_size_policy=size_policy
     )
 
     # Snapshot sets must be active to create boot entries.
