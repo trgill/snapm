@@ -521,17 +521,18 @@ def rename_snapset(manager, old_name, new_name):
     return manager.rename_snapshot_set(old_name, new_name)
 
 
-def resize_snapset(
-    manager, mount_points, name=None, uuid=None, default_size_policy=None
-):
+def resize_snapset(manager, sources, name=None, uuid=None, default_size_policy=None):
     """
-    Revert snapshot set matching selection criteria.
+    Resize snapshot set by name or UUID.
 
     :param manager: The manager context to use
-    :param selection: Selection criteria for the snapshot set to resize.
+    :param sources: A list of mount point or block devices to snapshot
+    :param name: The name of the snapshot set to resize.
+    :param uuid: The uuid of the snapshot set to resize.
+    :param default_size_policy: The default size policy for this snapshot set.
     """
     return manager.resize_snapshot_set(
-        mount_points, name=name, uuid=uuid, default_size_policy=default_size_policy
+        sources, name=name, uuid=uuid, default_size_policy=default_size_policy
     )
 
 
