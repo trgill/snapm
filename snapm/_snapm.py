@@ -81,6 +81,7 @@ SNAPSET_SNAPSHOTS = "Snapshots"
 # Constants for Snapshot property names
 SNAPSHOT_NAME = "Name"
 SNAPSHOT_ORIGIN = "Origin"
+SNAPSHOT_SOURCE = "Source"
 SNAPSHOT_MOUNT_POINT = "MountPoint"
 SNAPSHOT_PROVIDER = "Provider"
 SNAPSHOT_UUID = "UUID"
@@ -933,6 +934,7 @@ class Snapshot:
             f"{SNAPSET_NAME}:    {self.snapset_name}\n"
             f"{SNAPSHOT_ORIGIN}:         {self.origin}\n"
             f"{SNAPSET_TIME}:           {datetime.fromtimestamp(self.timestamp)}\n"
+            f"{SNAPSHOT_SOURCE}:         {self.source}\n"
             f"{SNAPSHOT_MOUNT_POINT}:     {self.mount_point}\n"
             f"{SNAPSHOT_PROVIDER}:       {self.provider.name}\n"
             f"{SNAPSHOT_UUID}:           {self.uuid}\n"
@@ -953,6 +955,7 @@ class Snapshot:
         pmap[SNAPSHOT_ORIGIN] = self.origin
         pmap[SNAPSET_TIMESTAMP] = self.timestamp
         pmap[SNAPSET_TIME] = self.time
+        pmap[SNAPSHOT_SOURCE] = self.source
         pmap[SNAPSHOT_MOUNT_POINT] = self.mount_point
         pmap[SNAPSHOT_PROVIDER] = self.provider.name
         pmap[SNAPSHOT_UUID] = str(self.uuid)
@@ -1241,6 +1244,7 @@ __all__ = [
     "SNAPSET_SNAPSHOTS",
     "SNAPSHOT_NAME",
     "SNAPSHOT_ORIGIN",
+    "SNAPSHOT_SOURCE",
     "SNAPSHOT_MOUNT_POINT",
     "SNAPSHOT_PROVIDER",
     "SNAPSHOT_UUID",
