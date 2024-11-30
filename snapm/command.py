@@ -29,6 +29,7 @@ import logging
 from snapm import (
     SnapmInvalidIdentifierError,
     SNAPSET_NAME,
+    SNAPSET_SOURCES,
     SNAPSET_MOUNT_POINTS,
     SNAPSET_NR_SNAPSHOTS,
     SNAPSET_TIME,
@@ -176,6 +177,15 @@ _snapshot_set_fields = [
         11,
         REP_NUM,
         lambda f, d: f.report_num(d.nr_snapshots),
+    ),
+    FieldType(
+        PR_SNAPSET,
+        "sources",
+        SNAPSET_SOURCES,
+        "Snapshot set sources",
+        8,
+        REP_STR_LIST,
+        lambda f, d: f.report_str_list(d.sources),
     ),
     FieldType(
         PR_SNAPSET,
