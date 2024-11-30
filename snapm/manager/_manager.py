@@ -20,7 +20,7 @@ from time import time
 from math import floor
 from stat import S_ISBLK
 from os import stat
-from os.path import ismount, normpath
+from os.path import exists, ismount, normpath, samefile
 import fnmatch
 import inspect
 import os
@@ -604,6 +604,20 @@ def _check_snapset_status(snapset, operation):
         if snapset.status == SnapStatus.REVERTING:
             _log_error("Cannot operate on reverting snapshot set '%s'", snapset.name)
         raise SnapmStateError(f"Failed to {operation} snapset '{snapset.name}'")
+
+
+def _find_mount_point_for_devpath(devpath):
+    """
+    Return the first mount point found in /proc/mounts that corresponds to
+    ``device``, or the empty string if no mount point can be found.
+    """
+    with open("/proc/mounts", "r", encoding="utf8") as mounts:
+        for line in mounts:
+            fields = line.split(" ")
+            if exists(fields[0]):
+                if samefile(devpath, fields[0]):
+                    return fields[1]
+    return ""
 
 
 class Manager:
