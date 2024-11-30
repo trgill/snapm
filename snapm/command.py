@@ -769,7 +769,7 @@ def _create_cmd(cmd_args):
     snapset = create_snapset(
         manager,
         cmd_args.snapset_name,
-        cmd_args.mount_points,
+        cmd_args.sources,
         size_policy=cmd_args.size_policy,
         boot=cmd_args.bootable,
         revert=cmd_args.revert,
@@ -840,7 +840,7 @@ def _resize_cmd(cmd_args):
 
     resize_snapset(
         manager,
-        cmd_args.mount_points,
+        cmd_args.sources,
         name=name,
         uuid=uuid,
         default_size_policy=cmd_args.size_policy,
@@ -1304,11 +1304,11 @@ def _add_snapset_subparser(type_subparser):
         help="The name of the snapshot set to create",
     )
     snapset_create_parser.add_argument(
-        "mount_points",
-        metavar="MOUNT_POINT",
+        "sources",
+        metavar="SOURCE",
         type=str,
         nargs="+",
-        help="A list of mount points to include in this snapshot set",
+        help="A device or mount point path to include in this snapshot set",
     )
     snapset_create_parser.add_argument(
         "-s",
@@ -1364,11 +1364,11 @@ def _add_snapset_subparser(type_subparser):
     snapset_resize_parser.set_defaults(func=_resize_cmd)
     _add_identifier_args(snapset_resize_parser, snapset=True)
     snapset_resize_parser.add_argument(
-        "mount_points",
-        metavar="MOUNT_POINT",
+        "sources",
+        metavar="SOURCE",
         type=str,
-        nargs="*",
-        help="A list of mount points to include in this snapshot set",
+        nargs="+",
+        help="A device or mount point path to include in this snapshot set",
     )
     snapset_resize_parser.add_argument(
         "-s",
