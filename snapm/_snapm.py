@@ -787,6 +787,13 @@ class SnapshotSet:
         return [s.mount_point for s in self.snapshots if s.mount_point]
 
     @property
+    def devices(self):
+        """
+        The list of block devices in this snapshot set.
+        """
+        return [s.source for s in self.snapshots if s.source not in self.mount_points]
+
+    @property
     def status(self):
         """
         The overall status of this snapshot set. Returns ``SnapStatus.ACTIVE``
