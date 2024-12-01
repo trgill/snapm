@@ -61,6 +61,7 @@ SECTOR_SIZE = 512
 ETC_FSTAB = "/etc/fstab"
 
 DEFAULT_PERCENT_USED = 200.0
+DEFAULT_PERCENT_SIZE = 25.0
 
 # Constants for SnapshotSet property names
 SNAPSET_NAME = "SnapsetName"
@@ -542,8 +543,11 @@ class SizePolicy:
         Parse a string representation of a size policy.
         """
         if policy is None:
-            self._percent = DEFAULT_PERCENT_USED
-            return SizePolicyType.PERCENT_USED
+            if self._mount:
+                self._percent = DEFAULT_PERCENT_USED
+                return SizePolicyType.PERCENT_USED
+            self._percent = DEFAULT_PERCENT_SIZE
+            return SizePolicyType.PERCENT_SIZE
         if "%" not in policy:
             self._size = parse_size_with_units(policy)
             return SizePolicyType.FIXED
