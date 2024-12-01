@@ -66,6 +66,7 @@ class StratisTestsSimple(unittest.TestCase):
             "/dev/mapper/fedora-root": False,
             "/dev/mapper/fedora-var": False,
             "/dev/mapper/stratis-1-1c7c941a2dba4eb78d57d3fb01aacc61-thin-fs-202ea1667fa54123bd24f0c353b9914c": True,
+            "/dev/stratis/p1/fs1": True,
             "/dev/mapper/mpatha": False,
         }
         for dev in devs.keys():
