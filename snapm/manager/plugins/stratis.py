@@ -42,7 +42,6 @@ from snapm import (
 from snapm.manager import Plugin
 from snapm.manager.plugins import (
     DEV_PREFIX,
-    DEV_MAPPER_PREFIX,
     DMSETUP_CMD,
     DMSETUP_INFO,
     DMSETUP_NO_HEADINGS,
@@ -93,16 +92,13 @@ def is_stratis_device(devpath):
     Return ``True`` if the device at ``devpath`` is a Stratis device or
     ``False`` otherwise.
     """
-    if not devpath.startswith(DEV_MAPPER_PREFIX):
-        return False
-    dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
     dmsetup_cmd_args = [
         DMSETUP_CMD,
         DMSETUP_INFO,
         DMSETUP_COLUMNS,
         DMSETUP_NO_HEADINGS,
         DMSETUP_FIELDS_UUID,
-        dm_name,
+        devpath,
     ]
     try:
         dmsetup_cmd = run(dmsetup_cmd_args, capture_output=True, check=True)
