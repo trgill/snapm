@@ -319,6 +319,32 @@ class ManagerTests(unittest.TestCase):
         )
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_create_snapshot_set_blockdevs_unmounted(self):
+        self._lvm.umount_all()
+        self._stratis.umount_all()
+        snapset = self.manager.create_snapshot_set(
+            "testset0", self._lvm.block_devs() + self._stratis.block_devs()
+        )
+        self._lvm.mount_all()
+        self._stratis.mount_all()
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_create_snapshot_set_mixed_1(self):
+        self._stratis.umount_all()
+        snapset = self.manager.create_snapshot_set(
+            "testset0", self._lvm.mount_points() + self._stratis.block_devs()
+        )
+        self._stratis.mount_all()
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_create_snapshot_set_mixed_2(self):
+        self._lvm.umount_all()
+        snapset = self.manager.create_snapshot_set(
+            "testset0", self._lvm.block_devs() + self._stratis.mount_points()
+        )
+        self._lvm.mount_all()
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
     def test_create_snapshot_set_default_size_policy(self):
         self.manager.create_snapshot_set(
             "testset0", self.mount_points(), default_size_policy="10%FREE"
