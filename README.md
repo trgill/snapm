@@ -107,9 +107,10 @@ The `snapset` subcommand is used to create, delete, rename, activate,
 deactivate, list and display snapsets.
 
 ##### create
-Create a new snapset with the provided name and list of mount points.
+Create a new snapset with the provided name and list of sources (mount point
+or block device paths):
 ```
-# snapm snapset create [-b|--bootable] [-r|--revert] <name> mount_point...
+# snapm snapset create [-b|--bootable] [-r|--revert] <name> source...
 ```
 ###### Size Policies
 Size policies can be used to control the size of fixed-sized snapshots and to
@@ -126,7 +127,7 @@ check that space is available for the requested size policy at snapshot set
 creation time.
 
 Size policy hints can be manually given on the command line to override the
-default behavior on a per-mount point basis. Four policies are available:
+default behavior on a per-source path basis. Four policies are available:
 
  * FIXED - a fixed size given on the command line
  * FREE - a percentage fraction of the free space available
@@ -137,7 +138,9 @@ default behavior on a per-mount point basis. Four policies are available:
 The FIXED size policy accepts optional units of KiB, MiB, GiB, TiB, PiB, EiB
 and ZiB. Units may be abbreviated to the first character.
 
-Per-mount point size policies are specified by adding a ':' and the required
+The USED size policy can only be applied to mounted file systems.
+
+Per-source path size policies are specified by adding a ':' and the required
 policy to the corresponding mount point path, for example:
 
 
@@ -157,12 +160,13 @@ policy to the corresponding mount point path, for example:
 # snapm snapset create backup /:100%SIZE /var:100%SIZE /home
 ```
 
-If no size policy is specified the default `200%USED` is applied. To ensure a
-volume can be completely overwritten specify `100%SIZE`. This requires more
-storage capacity but avoids the snapshot running out of space.
+If no size policy is specified the default is `200%USED` for mounted file
+systems and 25%SIZE for unmounted block devices. To ensure a volume can be
+completely overwritten specify `100%SIZE`. This requires more storage capacity
+but avoids the possibility of the snapshot running out of space.
 
-A default size policy for all mount points that do not specify an explicit
-per-mount point policy can be set with the `--size-policy` argument:
+A default size policy for all source paths that do not specify an explicit
+per-path policy can be set with the `--size-policy` argument:
 
 ```
 # snapm snapset create backup --size-policy 100%SIZE / /home /var
