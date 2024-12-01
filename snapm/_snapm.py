@@ -550,12 +550,12 @@ class SizePolicy:
         (percent, policy_type) = policy.rsplit("%", maxsplit=1)
         self._percent = float(percent)
         cap_percent = (SizePolicyType.PERCENT_SIZE, SizePolicyType.PERCENT_FREE)
-        if policy_type == SizePolicyType.PERCENT_USED and not self._mount:
-            raise SnapmSizePolicyError(
-                f"Cannot apply %USED size policy to unmounted block device {self._source}"
-            )
         for ptype in SizePolicyType:
             if ptype.value == policy_type:
+                if ptype == SizePolicyType.PERCENT_USED and not self._mount:
+                    raise SnapmSizePolicyError(
+                        f"Cannot apply %USED size policy to unmounted block device {self._source}"
+                    )
                 if ptype in cap_percent and self._percent > 100.0:
                     raise SnapmNoSpaceError(
                         f"Size {self._mount}:{self._percent}%{ptype.value} "
