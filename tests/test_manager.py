@@ -315,7 +315,7 @@ class ManagerTests(unittest.TestCase):
 
     def test_create_snapshot_set_blockdevs(self):
         snapset = self.manager.create_snapshot_set(
-            "testset0", self._lvm.block_devs()
+            "testset0", self._lvm.block_devs() + self._stratis.block_devs()
         )
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 

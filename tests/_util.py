@@ -406,6 +406,9 @@ class StratisLoopBacked(object):
     def mount_points(self):
         return [f"{self.mount_root}/{name}" for name in self.all_volumes()]
 
+    def block_devs(self):
+        return [f"/dev/stratis/{_POOL_NAME}/{name}" for name in self.all_volumes()]
+
     def touch_path(self, relpath):
         path = Path(f"{self.mount_root}/{relpath}")
         path.touch()
