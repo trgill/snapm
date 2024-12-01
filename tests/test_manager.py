@@ -313,6 +313,12 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(len(sets), 1)
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_create_snapshot_set_blockdevs(self):
+        snapset = self.manager.create_snapshot_set(
+            "testset0", self._lvm.block_devs()
+        )
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
     def test_create_snapshot_set_default_size_policy(self):
         self.manager.create_snapshot_set(
             "testset0", self.mount_points(), default_size_policy="10%FREE"
