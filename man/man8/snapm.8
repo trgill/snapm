@@ -1,4 +1,4 @@
-.TH SNAPM 8 "Oct 14 2024" "Linux" "MAINTENANCE COMMANDS"
+.TH SNAPM 8 "Dec 01 2024" "Linux" "MAINTENANCE COMMANDS"
 
 .de ARG_GLOBAL
 .  RI [ global_args ]
@@ -80,7 +80,7 @@ Snapm \(em Linux snapshot manager
 .  RB [ -s | --size-policy
 .  IR policy ]
 .  IR \fIname\fP
-.  IR \fImount_point[size_policy]\fP ...
+.  IR \fIsource[size_policy]\fP ...
 .  ad b
 ..
 .CMD_SNAPSET_CREATE
@@ -140,7 +140,7 @@ Snapm \(em Linux snapshot manager
 .  IR uuid ]
 .  RB [ -s | --size-policy
 .  IR policy ]
-.  IR \fImount_point[size_policy]\fP ...
+.  IR \fIsource[size_policy]\fP ...
 .  ad b
 ..
 .CMD_SNAPSET_RESIZE
@@ -481,16 +481,17 @@ Display the version of \fBsnapm\fP and exit.
 .SH SNAPSHOT SETS AND SNAPSHOTS
 .
 Snapm manages named collections of snapshots taken at a common point in time as
-\fIsnapshot sets\fP. A snapshot set is created from a list of mount points and
-allows the state of the system to be captured spanning over several volumes.
-Valid characters for snapset names are A-Z, a-z, 0-9, -, ., and +. Snapshot sets
-and snapshots are also identified by a unique UUID value. The terms \fIsnapshot
-set\fP and \fIsnapset\fP are used interchangeably in this manual page.
+\fIsnapshot sets\fP. A snapshot set is created from a list of sources (mount
+point or block device paths) and allows the state of the system to be captured
+spanning over several volumes.  Valid characters for snapset names are A-Z,
+a-z, 0-9, -, ., and +. Snapshot sets and snapshots are also identified by a
+unique UUID value. The terms \fIsnapshot set\fP and \fIsnapset\fP are used
+interchangeably in this manual page.
 
-A plugin model is used to map mount points onto possible snapshot
-\fIproviders\fP. A provider plugin must exist for each mount point specified
-when creating a snapshot set. The current plugins support LVM2 copy-on-write and
-LVM2 thinly provisioned snapshots.
+A plugin model is used to map mount points or devices onto possible snapshot
+\fIproviders\fP. A provider plugin must exist for each source path specified
+when creating a snapshot set. The current plugins support LVM2 copy-on-write,
+LVM2 thin provisioned and Stratis snapshots.
 
 The \fIsnapset\fP subcommand allows snapsets to be created, deleted,
 enumerated, renamed, reverted, and activated or deactivated.
@@ -509,8 +510,9 @@ specific size for the snapshot data store. If this space is completely consumed
 the snapshot becomes \fIinvalid\fP and can no longer be accessed.
 
 When a revert is executed for a snapshot set that is currently mounted the
-status of the snapshot set is \fIreverting\fP. The revert will take place the
-next time the volumes making up the snapshot set are activated.
+status of the snapshot set is \fIreverting\fP. If the snapshot set is in use
+(either the origin or snapshot volumes are mounted) The revert will take place
+the next time the volumes making up the snapshot set are activated.
 
 The status of a snapset is an aggregation of the status of the individual
 snapshots it contains: if any snapshots are \fIinactive\fP then the overall
@@ -521,7 +523,7 @@ are \fIinvalid\fP then the snapshot set status as a whole is also
 .B Snapshot size policies
 .P
 An optional size policy hint can be specified when creating a snapshot set,
-either as a global default or individually for each mount point. The policy is
+either as a global default or individually for each source path. The policy is
 used at creation time to check that sufficient space is present.
 
 For snapshot providers that require a fixed space to be allocated for the
@@ -542,7 +544,8 @@ A percentage of the free space available from 0 to 100%.
 .B %USED
 A percentage of the space currently consumed on the mount point, as reported
 by \fIdf\fP. Values greater than 100% can be used to allow the existing content
-to be completely overwritten without running out of space.
+to be completely overwritten without running out of space. This policy can only
+be applied to snapshot sources that correspond to mounted file systems.
 .TP
 .B %SIZE
 A percentage of the size of the origin volume from 0 to 100%.
@@ -550,7 +553,8 @@ A percentage of the size of the origin volume from 0 to 100%.
 .
 .P
 .br
-The default size policy for all volumes if none is specified is 200%USED.
+The default size policy mounted volumes if none is specified is 200%USED. The
+default size policy for unmounted block devices is 25%SIZE.
 .
 .P
 .B Snapshot Set Commands
@@ -560,7 +564,8 @@ The default size policy for all volumes if none is specified is 200%USED.
 .B snapm
 .CMD_SNAPSET_CREATE
 .br
-Create a new snapshot set using the specified list of mount points.
+Create a new snapshot set using the specified list of mount points and block
+devices.
 
 The newly created snapset is displayed on the terminal on success:
 
@@ -586,9 +591,9 @@ be used to automatically create snapshot boot and revert boot entries
 respectively.
 
 A size policy can be specified on the create command line, either as a global
-default or individually for each mount point. To specify a default policy use
-the \fB--size-policy\fP argument.  To specify a per-mount point size policy
-append the policy to the mount point path separated by the \fB:\fP character:
+default or individually for each source path. To specify a default policy use
+the \fB--size-policy\fP argument.  To specify a per-source path size policy
+append the policy to the source path separated by the \fB:\fP character:
 
 .br
 #
@@ -654,9 +659,9 @@ dynamically allocate space the command will check that the requested space is
 available at the time of the resize command. An error is returned if the
 specified size policies cannot be satisfied.
 
-Size policies may be specified on a per-mount basis using the same syntax as
+Size policies may be specified on a per-source basis using the same syntax as
 the \fBsnapset create\fP command. A default size policy can be set using the
-\fB--size-policy\fP argument. If no mount points are specified the command
+\fB--size-policy\fP argument. If no source paths are specified the command
 applies the default size policy to each member of the snapshot set.
 .
 .HP
