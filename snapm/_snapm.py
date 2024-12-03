@@ -1289,6 +1289,7 @@ __all__ = [
     "SnapmCalloutError",
     "SnapmNoSpaceError",
     "SnapmNoProviderError",
+    "SnapmSizePolicyError",
     "SnapmExistsError",
     "SnapmBusyError",
     "SnapmPathError",
