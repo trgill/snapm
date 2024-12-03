@@ -507,19 +507,11 @@ def is_size_policy(policy):
     :returns: ``True`` if ``policy`` is a valid size policy string or
               ``False`` otherwise.
     """
-    if policy is None:
-        return False
-    if "%" not in policy:
-        try:
-            parse_size_with_units(policy)
-        except SnapmSizePolicyError:
-            return False
+    try:
+        _ = SizePolicy("/", "/", 0, 0, 0, policy)
         return True
-    (_, policy_type) = policy.rsplit("%", maxsplit=1)
-    for ptype in SizePolicyType:
-        if ptype.value == policy_type:
-            return True
-    return False
+    except SnapmSizePolicyError:
+        return False
 
 
 class SizePolicyType(Enum):
