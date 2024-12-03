@@ -493,7 +493,7 @@ def parse_size_with_units(value):
     """
     match = _SIZE_RE.search(value)
     if match is None:
-        raise SnapmParseError(f"Malformed size expression: {value}")
+        raise SnapmSizePolicyError(f"Malformed size expression: {value}")
     (size, unit) = (match.group("size"), match.group("units").upper())
     size_bytes = int(size) * _SIZE_SUFFIXES[unit[0]]
     return size_bytes
@@ -512,7 +512,7 @@ def is_size_policy(policy):
     if "%" not in policy:
         try:
             parse_size_with_units(policy)
-        except SnapmParseError:
+        except SnapmSizePolicyError:
             return False
         return True
     (_, policy_type) = policy.rsplit("%", maxsplit=1)
@@ -561,12 +561,12 @@ class SizePolicy:
                         f"Cannot apply %USED size policy to unmounted block device {self._source}"
                     )
                 if ptype in cap_percent and self._percent > 100.0:
-                    raise SnapmNoSpaceError(
+                    raise SnapmSizePolicyError(
                         f"Size {self._mount}:{self._percent}%{ptype.value} "
                         "cannot be greater than 100%"
                     )
                 return ptype
-        raise SnapmParseError(f"Could not parse size policy: {policy}")
+        raise SnapmSizePolicyError(f"Could not parse size policy: {policy}")
 
     def __init__(self, source, mount, free_space, fs_used, dev_size, policy):
         """

@@ -170,15 +170,15 @@ class SnapmTests(unittest.TestCase):
         self.assertEqual(policy.size, TEN_TIB)
 
     def test_size_policy_size_over_limit_raises(self):
-        with self.assertRaises(snapm.SnapmNoSpaceError) as cm:
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
             policy = snapm.SizePolicy("/", "/", TEN_TIB, FOUR_TIB, TEN_TIB, "200%SIZE")
 
     def test_size_policy_fixed_bad_unit_raises(self):
-        with self.assertRaises(snapm.SnapmParseError) as cm:
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
             policy = snapm.SizePolicy("/", "/", TEN_GIB, FOUR_GIB, TEN_GIB, "2A")
 
     def test_size_policy_invalid_policy_raises(self):
-        with self.assertRaises(snapm.SnapmParseError) as cm:
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
             policy = snapm.SizePolicy("/", "/", TEN_GIB, FOUR_GIB, TEN_GIB, "100%QUX")
 
     def test_is_size_policy_valid(self):
