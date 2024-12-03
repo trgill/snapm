@@ -394,6 +394,37 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(len(sets), 1)
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_create_snapshot_set_size_policy_size_over_100_raises(self):
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
+            self.manager.create_snapshot_set(
+                "testset0", self.mount_points(), default_size_policy="150%SIZE"
+            )
+
+    def test_create_snapshot_set_size_policy_free_over_100_raises(self):
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
+            self.manager.create_snapshot_set(
+                "testset0", self.mount_points(), default_size_policy="150%FREE"
+            )
+
+    def test_create_snapshot_set_size_policy_bad_units_raises(self):
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
+            self.manager.create_snapshot_set(
+                "testset0", self.mount_points(), default_size_policy="2FiB"
+            )
+
+    def test_create_snapshot_set_size_policy_non_num_raises(self):
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
+            self.manager.create_snapshot_set(
+                "testset0", self.mount_points(), default_size_policy="quux"
+            )
+
+    def test_create_snapshot_set_size_policies_blockdev_used_raises(self):
+        dev_specs = [f"{dev}:100%USED" for dev in self._lvm.block_devs()]
+        self._lvm.umount_all()
+        with self.assertRaises(snapm.SnapmSizePolicyError) as cm:
+            self.manager.create_snapshot_set("testset0", dev_specs)
+        self._lvm.mount_all()
+
     def test_create_snapshot_set_bad_name_backslash(self):
         with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
             self.manager.create_snapshot_set("bad\\name", self.mount_points())
