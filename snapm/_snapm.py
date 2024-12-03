@@ -675,8 +675,15 @@ class SnapshotSet:
         snapset_str = (
             f"{SNAPSET_NAME}:      {self.name}\n"
             f"{SNAPSET_SOURCES}:          {', '.join(self.sources)}\n"
-            f"{SNAPSET_MOUNT_POINTS}:      {', '.join(self.mount_points)}\n"
-            f"{SNAPSET_DEVICES}:          {', '.join(self.devices)}\n"
+        )
+
+        if len(self.mount_points) > 0 and len(self.devices) > 0:
+            snapset_str += (
+                f"  {SNAPSET_MOUNT_POINTS}:    {', '.join(self.mount_points)}\n"
+                f"  {SNAPSET_DEVICES}:        {', '.join(self.devices)}\n"
+            )
+
+        snapset_str += (
             f"{SNAPSET_NR_SNAPSHOTS}:      {self.nr_snapshots}\n"
             f"{SNAPSET_TIME}:             {datetime.fromtimestamp(self.timestamp)}\n"
             f"{SNAPSET_UUID}:             {self.uuid}\n"
@@ -684,6 +691,7 @@ class SnapshotSet:
             f"{SNAPSET_AUTOACTIVATE}:     {'yes' if self.autoactivate else 'no'}\n"
             f"{SNAPSET_BOOTABLE}:         {'yes' if self.boot_entry is not None else 'no'}"
         )
+
         if self.boot_entry or self.revert_entry:
             snapset_str += f"\n{SNAPSET_BOOT_ENTRIES}:"
         if self.boot_entry:
