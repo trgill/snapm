@@ -883,6 +883,10 @@ class Manager:
                 mounts[source] = _find_mount_point_for_devpath(source)
                 origins[source] = source
                 mount = mounts[source]
+                if mount in provider_map:
+                    raise SnapmInvalidIdentifierError(
+                        f"Duplicate snapshot source {source} already added to {name} as {mount}"
+                    )
             else:
                 mount = source
                 origins[source] = provider_map[source].origin_from_mount_point(mount)
