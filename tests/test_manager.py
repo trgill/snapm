@@ -243,6 +243,10 @@ class ManagerTestsSimple(unittest.TestCase):
 
 @unittest.skipIf(not have_root(), "requires root privileges")
 class ManagerTests(unittest.TestCase):
+    """
+    Tests for snapm.manager.Manager that apply to all supported snapshot
+    providers.
+    """
     volumes = ["root", "home", "var", "data_vol"]
     thin_volumes = ["opt", "srv", "thin-vol"]
     stratis_volumes = ["fs1", "fs2"]
@@ -773,3 +777,39 @@ class ManagerTests(unittest.TestCase):
         for snapshot in snapset.snapshots:
             if snapshot.provider.name == "lvm2cow":
                 self.assertEqual(snapshot.size, 1024 ** 3)
+
+class ManagerTestsThin(unittest.TestCase):
+    """
+    Tests for snapm.manager.Manager that apply only to thin provisioned
+    snapshot providers (lvm2thin and stratis).
+    """
+    volumes = [] # Do not use lvm2cow
+    thin_volumes = ["root", "home", "var", "data_vol"]
+    stratis_volumes = ["fs1", "fs2"]
+
+    def setUp(self):
+        def cleanup_lvm():
+            if hasattr(self, "_lvm"):
+                self._lvm.destroy()
+
+        def cleanup_stratis():
+            if hasattr(self, "_stratis"):
+                self._stratis.destroy()
+
+        self.addCleanup(cleanup_lvm)
+        self.addCleanup(cleanup_stratis)
+
+        self._lvm = LvmLoopBacked(self.volumes, thin_volumes=self.thin_volumes)
+        self._stratis = StratisLoopBacked(self.stratis_volumes)
+
+        self.manager = snapm.manager.Manager()
+
+    def mount_points(self):
+        return self._lvm.mount_points() + self._stratis.mount_points()
+
+    def test_create_snapshot_set_recursion_raises(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+        self.manager.activate_snapshot_sets(snapm.Selection(name="testset0"))
+        snap_devs = [snapshot.devpath for snapshot in sset.snapshots]
+        with self.assertRaises(snapm.SnapmRecursionError) as cm:
+            sset = self.manager.create_snapshot_set("testset1", snap_devs)

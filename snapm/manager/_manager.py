@@ -48,6 +48,7 @@ from snapm import (
     SnapmInvalidIdentifierError,
     SnapmPluginError,
     SnapmStateError,
+    SnapmRecursionError,
     Selection,
     is_size_policy,
     SnapStatus,
@@ -725,6 +726,26 @@ class Manager:
 
         return snapset
 
+    def _check_recursion(self, origins):
+        """
+        Verify that each entry in  ``origins`` corresponds to a device that is
+        not a snapshot belonging to another snapshot set.
+
+        :param origins: A list of origin devices to check.
+        :raises: ``SnapmRecursionError`` if an origin device is a snapshot.
+        """
+        snapshot_devices = [
+            snapshot.devpath
+            for snapset in self.snapshot_sets
+            for snapshot in snapset.snapshots
+        ]
+        for source, device in origins.items():
+            if device in snapshot_devices:
+                raise SnapmRecursionError(
+                    "Snapshots of snapshots are not supported: "
+                    f"{source} corresponds to snapshot device {device}"
+                )
+
     def discover_snapshot_sets(self):
         """
         Discover snapshot sets by calling into each plugin to find
@@ -909,6 +930,8 @@ class Manager:
                 raise SnapmNoSpaceError(
                     f"Insufficient free space for snapshot set {name}"
                 ) from err
+
+        self._check_recursion(origins)
 
         _suspend_journal()
 

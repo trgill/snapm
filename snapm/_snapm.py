@@ -249,6 +249,13 @@ class SnapmStateError(SnapmError):
     """
 
 
+class SnapmRecursionError(SnapmError):
+    """
+    A snapshot set source corresponds to a snapshot of another snapshot
+    set.
+    """
+
+
 #
 # Selection criteria class
 #
@@ -1290,6 +1297,7 @@ __all__ = [
     "SnapmParseError",
     "SnapmPluginError",
     "SnapmStateError",
+    "SnapmRecursionError",
     "Selection",
     "size_fmt",
     "is_size_policy",
