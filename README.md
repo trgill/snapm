@@ -21,6 +21,7 @@ provisioned snapshots are supported.
                 * [delete](#delete)
                 * [rename](#rename)
                 * [revert](#revert)
+                * [resize](#resize)
                 * [activate](#activate)
                 * [deactivate](#deactivate)
                 * [autoactivate](#autoactivate)
@@ -220,6 +221,24 @@ set the `revert` command will suggest booting into it to continue:
 # snapm snapset revert upgrade
 WARNING - Snaphot set upgrade origin is in use: reboot required to complete revert
 Boot into 'Revert upgrade 2024-06-10 15:25:15 (6.8.9-300.fc40.x86_64)' to continue
+```
+
+##### resize
+Resize the members on an existing snapset, applying a new size policy to
+specified sources or applying a new default size policy to all snapshots within
+a snapset.
+
+Resize the `/var` member of the snapshot set named upgrade to 100%SIZE:
+
+```
+# snapm snapset resize upgrade /var:100%SIZE
+```
+
+Resize each member of the snapshot set named backup to the 200%USED size
+policy:
+
+```
+# snapm snapset resize backup --size-policy 200%USED
 ```
 
 ##### activate
