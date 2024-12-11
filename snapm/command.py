@@ -1367,7 +1367,7 @@ def _add_snapset_subparser(type_subparser):
         "sources",
         metavar="SOURCE",
         type=str,
-        nargs="+",
+        nargs="*",
         help="A device or mount point path to include in this snapshot set",
     )
     snapset_resize_parser.add_argument(
