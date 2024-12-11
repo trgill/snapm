@@ -103,7 +103,11 @@ def is_stratis_device(devpath):
     try:
         dmsetup_cmd = run(dmsetup_cmd_args, capture_output=True, check=True)
     except CalledProcessError as err:  # pragma: no cover
-        raise SnapmCalloutError(f"Error calling {DMSETUP_CMD}") from err
+        if "not found" in err.stderr.decode("utf8"):
+            return False
+        raise SnapmCalloutError(
+            f"Error calling {DMSETUP_CMD}: {err.stderr.decode('utf8')}"
+        ) from err
     uuid = dmsetup_cmd.stdout.decode("utf8").strip()
     return uuid.startswith(STRATIS_UUID_PREFIX)
 

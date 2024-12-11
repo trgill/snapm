@@ -41,6 +41,7 @@ def dmsetup_info(args):
                         print(dmsetup_info_columns_noheadings_ouuid[device_name])
                         return 0
                     else:
+                        print(f"Device {device_name} not found", file=sys.stderr)
                         return 1
                 else:
                     for device_name in dmsetup_info_columns_noheadings_ouuid.keys():
@@ -55,6 +56,7 @@ def dmsetup_splitname(args):
                 print(dmsetup_splitname_noheadings_ovgname_lvname[args.device_name])
                 return 0
             else:
+                print(f"Device {args.device_name} not found", file=sys.stderr)
                 return 1
 
 
