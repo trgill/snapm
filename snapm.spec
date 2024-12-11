@@ -2,7 +2,7 @@
 %global sphinx_docs 1
 
 Name:		snapm
-Version:	0.3.1
+Version:	0.4.0
 Release:	1%{?dist}
 Summary:	%{summary}
 
