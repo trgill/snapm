@@ -95,7 +95,6 @@ rm doc/conf.py
 %{python3_sitelib}/%{name}*.dist-info/
 %endif
 %doc doc
-%doc tests
 
 %changelog
 * Thu Jul 25 2024 Bryn M. Reeves <bmr@redhat.com> - 0.3.1
