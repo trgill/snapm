@@ -15,11 +15,11 @@ BuildArch:	noarch
 BuildRequires:	make
 BuildRequires:	python3-setuptools
 BuildRequires:	python3-devel
-BuildRequires:  python3-pip
-BuildRequires:  python3-wheel
+BuildRequires:	python3-pip
+BuildRequires:	python3-wheel
 %if 0%{?sphinx_docs}
 BuildRequires:	python3-sphinx
-BuildRequires:  boom-boot
+BuildRequires:	boom-boot
 %endif
 
 Requires: python3-snapm = %{version}-%{release}
