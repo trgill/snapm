@@ -16,13 +16,6 @@ import logging
 import os
 from uuid import UUID
 
-import snapm
-import snapm.manager as manager
-import boom
-
-from tests import have_root, BOOT_ROOT_TEST
-from ._util import LvmLoopBacked, StratisLoopBacked
-
 
 import snapm
 import snapm.manager as manager
