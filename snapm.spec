@@ -108,7 +108,7 @@ rm doc/conf.py
 # License for snapm.manager.plugins.stratislib (Apache 2.0)
 %license COPYING.stratislib
 %doc README.md
-%{python3_sitelib}/%{name}/*
+%{python3_sitelib}/%{name}/
 %if 0%{?centos} || 0%{?rhel}
 %{python3_sitelib}/%{name}-*.egg-info/
 %else
