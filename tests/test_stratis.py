@@ -33,6 +33,7 @@ from snapm import SnapmNotFoundError
 import snapm.manager.plugins.stratis as stratis
 from snapm.manager.plugins import device_from_mount_point
 
+from tests import have_root
 from ._util import StratisLoopBacked
 
 
@@ -94,6 +95,7 @@ class StratisTestsSimple(unittest.TestCase):
                 running = False
         self.assertEqual(running, stratis.is_stratisd_running())
 
+    @unittest.skipIf(not have_root(), "requires root privileges")
     def test_is_stratisd_running_stopped(self):
         systemctl_stop_args = _systemctl_args("stop")
         run(systemctl_stop_args, check=True)
@@ -116,6 +118,7 @@ class StratisTestsSimple(unittest.TestCase):
             self.assertEqual(xsize, stratis._snapshot_min_size(size))
 
 
+@unittest.skipIf(not have_root(), "requires root privileges")
 class StratisTests(unittest.TestCase):
 
     stratis_volumes = ["fs1", "fs2"]
