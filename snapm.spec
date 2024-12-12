@@ -143,9 +143,9 @@ rm doc/conf.py
 - doc: update README.md for block device snapshot support
 - doc: update snapm.8 for block device snapshot support
 - doc: add Stratis project URL to snapm.8
-- snapm: make 25%SIZE the default size policy for block device snapshots
+- snapm: make 25 percent SIZE the default size policy for block device snapshots
 - tests: fix mock dmsetup for test_is_stratis_device
-- snapm: fix detection of unmounted block devices for %USED size policy
+- snapm: fix detection of unmounted block devices for USED size policy
 - tests: extend coverage for block device snapshot sets
 - tests: extend test_create_snapshot_set_blockdevs to Stratis devices
 - stratis: accept /dev/stratis/$POOL/$FS form in is_stratis_device()
@@ -176,7 +176,7 @@ rm doc/conf.py
 - stratis: fix errors in Stratis._check_free_space() docstring
 - lvm2: index size_map by lv_name instead of mount_point
 - snapm: handle non-mount points in mount_point_space_used()
-- snapm: restrict %USED SizePolicy to mounted sources
+- snapm: restrict USED SizePolicy to mounted sources
 - lvm2, stratis: pass origin directly to Plugin._check_free_space()
 - lvm2, stratis: always include '/dev' prefix in origin
 - lvm2: include stderr in exceptions raised from failed callouts
