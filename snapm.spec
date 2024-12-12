@@ -17,6 +17,18 @@ BuildRequires:	python3-setuptools
 BuildRequires:	python3-devel
 BuildRequires:	python3-pip
 BuildRequires:	python3-wheel
+BuildRequires:	python3-boom
+BuildRequires:	python3-dbus-client-gen
+BuildRequires:	python3-dbus-python-client-gen
+BuildRequires:	python3-justbytes
+BuildRequires:	python3-packaging
+BuildRequires:	python3-dateutil
+BuildRequires:	python3-wcwidth
+BuildRequires:	python3-psutil
+BuildRequires:	python3-pytest
+BuildRequires:	lvm2
+BuildRequires:	stratisd
+BuildRequires:	stratis-cli
 %if 0%{?sphinx_docs}
 BuildRequires:	python3-sphinx
 BuildRequires:	boom-boot
@@ -89,9 +101,8 @@ install -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
 rm doc/Makefile
 rm doc/conf.py
 
-# Test suite currently does not operate in rpmbuild environment
-#%%check
-#%%{__python3} setup.py test
+%check
+pytest-3 --log-level=debug -v
 
 %files
 # Main license for snapm (GPLv2)
