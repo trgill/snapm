@@ -771,6 +771,7 @@ class ManagerTests(unittest.TestCase):
             if snapshot.provider.name == "lvm2cow":
                 self.assertEqual(snapshot.size, 1024 ** 3)
 
+@unittest.skipIf(not have_root(), "requires root privileges")
 class ManagerTestsThin(unittest.TestCase):
     """
     Tests for snapm.manager.Manager that apply only to thin provisioned
