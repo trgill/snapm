@@ -94,14 +94,18 @@ rm doc/conf.py
 #%%{__python3} setup.py test
 
 %files
+# Main license for snapm (GPLv2)
 %license COPYING
+# License for snapm.manager.plugins.stratislib (Apache 2.0)
 %license COPYING.stratislib
 %doc README.md
 %{_bindir}/snapm
 %doc %{_mandir}/man*/snapm.*
 
 %files -n python3-snapm
+# Main license for snapm (GPLv2)
 %license COPYING
+# License for snapm.manager.plugins.stratislib (Apache 2.0)
 %license COPYING.stratislib
 %doc README.md
 %{python3_sitelib}/%{name}/*
@@ -113,7 +117,9 @@ rm doc/conf.py
 
 %if 0%{?sphinx_docs}
 %files -n python3-snapm-doc
+# Main license for snapm (GPLv2)
 %license COPYING
+# License for snapm.manager.plugins.stratislib (Apache 2.0)
 %license COPYING.stratislib
 %doc README.md
 %doc doc
