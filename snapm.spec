@@ -35,13 +35,13 @@ BuildRequires:	boom-boot
 %endif
 
 Requires: python3-snapm = %{version}-%{release}
-Requires: python3-boom
 Recommends: boom-boot
 
 %package -n python3-snapm
 Summary: %{summary}
 %{?python_provide:%python_provide python3-snapm}
 Requires: %{__python3}
+Requires: python3-boom >= 1.6.4
 
 %if 0%{?sphinx_docs}
 %package -n python3-snapm-doc
