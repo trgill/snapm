@@ -39,7 +39,10 @@ _VAR_TMP = "/var/tmp"
 
 
 def is_redhat():
-    return os.path.exists("/etc/redhat-release")
+    # Exclude CentOS for now until the fix for boom-boot #59 is available
+    # in the CentOS repositories.
+    return (os.path.exists("/etc/redhat-release")
+            and not os.path.exists("/etc/centos-release"))
 
 
 class BootTestsSimple(unittest.TestCase):
