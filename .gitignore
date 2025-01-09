@@ -12,3 +12,4 @@ __pycache__
 doc/html
 doc/doctrees
 .vscode/
+venv/
