@@ -7,7 +7,7 @@ Release:	1%{?dist}
 Summary:	%{summary}
 
 License:	GPL-2.0-only AND Apache-2.0
-URL:		https://github.com/snapshotmanager/snapm
+URL:		https://github.com/snapshotmanager/%{name}
 Source0:	%{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildArch:	noarch
@@ -70,7 +70,7 @@ This package provides the python3 snapm module documentation in HTML format.
 %endif
 
 %prep
-%autosetup -p1 -n snapm-%{version}
+%autosetup -p1 -n %{name}-%{version}
 
 %build
 %if 0%{?sphinx_docs}
