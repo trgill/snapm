@@ -21,8 +21,6 @@ from subprocess import run
 from dbus_client_gen import DbusClientUniqueResultError
 
 log = logging.getLogger()
-log.level = logging.DEBUG
-log.addHandler(logging.FileHandler("test.log"))
 
 from snapm.manager.plugins.stratislib import (
     get_object,

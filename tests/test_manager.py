@@ -25,14 +25,7 @@ from tests import have_root, BOOT_ROOT_TEST
 from ._util import LvmLoopBacked, StratisLoopBacked
 
 
-_log = logging.getLogger()
-_log.level = logging.DEBUG
-_log.addHandler(logging.FileHandler("test.log"))
-
-_log_debug = _log.debug
-_log_info = _log.info
-_log_warn = _log.warning
-_log_error = _log.error
+log = logging.getLogger()
 
 boom.set_boot_path(BOOT_ROOT_TEST)
 
@@ -125,12 +118,12 @@ class ManagerTestsSimple(unittest.TestCase):
         self.assertEqual(len(PluginRegistry.plugins), 3)
 
     def test_plugin_info(self):
-        p = manager.Plugin(_log)
+        p = manager.Plugin(log)
         info = p.info()
         self.assertEqual(info, {"name": "plugin", "version": "0.1.0"})
 
     def _plugin_base_not_implemented_raises(self, method, args):
-        p = manager.Plugin(_log)
+        p = manager.Plugin(log)
         with self.assertRaises(NotImplementedError):
             getattr(p, method)(*args)
 

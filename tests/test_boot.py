@@ -20,8 +20,6 @@ from shutil import rmtree
 from uuid import UUID
 
 log = logging.getLogger()
-log.level = logging.DEBUG
-log.addHandler(logging.FileHandler("test.log"))
 
 import snapm
 import snapm.manager.boot as boot

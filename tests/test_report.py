@@ -17,8 +17,6 @@ import uuid
 from io import StringIO
 
 log = logging.getLogger()
-log.level = logging.DEBUG
-log.addHandler(logging.FileHandler("test.log"))
 
 from snapm.report import (
     REP_NUM,

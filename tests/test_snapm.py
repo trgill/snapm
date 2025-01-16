@@ -20,8 +20,6 @@ import snapm
 from tests import MockArgs
 
 log = logging.getLogger()
-log.level = logging.DEBUG
-log.addHandler(logging.FileHandler("test.log"))
 
 ONE_GIB = 2**30
 TWO_GIB = 2 * 2**30

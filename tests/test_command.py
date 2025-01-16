@@ -16,8 +16,6 @@ import logging
 import os
 
 log = logging.getLogger()
-log.level = logging.DEBUG
-log.addHandler(logging.FileHandler("test.log"))
 
 import snapm
 import snapm.command as command
