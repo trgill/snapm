@@ -1118,11 +1118,11 @@ def setup_logging(cmd_args):
         level = logging.INFO
     snapm_log = logging.getLogger("snapm")
     formatter = logging.Formatter("%(levelname)s - %(message)s")
-    snapm_log.setLevel(level)
-    _CONSOLE_HANDLER = logging.StreamHandler()
+    if _CONSOLE_HANDLER not in snapm_log.handlers:
+        _CONSOLE_HANDLER = logging.StreamHandler()
+        snapm_log.addHandler(_CONSOLE_HANDLER)
     _CONSOLE_HANDLER.setLevel(level)
     _CONSOLE_HANDLER.setFormatter(formatter)
-    snapm_log.addHandler(_CONSOLE_HANDLER)
 
 
 def shutdown_logging():
