@@ -16,9 +16,10 @@ import os
 from os.path import abspath, join
 import time
 
-_log = logging.getLogger()
-_log.level = logging.DEBUG
-_log.addHandler(logging.FileHandler("test.log"))
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.FileHandler("test.log"))
+log.addHandler(logging.StreamHandler())
 
 os.environ["TZ"] = "UTC"
 time.tzset()
