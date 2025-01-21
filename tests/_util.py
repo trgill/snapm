@@ -1,7 +1,10 @@
 import tempfile
 import subprocess
+import logging
 from pathlib import Path
 import os
+
+log = logging.getLogger()
 
 _LOSETUP_CMD = "losetup"
 
@@ -60,16 +63,33 @@ _VAR_TMP = "/var/tmp"
 _LOOP_DEVICE_SIZE = 20 * 2**30
 
 
+def _run(cmd):
+    """
+    Run command ``cmd`` using ``subprocess.run`` and return the output (if
+    any) as a string. A CalledProcessError is raised if the command exits
+    with failure.
+    """
+    log.debug("Calling: '%s'", " ".join(cmd))
+    try:
+        res = subprocess.run(
+            cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError as err:
+        log.error("Command failed: %s", " ".join(cmd))
+        log.error("Output: %s", err.output.decode("utf8"))
+        raise err
+    return res.stdout.decode("utf8").strip()
+
+
 def _version_string_to_tuple(version):
     return tuple(map(int, version.split(".")))
 
 
 def _get_lvm_version():
-    lvm_version_info = str.strip(
-        subprocess.check_output([_LVM_CMD, _LVM_VERSION]).decode("utf8")
-    )
+    lvm_version_info = _run([_LVM_CMD, _LVM_VERSION])
     for line in lvm_version_info.splitlines():
         if _LVM_VERSION_STR in line:
+            log.debug("Found %s", line)
             (_, _, version, _) = line.split()
             if "(" in version:
                 version, _ = version.split("(", maxsplit=1)
@@ -105,17 +125,13 @@ class LoopBackDevices(object):
             with open(backing_file, "ab") as file:
                 file.truncate(_LOOP_DEVICE_SIZE)
 
-            device = str.strip(
-                subprocess.check_output(
-                    [_LOSETUP_CMD, "--find", "--show", backing_file]
-                ).decode("utf8")
-            )
+            device = _run([_LOSETUP_CMD, "--find", "--show", backing_file])
             self.devices.append((device, backing_file))
         self.count = count
 
     def destroy_devices(self):
         for device, backing_file in self.devices:
-            subprocess.check_call([_LOSETUP_CMD, "--detach", device])
+            _run([_LOSETUP_CMD, "--detach", device])
             os.remove(backing_file)
         self.devices = []
         self.count = 0
@@ -144,6 +160,7 @@ class LvmLoopBacked(object):
                              virtual size of ``_LV_SIZE``.
         """
         self.mount_root = tempfile.mkdtemp("_snapm_mounts", dir=_VAR_TMP)
+        log.debug("Created LVM2 mount_root at %s", self.mount_root)
 
         # Create loopback device to back VG
         self._lb = LoopBackDevices()
@@ -163,7 +180,7 @@ class LvmLoopBacked(object):
     def _create_volume_group(self):
         _vgcreate_cmd = [_VGCREATE_CMD, _VG_NAME]
         _vgcreate_cmd.extend(self._lb.device_nodes())
-        subprocess.check_call(_vgcreate_cmd)
+        _run(_vgcreate_cmd)
 
     def _create_and_mount_volumes(self, volumes, thin=False):
         for lv in volumes:
@@ -174,11 +191,11 @@ class LvmLoopBacked(object):
 
     def _lvcreate(self, name, thin=False):
         if not thin:
-            subprocess.check_call(
+            _run(
                 [_LVCREATE_CMD, _SIZE_ARG, f"{_LV_SIZE}b", "--name", name, _VG_NAME]
             )
         else:
-            subprocess.check_call(
+            _run(
                 [
                     _LVCREATE_CMD,
                     "--virtualsize",
@@ -195,7 +212,7 @@ class LvmLoopBacked(object):
         Create a thin pool of ``_THIN_POOL_SIZE``. The pool will be
         named ``_THIN_POOL_NAME``.
         """
-        subprocess.check_call(
+        _run(
             [
                 _LVCREATE_CMD,
                 _SIZE_ARG,
@@ -211,7 +228,7 @@ class LvmLoopBacked(object):
         """
         Create an LVM2 CoW snapshot in the test VG.
         """
-        subprocess.check_call(
+        _run(
             [
                 _LVCREATE_CMD,
                 "--snapshot",
@@ -227,7 +244,7 @@ class LvmLoopBacked(object):
         """
         Create an LVM2 thin snapshot in the test VG.
         """
-        subprocess.check_call(
+        _run(
             [
                 _LVCREATE_CMD,
                 "--snapshot",
@@ -251,13 +268,13 @@ class LvmLoopBacked(object):
         return self.volumes + self.thin_volumes
 
     def format(self, name):
-        subprocess.check_call([_MKFS_EXT4_CMD, f"/dev/{_VG_NAME}/{name}"])
+        _run([_MKFS_EXT4_CMD, f"/dev/{_VG_NAME}/{name}"])
 
     def make_mount_point(self, name):
         os.makedirs(os.path.join(self.mount_root, name))
 
     def mount(self, name):
-        subprocess.check_call(
+        _run(
             [_MOUNT_CMD, f"/dev/{_VG_NAME}/{name}", f"{self.mount_root}/{name}"]
         )
 
@@ -266,17 +283,17 @@ class LvmLoopBacked(object):
             self.mount(lv)
 
     def umount(self, name):
-        subprocess.check_call([_UMOUNT_CMD, f"{self.mount_root}/{name}"])
+        _run([_UMOUNT_CMD, f"{self.mount_root}/{name}"])
 
     def umount_all(self):
         for lv in self.all_volumes():
             self.umount(lv)
 
     def activate(self):
-        subprocess.check_call([_VGCHANGE_CMD, "-ay", _VG_NAME])
+        _run([_VGCHANGE_CMD, "-ay", _VG_NAME])
 
     def deactivate(self):
-        subprocess.check_call([_VGCHANGE_CMD, "-an", _VG_NAME])
+        _run([_VGCHANGE_CMD, "-an", _VG_NAME])
 
     def mount_points(self):
         return [f"{self.mount_root}/{name}" for name in self.all_volumes()]
@@ -306,7 +323,7 @@ class LvmLoopBacked(object):
             os.rmdir(os.path.join(self.mount_root, subdir))
         os.rmdir(self.mount_root)
 
-        subprocess.check_call([_VGREMOVE_CMD, "--force", "--yes", _VG_NAME])
+        _run([_VGREMOVE_CMD, "--force", "--yes", _VG_NAME])
 
         self._lb.destroy_all()
 
@@ -327,6 +344,7 @@ class StratisLoopBacked(object):
                              virtual size of ``_FS_SIZE``.
         """
         self.mount_root = tempfile.mkdtemp("_snapm_mounts", dir=_VAR_TMP)
+        log.debug("Created Stratis mount_root at %s", self.mount_root)
 
         # Create loopback device to back pool
         self._lb = LoopBackDevices()
@@ -340,13 +358,13 @@ class StratisLoopBacked(object):
     def _create_pool(self):
         _stratis_pool_create_cmd = [_STRATIS_CMD, _POOL_CMD, _CREATE_CMD, _POOL_NAME]
         _stratis_pool_create_cmd.extend(self._lb.device_nodes())
-        subprocess.check_call(_stratis_pool_create_cmd)
+        _run(_stratis_pool_create_cmd)
 
     def _create_and_mount_volumes(self, volumes):
         for fs in volumes:
             os.makedirs(os.path.join(self.mount_root, fs))
             self._fs_create(fs)
-            subprocess.check_call(
+            _run(
                 [
                     _UDEVADM,
                     _SETTLE,
@@ -355,7 +373,7 @@ class StratisLoopBacked(object):
             self.mount(fs)
 
     def _fs_create(self, name, thin=False):
-        subprocess.check_call(
+        _run(
             [
                 _STRATIS_CMD,
                 _FILESYSTEM_CMD,
@@ -372,7 +390,7 @@ class StratisLoopBacked(object):
         Create a snapshot of volume `origin` in the test pool.
         """
         if origin in self.volumes:
-            return subprocess.check_call(
+            return _run(
                 [
                     _STRATIS_CMD,
                     _FILESYSTEM_CMD,
@@ -388,7 +406,7 @@ class StratisLoopBacked(object):
         return self.volumes
 
     def mount(self, name):
-        subprocess.check_call(
+        _run(
             [_MOUNT_CMD, f"/dev/stratis/{_POOL_NAME}/{name}", f"{self.mount_root}/{name}"]
         )
 
@@ -397,7 +415,7 @@ class StratisLoopBacked(object):
             self.mount(fs)
 
     def umount(self, name):
-        subprocess.check_call([_UMOUNT_CMD, f"{self.mount_root}/{name}"])
+        _run([_UMOUNT_CMD, f"{self.mount_root}/{name}"])
 
     def umount_all(self):
         for fs in self.all_volumes():
@@ -424,14 +442,14 @@ class StratisLoopBacked(object):
         subprocess.check_call([_STRATIS_CMD, _POOL_CMD])
 
     def start_pool(self):
-        subprocess.run([_STRATIS_CMD, _POOL_CMD, _START_CMD, _NAME_ARG, _POOL_NAME], check=True)
-        subprocess.run(["udevadm", "settle"], check=True)
+        _run([_STRATIS_CMD, _POOL_CMD, _START_CMD, _NAME_ARG, _POOL_NAME])
+        _run(["udevadm", "settle"])
 
     def stop_pool(self):
-        subprocess.run([_STRATIS_CMD, _POOL_CMD, _STOP_CMD, _NAME_ARG, _POOL_NAME], check=True)
+        _run([_STRATIS_CMD, _POOL_CMD, _STOP_CMD, _NAME_ARG, _POOL_NAME])
 
     def _destroy_one_filesystem(self, pool, filesystem):
-        subprocess.check_call(
+        _run(
             [
                 _STRATIS_CMD,
                 _FILESYSTEM_CMD,
@@ -449,12 +467,11 @@ class StratisLoopBacked(object):
             _POOL_NAME,
         ]
 
-        stratis_filesystem_cmd = subprocess.run(
+        stratis_filesystem_out = _run(
             stratis_filesystem_cmd_args,
-            capture_output=True
         )
 
-        for line in stratis_filesystem_cmd.stdout.decode('utf8').splitlines():
+        for line in stratis_filesystem_out.splitlines():
             if "Pool" in line and "Filesystem" in line:
                 continue
             fields = line.split()
@@ -472,6 +489,6 @@ class StratisLoopBacked(object):
         # Cleanup left-over file systems
         self._destroy_all_filesystems()
 
-        subprocess.check_call([_STRATIS_CMD, _POOL_CMD, _DESTROY_CMD, _POOL_NAME])
+        _run([_STRATIS_CMD, _POOL_CMD, _DESTROY_CMD, _POOL_NAME])
 
         self._lb.destroy_all()
