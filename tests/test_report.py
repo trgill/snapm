@@ -206,7 +206,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "foo             1\n"
             "bar             2\n"
             "baz             3\n"
@@ -247,8 +247,8 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(columns_as_rows=True, report_file=output)
 
         xoutput = (
-            "Name foo      bar      baz      qux      \n"
-            "Number        1        2        3        4 \n"
+            "Name foo      bar      baz      qux\n"
+            "Number        1        2        3        4\n"
         )
 
         pr = Report(
@@ -325,7 +325,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "foo             1\n"
             "bar             2\n"
             "baz             3\n"
@@ -364,7 +364,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "bar             2\n"
             "baz             3\n"
             "foo             1\n"
@@ -405,7 +405,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "foo             1\n"
             "bar             2\n"
             "baz             3\n"
@@ -446,7 +446,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "bar             2\n"
             "baz             3\n"
             "foo             1\n"
@@ -487,7 +487,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "qux             4\n"
             "foo             1\n"
             "baz             3\n"
@@ -528,7 +528,7 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number  \n"
+            "Name     Number\n"
             "bar             2\n"
             "baz             3\n"
             "foo             1\n"
@@ -647,11 +647,11 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number   Sha      Time                Uuid                                 Size     StrList        \n"
-            "foo             1 ffffffff 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000   1.0KiB bar, baz, foo  \n"
+            "Name     Number   Sha      Time                Uuid                                 Size     StrList\n"
+            "foo             1 ffffffff 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000   1.0KiB bar, baz, foo\n"
             "bar             2 FFFFFFFF 1978-01-10 09:13:12 1d133bcc-6137-5267-b870-e469f7188dbe   1.0MiB one, three, two\n"
-            "baz             3 11111111 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef   1.0GiB baz, quux      \n"
-            "qux             4 22222222 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b   1.0TiB list, string   \n"
+            "baz             3 11111111 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef   1.0GiB baz, quux\n"
+            "qux             4 22222222 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b   1.0TiB list, string\n"
         )
 
         pr = Report(
@@ -889,7 +889,6 @@ class ReportTests(unittest.TestCase):
             "json=False\n"
             "columns_as_rows=False\n"
         )
-        log.error(xstr)
         self.assertTrue(str(opts).startswith(xstr))
 
     def test_ReportOpts_eq_equal(self):
