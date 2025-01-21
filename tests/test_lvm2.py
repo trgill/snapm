@@ -28,7 +28,9 @@ class Lvm2Tests(unittest.TestCase):
     _old_path = None
 
     def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
         def cleanup():
+            log.debug("Cleaning up (%s)", self._testMethodName)
             if hasattr(self, "_old_path"):
                 os.environ["PATH"] = self._old_path
 

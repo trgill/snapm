@@ -48,6 +48,12 @@ class BootTestsSimple(unittest.TestCase):
     Test boot helpers
     """
 
+    def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
+
+    def tearDown(self):
+        log.debug("Tearing down %s", self._testMethodName)
+
     def test__get_uts_release(self):
         uname_cmd_args = ["uname", "-r"]
         uname_cmd = run(uname_cmd_args, capture_output=True, check=True)
@@ -134,6 +140,7 @@ class BootTests(unittest.TestCase):
         rmtree(boot_path)
 
     def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
         boom.set_boot_path("/boot")
         self._lvm = LvmLoopBacked(self.volumes, thin_volumes=self.thin_volumes)
         snapset_name = "bootset0"
@@ -149,6 +156,7 @@ class BootTests(unittest.TestCase):
         self._set_fstab()
 
     def tearDown(self):
+        log.debug("Tearing down %s", self._testMethodName)
         boom.set_boot_path(BOOT_ROOT_TEST)
         self._clear_fstab()
         self._lvm.destroy()

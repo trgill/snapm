@@ -39,12 +39,14 @@ class CommandTestsSimple(unittest.TestCase):
     _old_path = None
 
     def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
         bin_path = os.path.abspath("tests/bin")
         cur_path = os.environ["PATH"]
         self._old_path = cur_path
         os.environ["PATH"] = bin_path + os.pathsep + cur_path
 
     def tearDown(self):
+        log.debug("Tearing down %s", self._testMethodName)
         os.environ["PATH"] = self._old_path
 
     def test__str_indent(self):
@@ -226,11 +228,14 @@ class CommandTests(unittest.TestCase):
     stratis_volumes = ["fs1", "fs2"]
 
     def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
         def cleanup_lvm():
+            log.debug("Cleaning up LVM (%s)", self._testMethodName)
             if hasattr(self, "_lvm"):
                 self._lvm.destroy()
 
         def cleanup_stratis():
+            log.debug("Cleaning up Stratis (%s)", self._testMethodName)
             if hasattr(self, "_stratis"):
                 self._stratis.destroy()
 

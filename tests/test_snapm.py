@@ -39,6 +39,12 @@ TEN_TIB = 10 * 2**40
 class SnapmTests(unittest.TestCase):
     """Test snapm module"""
 
+    def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
+
+    def tearDown(self):
+        log.debug("Tearing down (%s)", self._testMethodName)
+
     def test_set_debug_mask(self):
         snapm.set_debug_mask(snapm.SNAPM_DEBUG_ALL)
 

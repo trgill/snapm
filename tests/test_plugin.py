@@ -37,6 +37,12 @@ def _find_device_mounts():
 class PluginTests(unittest.TestCase):
     """Test plugin helper functions"""
 
+    def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
+
+    def tearDown(self):
+        log.debug("Tearing down %s", self._testMethodName)
+
     def test_parse_snapshot_name(self):
         snapshot_names = {
             "root-snapset_backup_1693921253_-": ("backup", 1693921253, "/"),
