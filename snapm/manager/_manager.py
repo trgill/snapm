@@ -26,6 +26,7 @@ import inspect
 import os
 
 import snapm.manager.plugins
+from snapm.manager.signals import suspend_signals
 from snapm.manager.boot import (
     BootCache,
     create_snapset_boot_entry,
@@ -631,6 +632,7 @@ class Manager:
     by_name = {}
     by_uuid = {}
 
+    @suspend_signals
     def __init__(self):
         self.plugins = []
         self.snapshot_sets = []
@@ -870,6 +872,7 @@ class Manager:
                 )
 
     # pylint: disable=too-many-branches,too-many-locals
+    @suspend_signals
     def create_snapshot_set(self, name, source_specs, default_size_policy=None):
         """
         Create a snapshot set of the supplied mount points with the name
@@ -969,6 +972,7 @@ class Manager:
         self.snapshot_sets.append(snapset)
         return snapset
 
+    @suspend_signals
     def rename_snapshot_set(self, old_name, new_name):
         """
         Rename snapshot set ``old_name`` as ``new_name``.
@@ -1031,6 +1035,7 @@ class Manager:
         self.snapshot_sets.append(new_snapset)
         return new_snapset
 
+    @suspend_signals
     def delete_snapshot_sets(self, selection):
         """
         Remove snapshot sets matching selection criteria ``selection``.
@@ -1077,6 +1082,7 @@ class Manager:
         return deleted
 
     # pylint: disable=too-many-branches
+    @suspend_signals
     def resize_snapshot_set(
         self, source_specs, name=None, uuid=None, default_size_policy=None
     ):
@@ -1145,6 +1151,7 @@ class Manager:
         for provider in providers:
             provider.end_transaction()
 
+    @suspend_signals
     def revert_snapshot_set(self, name=None, uuid=None):
         """
         Revert snapshot set named ``name`` or having UUID ``uuid``.
@@ -1213,6 +1220,7 @@ class Manager:
             reverted += 1
         return reverted
 
+    @suspend_signals
     def activate_snapshot_sets(self, selection):
         """
         Activate snapshot sets matching selection criteria ``selection``.
@@ -1243,6 +1251,7 @@ class Manager:
             activated += 1
         return activated
 
+    @suspend_signals
     def deactivate_snapshot_sets(self, selection):
         """
         Deactivate snapshot sets matching selection criteria ``selection``.
@@ -1273,6 +1282,7 @@ class Manager:
             deactivated += 1
         return deactivated
 
+    @suspend_signals
     def set_autoactivate(self, selection, auto=False):
         """
         Set autoactivation state for snapshot sets matching selection criteria
@@ -1294,6 +1304,7 @@ class Manager:
             changed += 1
         return changed
 
+    @suspend_signals
     def create_snapshot_set_boot_entry(self, name=None, uuid=None):
         """
         Create a snapshot boot entry for the specified snapshot set.
@@ -1316,6 +1327,7 @@ class Manager:
         create_snapset_boot_entry(snapset)
         self._boot_cache.refresh_cache()
 
+    @suspend_signals
     def create_snapshot_set_revert_entry(self, name=None, uuid=None):
         """
         Create a revert boot entry for the specified snapshot set.
