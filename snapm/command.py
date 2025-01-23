@@ -1117,6 +1117,7 @@ def setup_logging(cmd_args):
     elif cmd_args.verbose and cmd_args.verbose > 0:
         level = logging.INFO
     snapm_log = logging.getLogger("snapm")
+    snapm_log.setLevel(level)
     formatter = logging.Formatter("%(levelname)s - %(message)s")
     if _CONSOLE_HANDLER not in snapm_log.handlers:
         _CONSOLE_HANDLER = logging.StreamHandler()
@@ -1551,6 +1552,8 @@ def main(args):
         try:
             status = cmd_args.func(cmd_args)
         # pylint: disable=broad-except
+        except KeyboardInterrupt:
+            _log_error("Exiting on user cancel")
         except Exception as err:
             _log_error("Command failed: %s", err)
 
