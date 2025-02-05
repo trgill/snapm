@@ -1049,31 +1049,9 @@ class Manager:
                 f"Could not find snapshot sets matching {selection}"
             )
         for snapset in sets:
-            if any(snapshot.snapshot_mounted for snapshot in snapset.snapshots):
-                raise SnapmBusyError(
-                    f"Snapshots from snapshot set {snapset.name} are mounted: cannot delete"
-                )
-            if snapset.status == SnapStatus.REVERTING:
-                _log_error(
-                    "Cannot operate on reverting snapshot set '%s'", snapset.name
-                )
-                raise SnapmBusyError(f"Failed to delete snapshot set {snapset.name}")
             delete_snapset_boot_entry(snapset)
             delete_snapset_revert_entry(snapset)
-            for snapshot in snapset.snapshots.copy():
-                try:
-                    snapshot.delete()
-                    snapset.snapshots.remove(snapshot)
-                except SnapmError as err:
-                    _log_error(
-                        "Failed to delete snapshot set member %s: %s",
-                        snapshot.name,
-                        err,
-                    )
-                    raise SnapmPluginError(
-                        f"Could not delete all snapshots for set {snapset.name}"
-                    ) from err
-
+            snapset.delete()
             self.snapshot_sets.remove(snapset)
             self.by_name.pop(snapset.name)
             self.by_uuid.pop(snapset.uuid)
