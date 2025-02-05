@@ -871,9 +871,11 @@ class Manager:
                     f"Snapshot set name cannot include '{char}'"
                 )
 
-    # pylint: disable=too-many-branches,too-many-locals
+    # pylint: disable=too-many-branches,too-many-locals,too-many-statements
     @suspend_signals
-    def create_snapshot_set(self, name, source_specs, default_size_policy=None):
+    def create_snapshot_set(
+        self, name, source_specs, default_size_policy=None, boot=False, revert=False
+    ):
         """
         Create a snapshot set of the supplied mount points with the name
         ``name``.
@@ -967,6 +969,26 @@ class Manager:
         snapset = SnapshotSet(name, timestamp, snapshots)
         for snapshot in snapset.snapshots:
             snapshot.snapshot_set = snapset
+            if boot or revert:
+                snapshot.autoactivate = True
+                snapshot.activate()
+
+        if boot:
+            try:
+                create_snapset_boot_entry(snapset)
+            except (OSError, ValueError) as err:
+                _log_error("Failed to create snapshot set boot entry: %s", err)
+                snapset.delete()
+                raise SnapmCalloutError from err
+
+        if revert:
+            try:
+                create_snapset_revert_entry(snapset)
+            except (OSError, ValueError) as err:
+                _log_error("Failed to create snapshot set revert boot entry: %s", err)
+                snapset.delete()
+                raise SnapmCalloutError from err
+
         self.by_name[snapset.name] = snapset
         self.by_uuid[snapset.uuid] = snapset
         self.snapshot_sets.append(snapset)

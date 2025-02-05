@@ -476,30 +476,9 @@ def create_snapset(manager, name, sources, size_policy=None, boot=False, revert=
     :param boot: Create a boot entry for this snapshot set.
     :param revert: Create a revert boot entry for this snapshot set.
     """
-    snapset = manager.create_snapshot_set(
-        name, sources, default_size_policy=size_policy
+    return manager.create_snapshot_set(
+        name, sources, default_size_policy=size_policy, boot=boot, revert=revert
     )
-
-    # Snapshot sets must be active to create boot entries.
-    if boot or revert:
-        select = Selection(name=snapset.name)
-        manager.activate_snapshot_sets(select)
-
-    if boot:
-        try:
-            manager.create_snapshot_set_boot_entry(name=snapset.name)
-        except (OSError, ValueError, TypeError) as err:
-            _log_error("Failed to create snapshot set boot entry: %s", err)
-            manager.delete_snapshot_sets(select)
-            return None
-    if revert:
-        try:
-            manager.create_snapshot_set_revert_entry(name=snapset.name)
-        except (OSError, ValueError, TypeError) as err:
-            _log_error("Failed to create snapshot set revert boot entry: %s", err)
-            manager.delete_snapshot_sets(select)
-            return None
-    return snapset
 
 
 def delete_snapset(manager, selection):
