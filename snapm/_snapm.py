@@ -915,6 +915,38 @@ class SnapshotSet:
             f"Source path {source} not found in snapset {self.name}"
         )
 
+    def delete(self):
+        """
+        Delete the on-disk representation of this ``SnapshotSet``.
+
+        :raises: ``SnapmBusyError`` if the snapshot set is in use.
+                 ``SnapmPluginError`` if an error occurs deleting snapshot
+                 set members.
+        """
+        if any(snapshot.snapshot_mounted for snapshot in self.snapshots):
+            raise SnapmBusyError(
+                f"Snapshots from snapshot set {self.name} are mounted: cannot delete"
+            )
+        if self.status == SnapStatus.REVERTING:
+            _log_error("Cannot operate on reverting snapshot set '%s'", self.name)
+            raise SnapmBusyError(f"Failed to delete snapshot set {self.name}")
+        for snapshot in self.snapshots.copy():
+            try:
+                snapshot.delete()
+                self.snapshots.remove(snapshot)
+                if snapshot.mount_point:
+                    self._by_mount_point.pop(snapshot.mount_point)
+                self._by_origin.pop(snapshot.origin)
+            except SnapmError as err:
+                _log_error(
+                    "Failed to delete snapshot set member %s: %s",
+                    snapshot.name,
+                    err,
+                )
+                raise SnapmPluginError(
+                    f"Could not delete all snapshots for set {self.name}"
+                ) from err
+
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
 class Snapshot:
