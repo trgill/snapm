@@ -1209,19 +1209,7 @@ class Manager:
             )
         for snapset in sets:
             _check_snapset_status(snapset, "activate")
-
-            for snapshot in snapset.snapshots:
-                try:
-                    snapshot.activate()
-                except SnapmError as err:
-                    _log_error(
-                        "Failed to activate snapshot set member %s: %s",
-                        snapshot.name,
-                        err,
-                    )
-                    raise SnapmPluginError(
-                        f"Could not activate all snapshots for set {snapset.name}"
-                    ) from err
+            snapset.activate()
             activated += 1
         return activated
 
@@ -1240,19 +1228,7 @@ class Manager:
             )
         for snapset in sets:
             _check_snapset_status(snapset, "deactivate")
-
-            for snapshot in snapset.snapshots:
-                try:
-                    snapshot.deactivate()
-                except SnapmError as err:
-                    _log_error(
-                        "Failed to deactivate snapshot set member %s: %s",
-                        snapshot.name,
-                        err,
-                    )
-                    raise SnapmPluginError(
-                        f"Could not deactivate all snapshots for set {snapset.name}"
-                    ) from err
+            snapset.deactivate()
             deactivated += 1
         return deactivated
 

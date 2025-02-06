@@ -983,6 +983,45 @@ class SnapshotSet:
                     revert_entry.title,
                 )
 
+    def activate(self):
+        """
+        Attempt to activate all members of this ``SnapshotSet``.
+
+        :raises: ``SnapmPluginError`` if a plugin fails to perform the
+                 requested operation.
+        """
+        for snapshot in self.snapshots:
+            try:
+                snapshot.activate()
+            except SnapmError as err:
+                _log_error(
+                    "Failed to activate snapshot set member %s: %s",
+                    snapshot.name,
+                    err,
+                )
+                raise SnapmPluginError(
+                    f"Could not activate all snapshots for set {self.name}"
+                ) from err
+
+    def deactivate(self):
+        """
+        Attempt to deactivate all members of this ``SnapshotSet``.
+
+        :raises: ``SnapmPluginError`` if a plugin fails to perform the
+                 requested operation.
+        """
+        for snapshot in self.snapshots:
+            try:
+                snapshot.deactivate()
+            except SnapmError as err:
+                _log_error(
+                    "Failed to deactivate snapshot set member %s: %s",
+                    snapshot.name,
+                    err,
+                )
+                raise SnapmPluginError(
+                    f"Could not deactivate all snapshots for set {self.name}"
+                ) from err
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
