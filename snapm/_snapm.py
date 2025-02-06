@@ -638,6 +638,7 @@ class SnapStatus(Enum):
         return "Invalid"
 
 
+# pylint: disable=too-many-public-methods
 class SnapshotSet:
     """
     Representation of a set of snapshots taken at the same point
@@ -946,6 +947,42 @@ class SnapshotSet:
                 raise SnapmPluginError(
                     f"Could not delete all snapshots for set {self.name}"
                 ) from err
+
+    def revert(self):
+        """
+        Initiate a revert operation on this ``SnapshotSet``.
+
+        :raises: ``SnapmPluginError`` if a plugin fails to perform the
+                 requested operation.
+        """
+        revert_entry = self.revert_entry
+        mounted = self.mounted
+        name = self.name
+
+        # Perform revert operation on all snapshots
+        for snapshot in self.snapshots:
+            try:
+                snapshot.revert()
+            except SnapmError as err:
+                _log_error(
+                    "Failed to revert snapshot set member %s: %s",
+                    snapshot.name,
+                    err,
+                )
+                raise SnapmPluginError(
+                    f"Could not revert all snapshots for set {self.name}"
+                ) from err
+        if mounted:
+            _log_warn(
+                "Snaphot set %s is in use: reboot required to complete revert",
+                name,
+            )
+            if revert_entry:
+                _log_warn(
+                    "Boot into '%s' to continue",
+                    revert_entry.title,
+                )
+
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods

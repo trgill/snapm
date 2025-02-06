@@ -1169,33 +1169,7 @@ class Manager:
         # Snapshot boot entry becomes invalid as soon as revert is initiated.
         delete_snapset_boot_entry(snapset)
 
-        revert_entry = snapset.revert_entry
-        mounted = snapset.mounted
-        name = snapset.name
-
-        # Perform revert operation on all snapshots
-        for snapshot in snapset.snapshots:
-            try:
-                snapshot.revert()
-            except SnapmError as err:
-                _log_error(
-                    "Failed to revert snapshot set member %s: %s",
-                    snapshot.name,
-                    err,
-                )
-                raise SnapmPluginError(
-                    f"Could not revert all snapshots for set {snapset.name}"
-                ) from err
-        if mounted:
-            _log_warn(
-                "Snaphot set %s is in use: reboot required to complete revert",
-                name,
-            )
-            if revert_entry:
-                _log_warn(
-                    "Boot into '%s' to continue",
-                    revert_entry.title,
-                )
+        snapset.revert()
 
         self._boot_cache.refresh_cache()
         return snapset
