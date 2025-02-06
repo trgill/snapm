@@ -948,6 +948,54 @@ class SnapshotSet:
                     f"Could not delete all snapshots for set {self.name}"
                 ) from err
 
+    def resize(self, sources, size_policies):
+        """
+        Attempt to resize the ``SnapshotSet`` according to the list of
+        ``sources`` and corresponding ``size_policy`` strings.
+
+        :raises: ``SnapmNoSpaceError`` if there is insufficient space available
+                 for the requested operation.
+        """
+        for source in sources:
+            try:
+                _ = self.snapshot_by_source(source)
+            except SnapmNotFoundError as err:
+                _log_error(
+                    "Cannot resize %s: source path not a member of snapset %s",
+                    source,
+                    self.name,
+                )
+                raise err
+
+        providers = set(snapshot.provider for snapshot in self.snapshots)
+        for provider in providers:
+            provider.start_transaction()
+
+        for source in sources:
+            snapshot = self.snapshot_by_source(source)
+            size_policy = size_policies[source]
+            try:
+                snapshot.check_resize(size_policy)
+            except SnapmNoSpaceError as err:
+                _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
+                raise SnapmNoSpaceError(
+                    f"Insufficient free space to resize snapshot set {self.name}"
+                ) from err
+
+        for source in sources:
+            snapshot = self.snapshot_by_source(source)
+            size_policy = size_policies[source]
+            try:
+                snapshot.resize(size_policy)
+            except SnapmNoSpaceError as err:
+                _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
+                raise SnapmNoSpaceError(
+                    f"Insufficient free space to resize snapshot set {self.name}"
+                ) from err
+
+        for provider in providers:
+            provider.end_transaction()
+
     def revert(self):
         """
         Initiate a revert operation on this ``SnapshotSet``.

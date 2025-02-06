@@ -1111,45 +1111,7 @@ class Manager:
             sources = [snapshot.source for snapshot in snapset.snapshots]
             size_policies = {source: default_size_policy for source in sources}
 
-        for source in sources:
-            try:
-                _ = snapset.snapshot_by_source(source)
-            except SnapmNotFoundError as err:
-                _log_error(
-                    "Cannot resize %s: source path not a member of snapset %s",
-                    source,
-                    snapset.name,
-                )
-                raise err
-
-        providers = set(snapshot.provider for snapshot in snapset.snapshots)
-        for provider in providers:
-            provider.start_transaction()
-
-        for source in sources:
-            snapshot = snapset.snapshot_by_source(source)
-            size_policy = size_policies[source]
-            try:
-                snapshot.check_resize(size_policy)
-            except SnapmNoSpaceError as err:
-                _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
-                raise SnapmNoSpaceError(
-                    f"Insufficient free space to resize snapshot set {snapset.name}"
-                ) from err
-
-        for source in sources:
-            snapshot = snapset.snapshot_by_source(source)
-            size_policy = size_policies[source]
-            try:
-                snapshot.resize(size_policy)
-            except SnapmNoSpaceError as err:
-                _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
-                raise SnapmNoSpaceError(
-                    f"Insufficient free space to resize snapshot set {snapset.name}"
-                ) from err
-
-        for provider in providers:
-            provider.end_transaction()
+        snapset.resize(sources, size_policies)
 
     @suspend_signals
     def revert_snapshot_set(self, name=None, uuid=None):
