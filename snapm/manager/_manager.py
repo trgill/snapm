@@ -1012,50 +1012,23 @@ class Manager:
         snapset = self.by_name[old_name]
         _check_snapset_status(snapset, "rename")
 
-        snapshots = snapset.snapshots
-        timestamp = snapset.timestamp
-        new_snapshots = []
-
         # Remove references to old set
-        self.snapshot_sets.remove(snapset)
         self.by_name.pop(snapset.name)
         self.by_uuid.pop(snapset.uuid)
+        self.snapshot_sets.remove(snapset)
 
-        for snapshot in snapshots.copy():
-            snapshots.remove(snapshot)
-            try:
-                new_snapshot = snapshot.rename(new_name)
-                new_snapshots.append(new_snapshot)
-            except SnapmError as err:
-                _log_error("Failed to rename snapshot %s: %s", snapshot.name, err)
-                rollback_snapshots = []
-                for new_snapshot in new_snapshots:
-                    try:
-                        rollback_snapshot = snapshot.rename(old_name)
-                        rollback_snapshots.append(rollback_snapshot)
-                    except SnapmError as err2:
-                        _log_error(
-                            "Failed to rollback snapshot rename on %s: %s",
-                            snapshot.name,
-                            err2,
-                        )
-                old_snapset = SnapshotSet(
-                    old_name, timestamp, snapshots + rollback_snapshots
-                )
-                self.by_name[old_snapset.name] = old_snapset
-                self.by_uuid[old_snapset.uuid] = old_snapset
-                self.snapshot_sets.append(old_snapset)
-                raise SnapmPluginError(
-                    f"Could not rename all snapshots for set {old_name}"
-                ) from err
+        try:
+            snapset.rename(new_name)
+        except SnapmError as err:
+            self.by_name[snapset.name] = snapset
+            self.by_uuid[snapset.uuid] = snapset
+            self.snapshot_sets.append(snapset)
+            raise err
 
-        new_snapset = SnapshotSet(new_name, timestamp, new_snapshots)
-        for snapshot in new_snapset.snapshots:
-            snapshot.snapshot_set = new_snapset
-        self.by_name[new_snapset.name] = new_snapset
-        self.by_uuid[new_snapset.uuid] = new_snapset
-        self.snapshot_sets.append(new_snapset)
-        return new_snapset
+        self.by_name[snapset.name] = snapset
+        self.by_uuid[snapset.uuid] = snapset
+        self.snapshot_sets.append(snapset)
+        return snapset
 
     @suspend_signals
     def delete_snapshot_sets(self, selection):

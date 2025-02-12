@@ -916,6 +916,44 @@ class SnapshotSet:
             f"Source path {source} not found in snapset {self.name}"
         )
 
+    def rename(self, new_name):
+        """
+        Rename this ``SnapshotSet`` to ``new_name``.
+
+        :raises: ``SnapmError`` if a call to rename any member of the snapshot
+                 set fails.
+        """
+        old_name = self.name
+        snapshots = self.snapshots
+        new_snapshots = []
+
+        for snapshot in snapshots.copy():
+            snapshots.remove(snapshot)
+            try:
+                new_snapshot = snapshot.rename(new_name)
+                new_snapshots.append(new_snapshot)
+            except SnapmError as err:
+                _log_error("Failed to rename snapshot %s: %s", snapshot.name, err)
+                rollback_snapshots = []
+                for new_snapshot in new_snapshots:
+                    try:
+                        rollback_snapshot = snapshot.rename(old_name)
+                        rollback_snapshots.append(rollback_snapshot)
+                    except SnapmError as err2:
+                        _log_error(
+                            "Failed to rollback snapshot rename on %s: %s",
+                            snapshot.name,
+                            err2,
+                        )
+                self._snapshots = snapshots + rollback_snapshots
+                raise SnapmPluginError(
+                    f"Could not rename all snapshots for set {old_name}"
+                ) from err
+
+        self._name = new_name
+        self._uuid = uuid5(NAMESPACE_SNAPSHOT_SET, self.name + str(self.timestamp))
+        self._snapshots = new_snapshots
+
     def delete(self):
         """
         Delete the on-disk representation of this ``SnapshotSet``.
