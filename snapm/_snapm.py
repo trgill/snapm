@@ -645,6 +645,14 @@ class SnapshotSet:
     in time and managed as a group.
     """
 
+    def _link_snapshots(self):
+        self._by_mount_point = {}
+        self._by_origin = {}
+        for snapshot in self._snapshots:
+            if snapshot.mount_point:
+                self._by_mount_point[snapshot.mount_point] = snapshot
+            self._by_origin[snapshot.origin] = snapshot
+
     def __init__(self, name, timestamp, snapshots):
         """
         Initialise a new ``SnapshotSet`` object.
@@ -657,14 +665,9 @@ class SnapshotSet:
         self._uuid = uuid5(NAMESPACE_SNAPSHOT_SET, name + str(timestamp))
         self._timestamp = timestamp
         self._snapshots = snapshots
-        self._by_mount_point = {}
-        self._by_origin = {}
+        self._link_snapshots()
         self.boot_entry = None
         self.revert_entry = None
-        for snapshot in self._snapshots:
-            if snapshot.mount_point:
-                self._by_mount_point[snapshot.mount_point] = snapshot
-            self._by_origin[snapshot.origin] = snapshot
 
     def __str__(self):
         """
@@ -953,6 +956,7 @@ class SnapshotSet:
         self._name = new_name
         self._uuid = uuid5(NAMESPACE_SNAPSHOT_SET, self.name + str(self.timestamp))
         self._snapshots = new_snapshots
+        self._link_snapshots()
 
     def delete(self):
         """
