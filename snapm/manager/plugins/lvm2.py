@@ -251,31 +251,6 @@ def is_lvm_device(devpath):
     return uuid.startswith(LVM_UUID_PREFIX)
 
 
-def vg_lv_from_device_path(devpath):
-    """
-    Return a ``(vg_name, lv_name)`` tuple for the LVM device at
-    ``devpath``.
-    """
-    lvs_cmd_args = [
-        LVS_CMD,
-        LVS_NO_HEADINGS,
-        LVM_REPORT_FORMAT,
-        LVM_BASIC,
-        LVM_OPTIONS,
-        LVS_FIELD_MIN_OPTIONS,
-        devpath,
-    ]
-    try:
-        lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
-    except CalledProcessError as err:
-        raise SnapmCalloutError(
-            f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
-        ) from err
-    name = lvs_cmd.stdout.decode("utf8").strip()
-    name_parts = name.split(" ")
-    return (name_parts[0], name_parts[1])
-
-
 def vg_lv_from_origin(origin):
     """
     Return a ``(vg_name, lv_name)`` tuple for the LVM device with origin
@@ -493,6 +468,30 @@ class _Lvm2(Plugin):
 
     max_name_len = LVM_MAX_NAME_LEN
 
+    def vg_lv_from_device_path(self, devpath):
+        """
+        Return a ``(vg_name, lv_name)`` tuple for the LVM device at
+        ``devpath``.
+        """
+        lvs_cmd_args = [
+            LVS_CMD,
+            LVS_NO_HEADINGS,
+            LVM_REPORT_FORMAT,
+            LVM_BASIC,
+            LVM_OPTIONS,
+            LVS_FIELD_MIN_OPTIONS,
+            devpath,
+        ]
+        try:
+            lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
+            ) from err
+        name = lvs_cmd.stdout.decode("utf8").strip()
+        name_parts = name.split(" ")
+        return (name_parts[0], name_parts[1])
+
     def pool_name_from_vg_lv(self, vg_lv):
         """
         Return the thin pool associated with the logical volume identified by
@@ -693,7 +692,7 @@ class _Lvm2(Plugin):
             device = device_from_mount_point(mount_point)
         if not is_lvm_device(device):
             return None
-        (vg_name, lv_name) = vg_lv_from_device_path(device)
+        (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         return path_join(DEV_PREFIX, vg_name, lv_name)
 
     def delete_snapshot(self, name):
@@ -945,7 +944,7 @@ class Lvm2Cow(_Lvm2):
 
         if not is_lvm_device(device):
             return False
-        (vg_name, lv_name) = vg_lv_from_device_path(device)
+        (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
@@ -1146,7 +1145,7 @@ class Lvm2Thin(_Lvm2):
 
         if not is_lvm_device(device):
             return False
-        (vg_name, lv_name) = vg_lv_from_device_path(device)
+        (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]

@@ -47,6 +47,7 @@ class Lvm2Tests(unittest.TestCase):
             self.assertEqual(lvm2.is_lvm_device(dev), devs[dev])
 
     def test_vg_lv_from_device_path(self):
+        lvm2cow = lvm2.Lvm2Cow(log)
         devs = {
             "/dev/mapper/fedora-home": ("fedora", "home"),
             "/dev/mapper/fedora-root": ("fedora", "root"),
@@ -63,10 +64,10 @@ class Lvm2Tests(unittest.TestCase):
         }
         for dev in devs.keys():
             if devs[dev] is not None:
-                self.assertEqual(lvm2.vg_lv_from_device_path(dev), devs[dev])
+                self.assertEqual(lvm2cow.vg_lv_from_device_path(dev), devs[dev])
             else:
                 with self.assertRaises(SnapmCalloutError) as cm:
-                    lvm2.vg_lv_from_device_path(dev)
+                    lvm2cow.vg_lv_from_device_path(dev)
 
     def test_vg_lv_from_origin(self):
         devs = {
