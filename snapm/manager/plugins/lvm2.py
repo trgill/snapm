@@ -12,7 +12,7 @@ from subprocess import run, CalledProcessError
 from json import loads, JSONDecodeError
 from math import floor
 from os.path import join as path_join
-from os import stat
+from os import stat, environ
 from stat import S_ISBLK
 from time import time
 from shutil import which
@@ -173,6 +173,27 @@ _LVM_CMDS = [
 
 MINIMUM_LVM_VERSION = (2, 3, 11)
 MINIMUM_LVM_VERSION_JSON_STD = (2, 3, 17)
+
+# LVM2 environment variables to filter out
+_LVM_ENV_FILTER = [
+    "LVM_OUT_FD",
+    "LVM_ERR_FD",
+    "LVM_REPORT_FD",
+    "LVM_COMMAND_PROFILE",
+    "LVM_RUN_BY_DMEVENTD",
+    "LVM_SUPPRESS_FD_WARNINGS",
+    "LVM_SUPPRESS_SYSLOG",
+    "LVM_VG_NAME",
+    "LVM_LVMPOLLD_PIDFILE",
+    "LVM_LVMPOLLD_SOCKET",
+    "LVM_LOG_FILE_EPOCH",
+    "LVM_LOG_FILE_MAX_LINES",
+    "LVM_EXPECTED_EXIT_STATUS",
+    "LVM_SUPPRESS_LOCKING_FAILURE_MESSAGES",
+    "DM_ABORT_ON_INTERNAL_ERRORS",
+    "DM_DISABLE_UDEV",
+    "DM_DEBUG_WITH_LINE_NUMBERS",
+]
 
 
 def _decode_stderr(err):
@@ -483,7 +504,7 @@ class _Lvm2(Plugin):
             devpath,
         ]
         try:
-            lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
+            lvs_cmd = run(lvs_cmd_args, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
@@ -619,11 +640,21 @@ class _Lvm2(Plugin):
         if lvm_version < MINIMUM_LVM_VERSION_JSON_STD:
             self._json_fmt = LVM_JSON
 
+    def _sanitize_environment(self):
+        env = environ.copy()
+        for var in _LVM_ENV_FILTER:
+            if var in env:
+                env.pop(var)
+        return env
+
     def __init__(self, logger):
         super().__init__(logger)
 
         # Default to using json_std when available.
         self._json_fmt = LVM_JSON_STD
+
+        # Sanitize environment for LVM2 callouts.
+        self._env = self._sanitize_environment()
 
         # Check for presence of required LVM2 binaries.
         _check_lvm_present()
@@ -703,7 +734,7 @@ class _Lvm2(Plugin):
         """
         lvremove_cmd = [LVREMOVE_CMD, LVREMOVE_YES, name]
         try:
-            run(lvremove_cmd, capture_output=True, check=True)
+            run(lvremove_cmd, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVREMOVE_CMD} failed with: {_decode_stderr(err)}"
@@ -739,7 +770,7 @@ class _Lvm2(Plugin):
             new_name,
         ]
         try:
-            run(lvrename_cmd, capture_output=True, check=True)
+            run(lvrename_cmd, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVRENAME_CMD} failed with: {_decode_stderr(err)}"
@@ -792,7 +823,7 @@ class _Lvm2(Plugin):
             name,
         ]
         try:
-            run(lvconvert_cmd, capture_output=False, check=True)
+            run(lvconvert_cmd, env=self._env, capture_output=False, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVCONVERT_CMD} failed with: {_decode_stderr(err)}"
@@ -830,7 +861,7 @@ class _Lvm2(Plugin):
             name,
         ]
         try:
-            run(lvchange_cmd, capture_output=True, check=True)
+            run(lvchange_cmd, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVCHANGE_CMD} failed with: {_decode_stderr(err)}"
@@ -1019,7 +1050,7 @@ class Lvm2Cow(_Lvm2):
             origin,
         ]
         try:
-            run(lvcreate_cmd, capture_output=True, check=True)
+            run(lvcreate_cmd, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVCREATE_CMD} failed with: {_decode_stderr(err)}"
@@ -1054,7 +1085,7 @@ class Lvm2Cow(_Lvm2):
             name,
         ]
         try:
-            run(lvresize_cmd, capture_output=True, check=True)
+            run(lvresize_cmd, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVRESIZE_CMD} failed with: {_decode_stderr(err)}"
@@ -1215,7 +1246,7 @@ class Lvm2Thin(_Lvm2):
             origin,
         ]
         try:
-            run(lvcreate_cmd, capture_output=True, check=True)
+            run(lvcreate_cmd, env=self._env, capture_output=True, check=True)
         except CalledProcessError as err:
             raise SnapmCalloutError(
                 f"{LVCREATE_CMD} failed with: {_decode_stderr(err)}"
