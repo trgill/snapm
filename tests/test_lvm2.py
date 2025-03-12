@@ -79,18 +79,21 @@ class Lvm2Tests(unittest.TestCase):
             self.assertEqual(lvm2.vg_lv_from_origin(dev), devs[dev])
 
     def test_pool_name_from_vg_lv(self):
+        lvm2thin = lvm2.Lvm2Thin(log)
         devs = {
             "fedora/srv": "pool0",
             "fedora/home": "",
         }
         for dev in devs.keys():
-            self.assertEqual(lvm2.pool_name_from_vg_lv(dev), devs[dev])
+            self.assertEqual(lvm2thin.pool_name_from_vg_lv(dev), devs[dev])
 
     def test_pool_name_from_vg_lv_bad_lv(self):
+        lvm2thin = lvm2.Lvm2Thin(log)
         with self.assertRaises(SnapmCalloutError) as cm:
-            lvm2.pool_name_from_vg_lv("some/lv")
+            lvm2thin.pool_name_from_vg_lv("some/lv")
 
     def test_pool_free_space(self):
+        lvm2thin = lvm2.Lvm2Thin(log)
         pools = {
             ("fedora", "pool0"): 933940639,
             ("fedora", "pool1"): 1073741824,
@@ -98,12 +101,13 @@ class Lvm2Tests(unittest.TestCase):
         }
         for pool in pools.keys():
             if pools[pool] is not None:
-                self.assertEqual(lvm2.pool_free_space(pool[0], pool[1]), pools[pool])
+                self.assertEqual(lvm2thin.pool_free_space(pool[0], pool[1]), pools[pool])
             else:
                 with self.assertRaises(SnapmCalloutError) as cm:
-                    lvm2.pool_free_space(pool[0], pool[1])
+                    lvm2thin.pool_free_space(pool[0], pool[1])
 
     def test_vg_free_space(self):
+        lvm2cow = lvm2.Lvm2Cow(log)
         groups = {
             "fedora": 9097445376,
             "vg_hex": 16903045120,
@@ -112,10 +116,10 @@ class Lvm2Tests(unittest.TestCase):
         }
         for vg in groups.keys():
             if groups[vg] != -1:
-                self.assertEqual(lvm2.vg_free_space(vg), groups[vg])
+                self.assertEqual(lvm2cow.vg_free_space(vg), groups[vg])
             else:
                 with self.assertRaises(SnapmCalloutError) as cm:
-                    lvm2.vg_free_space(vg)
+                    lvm2cow.vg_free_space(vg)
 
     def test_lvm2cow_discover_snapshots(self):
         lvm2cow = lvm2.Lvm2Cow(log)

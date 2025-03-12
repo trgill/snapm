@@ -51,7 +51,8 @@ LVM_COW_SNAPSHOT_NAME_LEN = 4
 
 # Global LVM2 report options
 LVM_REPORT_FORMAT = "--reportformat"
-LVM_JSON = "json_std"
+LVM_JSON = "json"
+LVM_JSON_STD = "json_std"
 LVM_OPTIONS = "--options"
 LVM_UNITS = "--units"
 LVM_BYTES = "b"
@@ -170,6 +171,7 @@ _LVM_CMDS = [
 ]
 
 MINIMUM_LVM_VERSION = (2, 3, 11)
+MINIMUM_LVM_VERSION_JSON_STD = (2, 3, 17)
 
 
 def _decode_stderr(err):
@@ -215,85 +217,6 @@ def _get_lvm_version():
                 version, _ = version.split("(", maxsplit=1)
             return _version_string_to_tuple(version)
     return (0, 0, 0)
-
-
-def _check_lvm_version():
-    def _version_string(value):
-        return f"{value[0]}.{value[1]}.{value[2]}"
-
-    try:
-        lvm_version = _get_lvm_version()
-    except CalledProcessError as err:
-        raise SnapmPluginError(
-            f"Error getting LVM2 version: {_decode_stderr(err)}"
-        ) from err
-    if lvm_version < MINIMUM_LVM_VERSION:
-        raise SnapmPluginError(
-            f"Unsupported LVM2 version: {_version_string(lvm_version)} "
-            f"< {_version_string(MINIMUM_LVM_VERSION)}"
-        )
-
-
-def get_lvs_json_report(vg_lv=None, lvs_all=False):
-    """
-    Call out to the ``lvs`` program and return a report in JSON format.
-    """
-    lvs_cmd_args = [
-        LVS_CMD,
-        LVM_REPORT_FORMAT,
-        LVM_JSON,
-        LVM_UNITS,
-        LVM_BYTES,
-        LVM_OPTIONS,
-        LVS_FIELD_OPTIONS,
-    ]
-    if vg_lv:
-        lvs_cmd_args.append(vg_lv)
-    if lvs_all:
-        lvs_cmd_args.append(LVS_ALL)
-    try:
-        lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
-    except CalledProcessError as err:
-        raise SnapmCalloutError(
-            f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
-        ) from err
-    try:
-        lvs_dict = loads(lvs_cmd.stdout)
-    except JSONDecodeError as err:
-        raise SnapmCalloutError(
-            f"Unable to decode {LVS_CMD} JSON output: {err}"
-        ) from err
-    return lvs_dict
-
-
-def get_vgs_json_report(vg_name=None):
-    """
-    Call out to the ``vgs`` program and return a report in JSON format.
-    """
-    vgs_cmd_args = [
-        VGS_CMD,
-        LVM_REPORT_FORMAT,
-        LVM_JSON,
-        LVM_UNITS,
-        LVM_BYTES,
-        LVM_OPTIONS,
-        VGS_FIELD_OPTIONS,
-    ]
-    if vg_name:
-        vgs_cmd_args.append(vg_name)
-    try:
-        vgs_cmd = run(vgs_cmd_args, capture_output=True, check=True)
-    except CalledProcessError as err:
-        raise SnapmCalloutError(
-            f"Error calling {VGS_CMD}: {_decode_stderr(err)}"
-        ) from err
-    try:
-        vgs_dict = loads(vgs_cmd.stdout)
-    except JSONDecodeError as err:
-        raise SnapmCalloutError(
-            f"Unable to decode {VGS_CMD} JSON output: {err}"
-        ) from err
-    return vgs_dict
 
 
 def is_lvm_device(devpath):
@@ -359,51 +282,6 @@ def vg_lv_from_origin(origin):
     return (name_parts[0], name_parts[1])
 
 
-def pool_name_from_vg_lv(vg_lv):
-    """
-    Return the thin pool associated with the logical volume identified by
-    ``vg_lv``.
-    """
-    lvs_dict = get_lvs_json_report(vg_lv)
-    lv_dict = lvs_dict[LVS_REPORT][0][LVS_LV][0]
-    return lv_dict[LVS_POOL_LV]
-
-
-def vg_free_space(vg_name):
-    """
-    Return the free space available as bytes for the volume group named
-    ``vg_name``.
-    """
-    vgs_dict = get_vgs_json_report(vg_name=vg_name)
-    for vg_dict in vgs_dict[VGS_REPORT][0][VGS_VG]:
-        if vg_dict["vg_name"] == vg_name:
-            return int(vg_dict["vg_free"].rstrip("B"))
-    raise ValueError(f"Volume group {vg_name} not found")
-
-
-def lv_dev_size(vg_name, lv_name):
-    """
-    Return the size of the specified logical volume in bytes.
-    """
-    lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
-    for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
-        if lv_dict["vg_name"] == vg_name and lv_dict["lv_name"] == lv_name:
-            return int(lv_dict["lv_size"].rstrip("B"))
-    raise ValueError(f"Logical volume {vg_name}/{lv_name} not found")
-
-
-def pool_free_space(vg_name, pool_name):
-    """
-    Return the free space available as bytes for the thin pool identified
-    by ``vg_name`` and ``pool_name``.
-    """
-    lvs_dict = get_lvs_json_report(f"{vg_name}/{pool_name}")
-    lv_dict = lvs_dict[LVS_REPORT][0][LVS_LV][0]
-    data_percent = float(lv_dict[LVS_DATA_PERCENT])
-    pool_size = int(lv_dict[LVS_LV_SIZE].rstrip("B"))
-    return int(pool_size - floor((pool_size * data_percent) / 100.0))
-
-
 class Lvm2Snapshot(Snapshot):
     """
     Class for LVM2 snapshot objects.
@@ -428,7 +306,9 @@ class Lvm2Snapshot(Snapshot):
         if lv_dict:
             self._lv_dict_cache = lv_dict
         else:
-            lvs_dict = get_lvs_json_report(f"{self.vg_name}/{self.lv_name}")
+            lvs_dict = self.provider.get_lvs_json_report(
+                f"{self.vg_name}/{self.lv_name}"
+            )
             self._lv_dict_cache = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         self._lv_dict_cache_ts = time()
 
@@ -500,7 +380,9 @@ class Lvm2Snapshot(Snapshot):
     def _get_lv_dict_cache(self):
         now = time()
         if not self._lv_dict_cache or (self._lv_dict_cache_ts + LVS_CACHE_VALID) < now:
-            lvs_dict = get_lvs_json_report(f"{self.vg_name}/{self.lv_name}")
+            lvs_dict = self.provider.get_lvs_json_report(
+                f"{self.vg_name}/{self.lv_name}"
+            )
             self._lv_dict_cache = lvs_dict[LVS_REPORT][0][LVS_LV][0]
             self._lv_dict_cache_ts = now
         return self._lv_dict_cache
@@ -526,7 +408,7 @@ class Lvm2ThinSnapshot(Lvm2Snapshot):
     @property
     def free(self):
         lv_dict = self._get_lv_dict_cache()
-        return pool_free_space(self.vg_name, lv_dict[LVS_POOL_LV])
+        return self.provider.pool_free_space(self.vg_name, lv_dict[LVS_POOL_LV])
 
 
 def _volume_type_or_merging(lv_dict, lv_type):
@@ -608,10 +490,136 @@ class _Lvm2(Plugin):
 
     max_name_len = LVM_MAX_NAME_LEN
 
+    def pool_name_from_vg_lv(self, vg_lv):
+        """
+        Return the thin pool associated with the logical volume identified by
+        ``vg_lv``.
+        """
+        lvs_dict = self.get_lvs_json_report(vg_lv)
+        lv_dict = lvs_dict[LVS_REPORT][0][LVS_LV][0]
+        return lv_dict[LVS_POOL_LV]
+
+    def vg_free_space(self, vg_name):
+        """
+        Return the free space available as bytes for the volume group named
+        ``vg_name``.
+        """
+        vgs_dict = self.get_vgs_json_report(vg_name=vg_name)
+        for vg_dict in vgs_dict[VGS_REPORT][0][VGS_VG]:
+            if vg_dict["vg_name"] == vg_name:
+                return int(vg_dict["vg_free"].rstrip("B"))
+        raise ValueError(f"Volume group {vg_name} not found")
+
+    def lv_dev_size(self, vg_name, lv_name):
+        """
+        Return the size of the specified logical volume in bytes.
+        """
+        lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
+        for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
+            if lv_dict["vg_name"] == vg_name and lv_dict["lv_name"] == lv_name:
+                return int(lv_dict["lv_size"].rstrip("B"))
+        raise ValueError(f"Logical volume {vg_name}/{lv_name} not found")
+
+    def pool_free_space(self, vg_name, pool_name):
+        """
+        Return the free space available as bytes for the thin pool identified
+        by ``vg_name`` and ``pool_name``.
+        """
+        lvs_dict = self.get_lvs_json_report(f"{vg_name}/{pool_name}")
+        lv_dict = lvs_dict[LVS_REPORT][0][LVS_LV][0]
+        data_percent = float(lv_dict[LVS_DATA_PERCENT])
+        pool_size = int(lv_dict[LVS_LV_SIZE].rstrip("B"))
+        return int(pool_size - floor((pool_size * data_percent) / 100.0))
+
+    def get_lvs_json_report(self, vg_lv=None, lvs_all=False):
+        """
+        Call out to the ``lvs`` program and return a report in JSON format.
+        """
+        lvs_cmd_args = [
+            LVS_CMD,
+            LVM_REPORT_FORMAT,
+            LVM_JSON,
+            LVM_UNITS,
+            LVM_BYTES,
+            LVM_OPTIONS,
+            LVS_FIELD_OPTIONS,
+        ]
+        if vg_lv:
+            lvs_cmd_args.append(vg_lv)
+        if lvs_all:
+            lvs_cmd_args.append(LVS_ALL)
+        try:
+            lvs_cmd = run(lvs_cmd_args, capture_output=True, check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
+            ) from err
+        try:
+            lvs_dict = loads(lvs_cmd.stdout)
+        except JSONDecodeError as err:
+            raise SnapmCalloutError(
+                f"Unable to decode {LVS_CMD} JSON output: {err}"
+            ) from err
+        return lvs_dict
+
+    def get_vgs_json_report(self, vg_name=None):
+        """
+        Call out to the ``vgs`` program and return a report in JSON format.
+        """
+        vgs_cmd_args = [
+            VGS_CMD,
+            LVM_REPORT_FORMAT,
+            LVM_JSON,
+            LVM_UNITS,
+            LVM_BYTES,
+            LVM_OPTIONS,
+            VGS_FIELD_OPTIONS,
+        ]
+        if vg_name:
+            vgs_cmd_args.append(vg_name)
+        try:
+            vgs_cmd = run(vgs_cmd_args, capture_output=True, check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"Error calling {VGS_CMD}: {_decode_stderr(err)}"
+            ) from err
+        try:
+            vgs_dict = loads(vgs_cmd.stdout)
+        except JSONDecodeError as err:
+            raise SnapmCalloutError(
+                f"Unable to decode {VGS_CMD} JSON output: {err}"
+            ) from err
+        return vgs_dict
+
+    def _check_lvm_version(self):
+        """
+        Check for the required minimum LVM2 version and enable any version
+        dependent workarounds as needed.
+        """
+
+        def _version_string(value):
+            return f"{value[0]}.{value[1]}.{value[2]}"
+
+        try:
+            lvm_version = _get_lvm_version()
+        except CalledProcessError as err:
+            raise SnapmPluginError(
+                f"Error getting LVM2 version: {_decode_stderr(err)}"
+            ) from err
+        if lvm_version < MINIMUM_LVM_VERSION:
+            raise SnapmPluginError(
+                f"Unsupported LVM2 version: {_version_string(lvm_version)} "
+                f"< {_version_string(MINIMUM_LVM_VERSION)}"
+            )
+
     def __init__(self, logger):
         super().__init__(logger)
+
+        # Check for presence of required LVM2 binaries.
         _check_lvm_present()
-        _check_lvm_version()
+
+        # Check LVM2 minimum version requirements.
+        self._check_lvm_version()
 
     def discover_snapshots(self):
         """
@@ -751,7 +759,7 @@ class _Lvm2(Plugin):
         merged.
         """
         vg_name, lv_name = vg_lv_from_origin(origin)
-        lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
+        lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
@@ -881,7 +889,7 @@ class Lvm2Cow(_Lvm2):
         :returns: A list of ``Lvm2Snapshot`` objects discovered by this plugin.
         """
         snapshots = []
-        lvs_dict = get_lvs_json_report(lvs_all=True)
+        lvs_dict = self.get_lvs_json_report(lvs_all=True)
         for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
             if filter_cow_snapshot(lv_dict):
                 try:
@@ -927,7 +935,7 @@ class Lvm2Cow(_Lvm2):
         if not is_lvm_device(device):
             return False
         (vg_name, lv_name) = vg_lv_from_device_path(device)
-        lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
+        lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
@@ -951,8 +959,8 @@ class Lvm2Cow(_Lvm2):
         """
         vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
-        vg_free = vg_free_space(vg_name)
-        lv_size = lv_dev_size(vg_name, lv_name)
+        vg_free = self.vg_free_space(vg_name)
+        lv_size = self.lv_dev_size(vg_name, lv_name)
         policy = SizePolicy(origin, mount_point, vg_free, fs_used, lv_size, size_policy)
         snapshot_min_size = _snapshot_min_size(policy.size)
         if vg_free < (sum(self.size_map[vg_name].values()) + snapshot_min_size):
@@ -1083,7 +1091,7 @@ class Lvm2Thin(_Lvm2):
 
     def discover_snapshots(self):
         snapshots = []
-        lvs_dict = get_lvs_json_report(lvs_all=True)
+        lvs_dict = self.get_lvs_json_report(lvs_all=True)
         for lv_dict in lvs_dict[LVS_REPORT][0][LVS_LV]:
             if filter_thin_snapshot(lv_dict):
                 try:
@@ -1128,7 +1136,7 @@ class Lvm2Thin(_Lvm2):
         if not is_lvm_device(device):
             return False
         (vg_name, lv_name) = vg_lv_from_device_path(device)
-        lvs_dict = get_lvs_json_report(f"{vg_name}/{lv_name}")
+        lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
         lv_attr = lv_report[LVS_LV_ATTR]
         if lv_attr[0] == LVM_LV_ORIGIN_MERGING:
@@ -1142,8 +1150,8 @@ class Lvm2Thin(_Lvm2):
     def _check_free_space(self, origin, pool_name, mount_point, size_policy):
         vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
-        lv_size = lv_dev_size(vg_name, lv_name)
-        pool_free = pool_free_space(vg_name, pool_name)
+        lv_size = self.lv_dev_size(vg_name, lv_name)
+        pool_free = self.pool_free_space(vg_name, pool_name)
         policy = SizePolicy(
             origin, mount_point, pool_free, fs_used, lv_size, size_policy
         )
@@ -1161,7 +1169,7 @@ class Lvm2Thin(_Lvm2):
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
         vg_name, lv_name = vg_lv_from_origin(origin)
-        pool_name = pool_name_from_vg_lv(origin)
+        pool_name = self.pool_name_from_vg_lv(origin)
         snapshot_name = format_snapshot_name(
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
@@ -1215,7 +1223,7 @@ class Lvm2Thin(_Lvm2):
 
     def check_resize_snapshot(self, name, origin, mount_point, size_policy):
         vg_name, lv_name = vg_lv_from_origin(origin)
-        pool_name = pool_name_from_vg_lv(origin)
+        pool_name = self.pool_name_from_vg_lv(origin)
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
         if pool_name not in self.size_map[vg_name]:
