@@ -84,8 +84,12 @@ jobs:
           sudo make install
           sudo systemctl enable --now stratisd
         working-directory: /var/tmp/stratisd
+      - name: Check out stratis-cli
+        run: git clone https://github.com/stratis-storage/stratis-cli -b rebase-3.6.0
+        working-directory: /var/tmp
       - name: Install stratis-cli
-        run: sudo pip install stratis-cli
+        run: sudo pip install -v .
+        working-directory: /var/tmp/stratis-cli
       - name: Check PyCodestyle
         run: >
           pycodestyle snapm --ignore E501,E203,W503
