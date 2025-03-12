@@ -10,6 +10,7 @@ LVS_FIELD_OPTIONS = (
 LVS_VG_LV_FIELD_OPTIONS = "vg_name,lv_name"
 
 LVM_JSON = "json"
+LVM_JSON_STD = "json_std"
 LVM_BYTES = "b"
 
 fedora_pool0 = """  {
@@ -191,7 +192,7 @@ def main(args):
     args = parser.parse_args()
 
     if args.options == LVS_FIELD_OPTIONS:
-        if args.reportformat != LVM_JSON:
+        if args.reportformat != LVM_JSON and args.reportformat != LVM_JSON_STD:
             return 1
         if args.units != LVM_BYTES:
             return 1

@@ -8,6 +8,7 @@ VGS_FIELD_OPTIONS = (
 )
 
 LVM_JSON = "json"
+LVM_JSON_STD = "json_std"
 LVM_BYTES = "b"
 
 fedora = """  {
@@ -56,7 +57,7 @@ def main(args):
     
     args = parser.parse_args()
 
-    if args.reportformat != LVM_JSON:
+    if args.reportformat != LVM_JSON and args.reportformat != LVM_JSON_STD:
         return 1
     if args.options != VGS_FIELD_OPTIONS:
         return 1

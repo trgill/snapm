@@ -51,7 +51,7 @@ LVM_COW_SNAPSHOT_NAME_LEN = 4
 
 # Global LVM2 report options
 LVM_REPORT_FORMAT = "--reportformat"
-LVM_JSON = "json"
+LVM_JSON = "json_std"
 LVM_OPTIONS = "--options"
 LVM_UNITS = "--units"
 LVM_BYTES = "b"
