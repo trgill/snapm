@@ -53,6 +53,7 @@ LVM_COW_SNAPSHOT_NAME_LEN = 4
 LVM_REPORT_FORMAT = "--reportformat"
 LVM_JSON = "json"
 LVM_JSON_STD = "json_std"
+LVM_BASIC = "basic"
 LVM_OPTIONS = "--options"
 LVM_UNITS = "--units"
 LVM_BYTES = "b"
@@ -258,7 +259,9 @@ def vg_lv_from_device_path(devpath):
     lvs_cmd_args = [
         LVS_CMD,
         LVS_NO_HEADINGS,
-        "-o",
+        LVM_REPORT_FORMAT,
+        LVM_BASIC,
+        LVM_OPTIONS,
         LVS_FIELD_MIN_OPTIONS,
         devpath,
     ]
