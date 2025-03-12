@@ -538,7 +538,7 @@ class _Lvm2(Plugin):
         lvs_cmd_args = [
             LVS_CMD,
             LVM_REPORT_FORMAT,
-            LVM_JSON,
+            self._json_fmt,
             LVM_UNITS,
             LVM_BYTES,
             LVM_OPTIONS,
@@ -569,7 +569,7 @@ class _Lvm2(Plugin):
         vgs_cmd_args = [
             VGS_CMD,
             LVM_REPORT_FORMAT,
-            LVM_JSON,
+            self._json_fmt,
             LVM_UNITS,
             LVM_BYTES,
             LVM_OPTIONS,
@@ -612,8 +612,16 @@ class _Lvm2(Plugin):
                 f"< {_version_string(MINIMUM_LVM_VERSION)}"
             )
 
+        # Work around missing --reportformat json_std in ubuntu-24.04
+        # See https://github.com/snapshotmanager/snapm/issues/110
+        if lvm_version < MINIMUM_LVM_VERSION_JSON_STD:
+            self._json_fmt = LVM_JSON
+
     def __init__(self, logger):
         super().__init__(logger)
+
+        # Default to using json_std when available.
+        self._json_fmt = LVM_JSON_STD
 
         # Check for presence of required LVM2 binaries.
         _check_lvm_present()
