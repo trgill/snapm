@@ -665,6 +665,10 @@ class Manager:
 
         # Find provider plugins for sources
         for source in sources:
+            if not exists(source):
+                _log_error("No such file or directory: %s", source)
+                raise SnapmNotFoundError(f"Source path '{source}' does not exist")
+
             _log_debug(
                 "Probing plugins for %s with size policy %s",
                 source,
