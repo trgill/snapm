@@ -27,6 +27,7 @@ jobs:
           python3-packaging
           python3-wcwidth
           pycodestyle
+          libfaketime
           flake8
           pylint
           bandit
