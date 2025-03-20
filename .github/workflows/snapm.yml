@@ -28,6 +28,7 @@ jobs:
           python3-wcwidth
           pycodestyle
           libfaketime
+          faketime
           flake8
           pylint
           bandit
