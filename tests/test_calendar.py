@@ -5,6 +5,7 @@
 # This file is part of the snapm project.
 #
 # SPDX-License-Identifier: GPL-2.0-only
+from shutil import which
 import unittest
 import logging
 import time
@@ -20,6 +21,14 @@ USECS_INFINITY = -1
 TZ = "TZ"
 
 _sd_analyze_orig = snapm.manager.calendar._sd_analyze_calendar
+
+
+def have_faketime():
+    """
+    Return `True` if the `faketime` command is available, or `False`
+    otherwise.
+    """
+    return which("faketime") is not None
 
 
 def patch_sd_analyze(faketime):
@@ -161,6 +170,7 @@ class CalendarSpecTests(unittest.TestCase):
             with self.subTest(f"Validating '{calin}' == '{calout}'", i=data.index((calin, calout))):
                 self.assertTrue(self._test_one(calin, calout))
 
+    @unittest.skipIf(not have_faketime(), "missing faketime command")
     def test_calendar_spec_next(self):
         data = [
             ("2016-03-27 03:17:00", "", 12345, 1459048620000000),
