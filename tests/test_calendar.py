@@ -59,8 +59,6 @@ class CalendarSpecTests(unittest.TestCase):
         self.assertEqual(str(cs), str(cs2))
 
     def _test_next(self, calin, new_tz, after, expect):
-        if "TZ" in os.environ:
-            print(f"Start: {os.environ["TZ"]}")
         old_tz = os.environ[TZ] if TZ in os.environ else ""
 
         if new_tz:
@@ -81,8 +79,6 @@ class CalendarSpecTests(unittest.TestCase):
         unpatch_sd_analyze()
         os.environ[TZ] = old_tz
         time.tzset()
-        if "TZ" in os.environ:
-            print(f"End: {os.environ["TZ"]}")
 
     def test_calendar_spec_one(self):
         self._test_one("Sat,Thu,Mon-Wed,Sat-Sun", "Mon..Thu,Sat,Sun *-*-* 00:00:00")
