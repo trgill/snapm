@@ -33,6 +33,9 @@ BuildRequires:	stratis-cli
 BuildRequires:	python3-sphinx
 BuildRequires:	boom-boot
 %endif
+%if 0%{?fedora}
+BuildRequires: libfaketime
+%endif
 
 Requires: python3-snapm = %{version}-%{release}
 Recommends: boom-boot
