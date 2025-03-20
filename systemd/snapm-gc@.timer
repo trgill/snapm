@@ -1,0 +1,9 @@
+[Unit]
+Description=Scheduled %I snapshot set cleanup
+Documentation=man:snapm(8) man:snapm-conf(5)
+
+[Timer]
+Unit=snapm-gc@%i.service
+
+[Install]
+WantedBy=timers.target

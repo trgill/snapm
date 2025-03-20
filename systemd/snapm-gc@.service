@@ -1,0 +1,8 @@
+[Unit]
+Description=Clean up %I snapshot sets
+Documentation=man:snapm(8) man:snapm-conf(5)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=snapm schedule gc -c %i.conf

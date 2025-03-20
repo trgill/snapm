@@ -1,0 +1,8 @@
+[Unit]
+Description=Create %I snapshot sets
+Documentation=man:snapm(8) man:snapm-conf(5)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=snapm snapset create -c %i.conf

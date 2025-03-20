@@ -1,0 +1,9 @@
+[Unit]
+Description=Scheduled %I snapshot set creation timer
+Documentation=man:snapm(8) man:snapm-conf(5)
+
+[Timer]
+Unit=snapm-create@%i.service
+
+[Install]
+WantedBy=timers.target
