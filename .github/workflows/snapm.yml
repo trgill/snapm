@@ -20,6 +20,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive
           sudo apt-get install -y
           python3-pytest
+          python3-pytest-subtests
           python3-pycodestyle
           python3-coverage
           python3-flake8
