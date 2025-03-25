@@ -26,7 +26,7 @@ import sys
 import uuid
 from json import dumps
 
-from snapm import size_fmt
+from snapm import size_fmt, SNAPSET_INDEX_NONE
 
 
 def find_minimum_sha_prefix(shas, min_prefix):
@@ -66,15 +66,25 @@ _DEFAULT_COLUMNS = 80
 REP_NUM = "num"
 REP_STR = "str"
 REP_SHA = "sha"
+REP_IDX = "idx"
 REP_TIME = "time"
 REP_UUID = "uuid"
 REP_SIZE = "size"
 REP_STR_LIST = "strlist"
 
-_dtypes = [REP_NUM, REP_STR, REP_SHA, REP_TIME, REP_UUID, REP_SIZE, REP_STR_LIST]
+_dtypes = [
+    REP_NUM,
+    REP_STR,
+    REP_SHA,
+    REP_IDX,
+    REP_TIME,
+    REP_UUID,
+    REP_SIZE,
+    REP_STR_LIST,
+]
 
 _left_align_dtypes = [REP_STR, REP_SHA, REP_TIME, REP_UUID, REP_STR_LIST]
-_right_align_dtypes = [REP_NUM, REP_SIZE]
+_right_align_dtypes = [REP_NUM, REP_IDX, REP_SIZE]
 
 _DEFAULT_WIDTH = 8
 
@@ -374,6 +384,25 @@ class Field:
         if not isinstance(value, string_types):
             raise TypeError("Value for report_sha() must be a string type.")
         self.set_value(value, sort_value=value)
+
+    def report_idx(self, value):
+        """
+        Report an index value for this Field object.
+
+        Set the value for this field to the supplied ``value``.
+
+        :param value: The index value to set
+        :rtype: None
+        """
+        if not isinstance(value, num_types):
+            raise TypeError("Value for report_idx() must me a numeric type.")
+        if value == SNAPSET_INDEX_NONE:
+            report_string = "-"
+            sort_value = value
+        else:
+            report_string = str(value)
+            sort_value = value
+        self.set_value(report_string, sort_value=sort_value)
 
     def report_num(self, value):
         """
@@ -1338,6 +1367,7 @@ __all__ = [
     "REP_NUM",
     "REP_STR",
     "REP_SHA",
+    "REP_IDX",
     "REP_TIME",
     "REP_UUID",
     "REP_SIZE",

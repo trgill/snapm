@@ -16,6 +16,7 @@ from snapm.report import (
     REP_NUM,
     REP_STR,
     REP_SHA,
+    REP_IDX,
     REP_TIME,
     REP_UUID,
     REP_SIZE,
@@ -33,6 +34,7 @@ _report_objs = [
         1,
         "foo",
         "ffffffffffffffffffffffffffffffffffffffff",
+        0,
         "2023-09-05 14:40:53",
         uuid.UUID("00000000-0000-0000-0000-000000000000"),
         1024,
@@ -42,6 +44,7 @@ _report_objs = [
         2,
         "bar",
         "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        1,
         "1978-01-10 09:13:12",
         uuid.UUID("1d133bcc-6137-5267-b870-e469f7188dbe"),
         1024**2,
@@ -51,6 +54,7 @@ _report_objs = [
         3,
         "baz",
         "1111111111111111111111111111111111111111",
+        2,
         "2022-08-01 16:43:32",
         uuid.UUID("3576355e-e4d7-5a57-9f24-b3f4e0e326ef"),
         1024**3,
@@ -60,6 +64,7 @@ _report_objs = [
         4,
         "qux",
         "2222222222222222222222222222222222222222",
+        -1,
         "2020-01-01 23:32:08",
         uuid.UUID("046e4f15-1ddd-5724-b032-878248a71d4b"),
         1024**4,
@@ -70,19 +75,21 @@ _report_objs = [
 PR_NUM = 1
 PR_STR = 2
 PR_SHA = 4
-PR_TIME = 8
-PR_UUID = 16
-PR_SIZE = 32
-PR_STR_LIST = 64
+PR_IDX = 8
+PR_TIME = 16
+PR_UUID = 32
+PR_SIZE = 64
+PR_STR_LIST = 128
 
 _test_obj_types = [
     ReportObjType(PR_NUM, "Num", "num_", lambda o: o[0]),
     ReportObjType(PR_STR, "Str", "str_", lambda o: o[1]),
     ReportObjType(PR_SHA, "Sha", "sha_", lambda o: o[2]),
-    ReportObjType(PR_TIME, "Time", "time_", lambda o: o[3]),
-    ReportObjType(PR_UUID, "Uuid", "uuid_", lambda o: o[4]),
-    ReportObjType(PR_SIZE, "Size", "size_", lambda o: o[5]),
-    ReportObjType(PR_STR_LIST, "StrList", "strlist_", lambda o: o[6]),
+    ReportObjType(PR_IDX, "Idx", "idx_", lambda o: o[3]),
+    ReportObjType(PR_TIME, "Time", "time_", lambda o: o[4]),
+    ReportObjType(PR_UUID, "Uuid", "uuid_", lambda o: o[5]),
+    ReportObjType(PR_SIZE, "Size", "size_", lambda o: o[6]),
+    ReportObjType(PR_STR_LIST, "StrList", "strlist_", lambda o: o[7]),
 ]
 
 
@@ -116,6 +123,10 @@ class ReportTests(unittest.TestCase):
     def test_FieldType_dtype_SHA(self):
         pf = FieldType(PR_SHA, "none", "None", "Nothing", 0, REP_SHA, lambda x: x)
         self.assertEqual(pf.dtype, REP_SHA)
+
+    def test_FieldType_dtype_IDX(self):
+        pf = FieldType(PR_IDX, "none", "None", "Nothing", 0, REP_IDX, lambda x: x)
+        self.assertEqual(pf.dtype, REP_IDX)
 
     def test_FieldType_dtype_TIME(self):
         pf = FieldType(PR_TIME, "none", "None", "Nothing", 0, REP_TIME, lambda x: x)
@@ -600,6 +611,15 @@ class ReportTests(unittest.TestCase):
             REP_SHA,
             lambda f, d: f.report_sha(d),
         )
+        pf_idx = FieldType(
+            PR_IDX,
+            "idx",
+            "Idx",
+            "Nothing",
+            5,
+            REP_IDX,
+            lambda f, d: f.report_idx(d),
+        )
         pf_time = FieldType(
             PR_TIME,
             "time",
@@ -641,17 +661,17 @@ class ReportTests(unittest.TestCase):
         opts = ReportOpts(report_file=output)
 
         xoutput = (
-            "Name     Number   Sha      Time                Uuid                                 Size     StrList\n"
-            "foo             1 ffffffff 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000   1.0KiB bar, baz, foo\n"
-            "bar             2 FFFFFFFF 1978-01-10 09:13:12 1d133bcc-6137-5267-b870-e469f7188dbe   1.0MiB one, three, two\n"
-            "baz             3 11111111 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef   1.0GiB baz, quux\n"
-            "qux             4 22222222 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b   1.0TiB list, string\n"
+            "Name     Number   Sha      Idx   Time                Uuid                                 Size     StrList\n"
+            "foo             1 ffffffff     0 2023-09-05 14:40:53 00000000-0000-0000-0000-000000000000   1.0KiB bar, baz, foo\n"
+            "bar             2 FFFFFFFF     1 1978-01-10 09:13:12 1d133bcc-6137-5267-b870-e469f7188dbe   1.0MiB one, three, two\n"
+            "baz             3 11111111     2 2022-08-01 16:43:32 3576355e-e4d7-5a57-9f24-b3f4e0e326ef   1.0GiB baz, quux\n"
+            "qux             4 22222222     - 2020-01-01 23:32:08 046e4f15-1ddd-5724-b032-878248a71d4b   1.0TiB list, string\n"
         )
 
         pr = Report(
             _test_obj_types,
-            [pf_name, pf_num, pf_sha, pf_time, pf_uuid, pf_size, pf_str_list],
-            "name,number,sha,time,uuid,size,strlist",
+            [pf_name, pf_num, pf_sha, pf_idx, pf_time, pf_uuid, pf_size, pf_str_list],
+            "name,number,sha,idx,time,uuid,size,strlist",
             opts,
             None,
             None,
