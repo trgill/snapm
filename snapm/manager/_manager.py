@@ -441,6 +441,7 @@ def load_plugins():
             import_plugin(plugbase)
 
 
+# pylint: disable=too-many-return-statements
 def select_snapshot_set(select, snapshot_set):
     """
     Test SnapshotSet against Selection criteria.
@@ -458,6 +459,10 @@ def select_snapshot_set(select, snapshot_set):
     if select.name and select.name != snapshot_set.name:
         return False
     if select.uuid and select.uuid != snapshot_set.uuid:
+        return False
+    if select.basename and select.basename != snapshot_set.basename:
+        return False
+    if select.index is not None and select.index != snapshot_set.index:
         return False
     if select.timestamp and select.timestamp != snapshot_set.timestamp:
         return False

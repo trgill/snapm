@@ -93,6 +93,7 @@ SNAPSHOT_DEV_PATH = "DevicePath"
 SNAPSET_INDEX_NONE = -1
 SNAPSHOT_INDEX_NONE = -1
 
+
 class SnapmLogger(logging.Logger):
     """
     Snapm logging wrapper class: wrap the Logger.debug() method
@@ -267,6 +268,8 @@ class Selection:
     # Snapshot set fields
     name = None
     uuid = None
+    basename = None
+    index = None
     timestamp = None
     nr_snapshots = None
     mount_points = None
@@ -280,6 +283,8 @@ class Selection:
     snapshot_set_attrs = [
         "name",
         "uuid",
+        "basename",
+        "index",
         "timestamp",
         "nr_snapshots",
         "mount_points",
@@ -328,6 +333,8 @@ class Selection:
         self,
         name=None,
         uuid=None,
+        basename=None,
+        index=None,
         timestamp=None,
         nr_snapshots=None,
         mount_points=None,
@@ -338,6 +345,8 @@ class Selection:
     ):
         self.name = name
         self.uuid = uuid
+        self.basename = basename
+        self.index = index
         self.timestamp = timestamp
         self.nr_snapshots = nr_snapshots
         self.mount_points = mount_points
