@@ -59,6 +59,8 @@ DEFAULT_PERCENT_SIZE = 25.0
 
 # Constants for SnapshotSet property names
 SNAPSET_NAME = "SnapsetName"
+SNAPSET_BASENAME = "Basename"
+SNAPSET_INDEX = "Index"
 SNAPSET_SOURCES = "Sources"
 SNAPSET_MOUNT_POINTS = "MountPoints"
 SNAPSET_DEVICES = "Devices"
@@ -76,6 +78,8 @@ SNAPSET_SNAPSHOTS = "Snapshots"
 
 # Constants for Snapshot property names
 SNAPSHOT_NAME = "Name"
+SNAPSHOT_BASENAME = "Basename"
+SNAPSHOT_INDEX = "Index"
 SNAPSHOT_ORIGIN = "Origin"
 SNAPSHOT_SOURCE = "Source"
 SNAPSHOT_MOUNT_POINT = "MountPoint"
@@ -1555,6 +1559,8 @@ class Snapshot:
 __all__ = [
     "ETC_FSTAB",
     "SNAPSET_NAME",
+    "SNAPSET_BASENAME",
+    "SNAPSET_INDEX",
     "SNAPSET_SOURCES",
     "SNAPSET_MOUNT_POINTS",
     "SNAPSET_DEVICES",
@@ -1570,6 +1576,8 @@ __all__ = [
     "SNAPSET_REVERT_ENTRY",
     "SNAPSET_SNAPSHOTS",
     "SNAPSHOT_NAME",
+    "SNAPSHOT_BASENAME",
+    "SNAPSHOT_INDEX",
     "SNAPSHOT_ORIGIN",
     "SNAPSHOT_SOURCE",
     "SNAPSHOT_MOUNT_POINT",
