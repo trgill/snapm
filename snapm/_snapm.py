@@ -89,6 +89,9 @@ SNAPSHOT_FREE_BYTES = "FreeBytes"
 SNAPSHOT_AUTOACTIVATE = "Autoactivate"
 SNAPSHOT_DEV_PATH = "DevicePath"
 
+# Constants for Snapshot and SnapshotSet property values
+SNAPSET_INDEX_NONE = -1
+SNAPSHOT_INDEX_NONE = -1
 
 class SnapmLogger(logging.Logger):
     """
@@ -646,6 +649,31 @@ class SnapStatus(Enum):
         return "Invalid"
 
 
+def _split_name(name):
+    return name.rsplit(".", maxsplit=1)
+
+
+def _has_index(name):
+    if "." in name:
+        return (_split_name(name)[1]).isdigit()
+    return False
+
+
+def _parse_basename(name):
+    if "." in name:
+        return _split_name(name)[0]
+    return name
+
+
+def _parse_index(name):
+    if "." in name:
+        index_str = _split_name(name)[1]
+        if not index_str.isdigit():
+            return name
+        return int(index_str)
+    return name
+
+
 # pylint: disable=too-many-public-methods
 class SnapshotSet:
     """
@@ -677,6 +705,13 @@ class SnapshotSet:
         self._link_snapshots()
         self.boot_entry = None
         self.revert_entry = None
+
+        if _has_index(name):
+            self._basename = _parse_basename(name)
+            self._index = _parse_index(name)
+        else:
+            self._basename = name
+            self._index = SNAPSET_INDEX_NONE
 
     def __str__(self):
         """
@@ -763,6 +798,21 @@ class SnapshotSet:
         The name of this snapshot set.
         """
         return self._name
+
+    @property
+    def basename(self):
+        """
+        The basename of this snapshot set, minus any index.
+        """
+        return self._basename
+
+    @property
+    def index(self):
+        """
+        The index of this snapshot set, if set, or the special value
+        ``snapm.SNAPSET_INDEX_NONE`` otherwise.
+        """
+        return self._index
 
     @property
     def uuid(self):
@@ -1163,6 +1213,14 @@ class Snapshot:
         self._timestamp = timestamp
         self._mount_point = mount_point
         self._snapshot_set = None
+
+        if _has_index(snapset_name):
+            self._basename = _parse_basename(snapset_name)
+            self._index = _parse_index(snapset_name)
+        else:
+            self._basename = snapset_name
+            self._index = SNAPSHOT_INDEX_NONE
+
         self.provider = provider
 
     def __str__(self):
@@ -1236,6 +1294,22 @@ class Snapshot:
         The name of the snapshot set this snapshot belongs to.
         """
         return self._snapset_name
+
+    @property
+    def snapset_basename(self):
+        """
+        The basename of the snapshot set this snapshot belongs to,
+        minus any index.
+        """
+        return self._basename
+
+    @property
+    def index(self):
+        """
+        The index of this snapshot, if set, or the special value
+        ``snapm.SNAPSHOT_INDEX_NONE`` otherwise.
+        """
+        return self._index
 
     @property
     def origin(self):
@@ -1499,6 +1573,8 @@ __all__ = [
     "SNAPSHOT_FREE_BYTES",
     "SNAPSHOT_AUTOACTIVATE",
     "SNAPSHOT_DEV_PATH",
+    "SNAPSET_INDEX_NONE",
+    "SNAPSHOT_INDEX_NONE",
     "SNAPM_DEBUG_MANAGER",
     "SNAPM_DEBUG_COMMAND",
     "SNAPM_DEBUG_REPORT",
