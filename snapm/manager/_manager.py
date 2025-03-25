@@ -855,6 +855,18 @@ class Manager:
         _log_debug("Found %d snapshots", len(matches))
         return matches
 
+    def _find_next_index(self, basename):
+        """
+        Find the next index value for the recurring snapset with basename
+        ``basename``.
+
+        :param basename: The basename of the recurring snapset
+        :returns: An integer index value
+        """
+        sets = self.find_snapshot_sets(selection=Selection(basename=basename))
+        sets.sort(key=lambda x: x.index)
+        return (sets[-1].index + 1) if sets else 0
+
     def _validate_snapset_name(self, name):
         """
         Validate a snapshot set name.
@@ -878,7 +890,13 @@ class Manager:
     # pylint: disable=too-many-branches,too-many-locals,too-many-statements
     @suspend_signals
     def create_snapshot_set(
-        self, name, source_specs, default_size_policy=None, boot=False, revert=False
+        self,
+        name,
+        source_specs,
+        default_size_policy=None,
+        boot=False,
+        revert=False,
+        autoindex=False,
     ):
         """
         Create a snapshot set of the supplied mount points with the name
@@ -890,10 +908,16 @@ class Manager:
         :param default_size_policy: A default size policy to use for the set.
         :param boot: Create a snapshot boot entry for this snapshot set.
         :param revert: Create a revert boot entry for this snapshot set.
+        :param autoindex: Treat `name` as the basename of a recurring snapshot set
+                          and generate and append an appropriate index value.
         :raises: ``SnapmExistsError`` if the name is already in use, or
                  ``SnapmInvalidIdentifierError`` if the name fails validation.
         """
         self._validate_snapset_name(name)
+
+        if autoindex:
+            index = self._find_next_index(name)
+            name = f"{name}.{index}"
 
         # Parse size policies and normalise mount paths
         (sources, size_policies) = _parse_source_specs(

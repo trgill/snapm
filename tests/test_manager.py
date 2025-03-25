@@ -451,8 +451,7 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(len(sets), 0)
 
     def test_create_delete_snapshot_set_with_index(self):
-        """ Note: convert to autoindex= once #159 done. """
-        self.manager.create_snapshot_set("testset0.0", self.mount_points())
+        self.manager.create_snapshot_set("testset0", self.mount_points(), autoindex=True)
         select = snapm.Selection(name="testset0.0")
         sset = self.manager.find_snapshot_sets(selection=select)[0]
         self.assertEqual(sset.basename, "testset0")
@@ -460,8 +459,7 @@ class ManagerTests(unittest.TestCase):
         self.manager.delete_snapshot_sets(selection=select)
 
     def test_create_delete_snapshot_set_no_index(self):
-        """ Note: convert to autoindex= once #159 done. """
-        self.manager.create_snapshot_set("testset0", self.mount_points())
+        self.manager.create_snapshot_set("testset0", self.mount_points(), autoindex=False)
         select = snapm.Selection(name="testset0")
         sset = self.manager.find_snapshot_sets(selection=select)[0]
         self.assertEqual(sset.basename, "testset0")
