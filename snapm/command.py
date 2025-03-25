@@ -449,7 +449,9 @@ def _do_print_type(
     return report.report_output()
 
 
-def create_snapset(manager, name, sources, size_policy=None, boot=False, revert=False):
+def create_snapset(
+    manager, name, sources, size_policy=None, boot=False, revert=False, autoindex=False
+):
     """
     Create a new snapshot set from a list of mount point and block device
     source paths.
@@ -460,9 +462,16 @@ def create_snapset(manager, name, sources, size_policy=None, boot=False, revert=
     :param size_policy: The default size policy for this snapshot set.
     :param boot: Create a boot entry for this snapshot set.
     :param revert: Create a revert boot entry for this snapshot set.
+    :param autoindex: Treat `name` as the basename of a recurring snapshot set
+                      and generate and append an appropriate index value.
     """
     return manager.create_snapshot_set(
-        name, sources, default_size_policy=size_policy, boot=boot, revert=revert
+        name,
+        sources,
+        default_size_policy=size_policy,
+        boot=boot,
+        revert=revert,
+        autoindex=autoindex,
     )
 
 

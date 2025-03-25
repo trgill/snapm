@@ -276,7 +276,8 @@ class CommandTests(unittest.TestCase):
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_create_snapset(self):
-        command.create_snapset(self.manager, "testset0", self.mount_points())
+        sset = command.create_snapset(self.manager, "testset0", self.mount_points())
+        self.assertEqual(sset.index, snapm.SNAPSET_INDEX_NONE)
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_create_snapset_default_size_policy(self):
@@ -294,6 +295,13 @@ class CommandTests(unittest.TestCase):
         mount_specs = [f"{mp}:100%SIZE" for mp in self.mount_points()]
         command.create_snapset(self.manager, "testset0", mount_specs)
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_create_snapset_autoindex(self):
+        one = command.create_snapset(self.manager, "hourly", self.mount_points(), autoindex=True)
+        two = command.create_snapset(self.manager, "hourly", self.mount_points(), autoindex=True)
+        self.assertEqual(one.index, 0)
+        self.assertEqual(two.index, 1)
+        self.manager.delete_snapshot_sets(snapm.Selection(basename="hourly"))
 
     def test_create_delete_snapset(self):
         command.create_snapset(self.manager, "testset0", self.mount_points())
