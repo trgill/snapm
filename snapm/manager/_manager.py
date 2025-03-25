@@ -888,6 +888,8 @@ class Manager:
         :param source_specs: A list of mount point and block device paths to
                              include in the set.
         :param default_size_policy: A default size policy to use for the set.
+        :param boot: Create a snapshot boot entry for this snapshot set.
+        :param revert: Create a revert boot entry for this snapshot set.
         :raises: ``SnapmExistsError`` if the name is already in use, or
                  ``SnapmInvalidIdentifierError`` if the name fails validation.
         """
