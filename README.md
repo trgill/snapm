@@ -191,6 +191,35 @@ BootEntries:
   RevertEntry:    f428f9f
 ```
 
+##### Autoindex for recurring snapshot sets
+The `--autoindex` argument allows creating a recurring snapshot set with a
+common basename and unique index (a non-negative integer). This can be used
+to take regular snapshots with a common name:
+
+```
+# snapm snapset create hourly --autoindex /:25%SIZE /var:25%SIZE
+SnapsetName:      hourly.3
+Sources:          /, /var
+NrSnapshots:      2
+Time:             2025-03-26 14:17:18
+UUID:             ae082452-7995-5316-ac65-388eadd9879c
+Status:           Active
+Autoactivate:     yes
+Bootable:         no
+```
+
+The basename and index values are available via the `snapset list` report:
+
+```
+# snapm snapset list -o+basename,index
+SnapsetName  Time                 NrSnapshots Status  Sources  Basename     Index
+backup       2025-03-25 18:12:54            2 Invalid /, /var  backup           -
+hourly.0     2025-03-25 19:40:39            2 Invalid /, /var  hourly           0
+hourly.1     2025-03-26 14:17:11            2 Active  /, /var  hourly           1
+hourly.2     2025-03-26 14:17:15            2 Active  /, /var  hourly           2
+hourly.3     2025-03-26 14:17:18            2 Active  /, /var  hourly           3
+```
+
 ##### delete
 Delete an existing snapset by name or uuid.
 ```
