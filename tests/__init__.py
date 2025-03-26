@@ -41,6 +41,7 @@ class MockArgs(object):
     verbose = 0
     version = False
     json = False
+    autoindex = False
 
 
 def have_root():

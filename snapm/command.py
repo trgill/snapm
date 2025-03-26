@@ -767,6 +767,7 @@ def _create_cmd(cmd_args):
         size_policy=cmd_args.size_policy,
         boot=cmd_args.bootable,
         revert=cmd_args.revert,
+        autoindex=cmd_args.autoindex,
     )
     if snapset is None:
         return 1
@@ -1323,6 +1324,12 @@ def _add_snapset_subparser(type_subparser):
         "--revert",
         action="store_true",
         help="Create a revert boot entry for this snapshot set",
+    )
+    snapset_create_parser.add_argument(
+        "-a",
+        "--autoindex",
+        action="store_true",
+        help="Automatically create a unique index for recurring snapshot sets",
     )
 
     # snapset delete subcommand
