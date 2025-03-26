@@ -79,6 +79,7 @@ Snapm \(em Linux snapshot manager
 .  RB [ -r | --revert ]
 .  RB [ -s | --size-policy
 .  IR policy ]
+.  RB [ -a | --autoindex ]
 .  IR \fIname\fP
 .  IR \fIsource[size_policy]\fP ...
 .  ad b
@@ -380,6 +381,17 @@ are: manager, command, plugins, report.
 Display usage information and exit.
 .
 .HP
+.BR -a | --autoindex
+.br
+When creating snapshot sets treat \fBname\fP as a common basename and
+generate and append a new, non-negative index value, to create a unique
+instance name.
+
+This is useful when creating recurring snapshot sets of the same set of
+sources, for example to create a timeline of snapshots for recovery and
+rollback purposes.
+.
+.HP
 .BR -b | --bootable
 .br
 When creating snapshot sets automatically create a snapshot boot entry
@@ -625,6 +637,34 @@ Snapshot providers that do not allocate a fixed size for snapshot data will
 check for available space according to the policy at creation time but do not
 enforce a fixed size for individual snapshots: space is allocated from the
 available pool on an as-needed basis.
+
+If the \fB--autoindex\fP argument is given the \fBname\fP given on the
+command line is treated as a basename and a new, non-negative integer
+index will be generated and appended to the \fBname\fP to construct a new,
+unique instance name. This can be used to group a series of snapshot sets
+of the same set of sources that are taken on a recurring schedule.
+
+.br
+#
+.B snapm snapset create hourly --autoindex /:5%SIZE /var:5%SIZE
+.br
+SnapsetName:      hourly.3
+.br
+Sources:          /, /var
+.br
+NrSnapshots:      2
+.br
+Time:             2025-03-26 14:17:18
+.br
+UUID:             ae082452-7995-5316-ac65-388eadd9879c
+.br
+Status:           Active
+.br
+Autoactivate:     yes
+.br
+Bootable:         no
+.br
+
 .
 .HP
 .B snapm
@@ -928,6 +968,13 @@ The name of this snapshot set.
 .B uuid
 The UUID of this snapshot set.
 .TP
+.B basename
+The basename of this snapshot set.
+.TP
+.B index
+The index of this snapshot set, or the special value '-' if this snapshot set
+does not have recurring instances.
+.TP
 .B timestamp
 The snapshot set creation time as a UNIX epoch value.
 .TP
@@ -1038,6 +1085,24 @@ backup       fedora/var-snapset_backup_1733421190_-var     /dev/fedora/var     /
 backup       p1/fs2-snapset_backup_1733421190_-srv         /dev/stratis/p1/fs2 /srv    Active     2.0GiB   3.2GiB yes          stratis
 .br
 backup       p1/fs1-snapset_backup_1733421190_-opt         /dev/stratis/p1/fs1 /opt    Active     1.0GiB   3.2GiB yes          stratis
+.br
+.P
+List the available snapshots, displaying the basename and index for each
+.br
+#
+.B snapm snapset list -o+basename,index
+.br
+SnapsetName  Time                 NrSnapshots Status  Sources  Basename     Index
+.br
+backup       2025-03-25 18:12:54            2 Invalid /, /var  backup           -
+.br
+hourly.0     2025-03-26 14:00:00            2 Invalid /, /var  hourly           0
+.br
+hourly.1     2025-03-26 15:00:00            2 Active  /, /var  hourly           1
+.br
+hourly.2     2025-03-26 16:00:00            2 Active  /, /var  hourly           2
+.br
+hourly.3     2025-03-26 17:00:00            2 Active  /, /var  hourly           3
 .br
 .P
 Create a new snapshot set from the mount points /, /home, and /var
