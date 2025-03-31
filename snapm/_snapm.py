@@ -258,6 +258,12 @@ class SnapmRecursionError(SnapmError):
     """
 
 
+class SnapmArgumentError(SnapmError):
+    """
+    An invalid argument was passed to a snapshot manager API call.
+    """
+
+
 #
 # Selection criteria class
 #
@@ -1613,6 +1619,7 @@ __all__ = [
     "SnapmPluginError",
     "SnapmStateError",
     "SnapmRecursionError",
+    "SnapmArgumentError",
     "Selection",
     "size_fmt",
     "is_size_policy",
