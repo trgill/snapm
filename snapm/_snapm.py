@@ -11,6 +11,7 @@ Global definitions for the top-level snapm package.
 from uuid import UUID, uuid5
 from datetime import datetime
 from enum import Enum
+import string
 import json
 import math
 import logging
@@ -96,6 +97,12 @@ SNAPSHOT_DEV_PATH = "DevicePath"
 # Constants for Snapshot and SnapshotSet property values
 SNAPSET_INDEX_NONE = -1
 SNAPSHOT_INDEX_NONE = -1
+
+
+# Constant for allow-listed name characters
+SNAPM_VALID_NAME_CHARS = set(
+    string.ascii_lowercase + string.ascii_uppercase + string.digits + "+_.-"
+)
 
 
 class SnapmLogger(logging.Logger):
@@ -1598,6 +1605,7 @@ __all__ = [
     "SNAPSHOT_DEV_PATH",
     "SNAPSET_INDEX_NONE",
     "SNAPSHOT_INDEX_NONE",
+    "SNAPM_VALID_NAME_CHARS",
     "SNAPM_DEBUG_MANAGER",
     "SNAPM_DEBUG_COMMAND",
     "SNAPM_DEBUG_REPORT",
