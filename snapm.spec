@@ -98,7 +98,7 @@ rm doc/Makefile
 rm doc/conf.py
 
 %check
-%pytest --log-level=debug -v
+%pytest --log-level=debug -v tests/
 
 %files
 # Main license for snapm (Apache-2.0)
