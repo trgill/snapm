@@ -16,7 +16,7 @@ from uuid import UUID
 log = logging.getLogger()
 
 import snapm
-import snapm.manager.boot as boot
+import snapm.manager._boot as boot
 import snapm.manager
 from snapm.manager.plugins import format_snapshot_name, encode_mount_point
 import boom

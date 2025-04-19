@@ -17,7 +17,7 @@ from os import stat
 from os.path import exists, ismount, normpath, samefile
 
 from snapm.manager.signals import suspend_signals
-from snapm.manager.boot import (
+from ._boot import (
     BootCache,
     create_snapset_boot_entry,
     delete_snapset_boot_entry,
