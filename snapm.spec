@@ -79,7 +79,7 @@ rm -f doc/*.rst doc/Makefile doc/conf.py
 %pyproject_install
 
 mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
-install -p -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
+%{__install} -p -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
 
 %check
 %pytest --log-level=debug -v tests/
