@@ -127,11 +127,11 @@ class CalendarSpec:
         """
         Return a string representation of this ``CalendarSpec`` instance.
         """
-        return self.normalized
+        return self._calendarspec
 
     def __repr__(self):
         """
         Return a string representation of this ``CalendarSpec`` instance in the
         form of a call to the CalendarSpec initializer.
         """
-        return f'CalendarSpec("{self.normalized}")'
+        return f'CalendarSpec("{str(self)}")'

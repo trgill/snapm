@@ -58,7 +58,7 @@ class CalendarSpecTests(unittest.TestCase):
     def _test_one(self, calin, calout):
         cs = CalendarSpec(calin)
         self.assertTrue(cs)
-        self.assertTrue(str(cs) == calout)
+        self.assertTrue(cs.normalized == calout)
 
         if cs.occurs:
             self.assertTrue(cs.next_elapse is not None)
