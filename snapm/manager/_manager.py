@@ -16,16 +16,6 @@ from stat import S_ISBLK
 from os import stat
 from os.path import exists, ismount, normpath, samefile
 
-from ._signals import suspend_signals
-from ._boot import (
-    BootCache,
-    create_snapset_boot_entry,
-    delete_snapset_boot_entry,
-    create_snapset_revert_entry,
-    delete_snapset_revert_entry,
-    check_boom_config,
-)
-
 from snapm import (
     SNAPM_DEBUG_MANAGER,
     SNAPM_VALID_NAME_CHARS,
@@ -48,7 +38,17 @@ from snapm import (
     SnapStatus,
     SnapshotSet,
 )
+
+from ._boot import (
+    BootCache,
+    create_snapset_boot_entry,
+    delete_snapset_boot_entry,
+    create_snapset_revert_entry,
+    delete_snapset_revert_entry,
+    check_boom_config,
+)
 from ._loader import load_plugins
+from ._signals import suspend_signals
 
 
 _log = logging.getLogger(__name__)
