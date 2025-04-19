@@ -11,8 +11,8 @@ import logging
 import time
 import os
 
-import snapm.manager.calendar
-from snapm.manager.calendar import CalendarSpec
+import snapm.manager._calendar
+from snapm.manager._calendar import CalendarSpec
 
 log = logging.getLogger()
 
@@ -20,7 +20,7 @@ USECS_PER_SEC = 1000000
 USECS_INFINITY = -1
 TZ = "TZ"
 
-_sd_analyze_orig = snapm.manager.calendar._sd_analyze_calendar
+_sd_analyze_orig = snapm.manager._calendar._sd_analyze_calendar
 
 
 def have_faketime():
@@ -37,7 +37,7 @@ def patch_sd_analyze(faketime):
     ``faketime @faketime`` into the systemd-analyze command list.
     """
     faketime = float(faketime) / USECS_PER_SEC
-    snapm.manager.calendar._sd_analyze_calendar = [
+    snapm.manager._calendar._sd_analyze_calendar = [
         "faketime",
         f"@{str(faketime)}",
         "systemd-analyze",
@@ -49,7 +49,7 @@ def unpatch_sd_analyze():
     """
     Revert calendar._sd_analyze_calendar list faketime injection.
     """
-    snapm.manager.calendar._sd_analyze_calendar = _sd_analyze_orig
+    snapm.manager._calendar._sd_analyze_calendar = _sd_analyze_orig
 
 
 class CalendarSpecTests(unittest.TestCase):
