@@ -123,6 +123,13 @@ class CalendarSpec:
             and self.from_now != _NEVER
         )
 
+    @property
+    def original(self):
+        """
+        The original form of this ``CalendarSpec`` as a string.
+        """
+        return self._calendarspec
+
     def __str__(self):
         """
         Return a string representation of this ``CalendarSpec`` instance.
