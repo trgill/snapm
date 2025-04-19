@@ -113,7 +113,8 @@ class CalendarSpec:
 
     @property
     def occurs(self):
-        """``True`` if this ``CalendarSpec`` object's calendar expression will
+        """
+        ``True`` if this ``CalendarSpec`` object's calendar expression will
         occur in the future, or ``False`` otherwise.
         """
         return (
