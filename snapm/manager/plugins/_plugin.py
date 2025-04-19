@@ -162,8 +162,8 @@ class Plugin:
 
         :returns: None
         :raises: ``SnapmNoSpaceError`` if insufficient space is available to
-        satisfy the requested size policy or ``SnapmPluginError`` if another
-        reason prevents the snapshot from being resized.
+                 satisfy the requested size policy or ``SnapmPluginError`` if
+                 another reason prevents the snapshot from being resized.
         """
         raise NotImplementedError
 
@@ -175,8 +175,8 @@ class Plugin:
 
         :returns: None
         :raises: ``SnapmNoSpaceError`` if insufficient space is available to
-        satisfy the requested size policy or ``SnapmPluginError`` if another
-        reason prevents the snapshot from being resized.
+                 satisfy the requested size policy or ``SnapmPluginError`` if
+                 another reason prevents the snapshot from being resized.
         """
         raise NotImplementedError
 
@@ -187,10 +187,10 @@ class Plugin:
 
         :returns: None
         :raises: ``NotImplementedError`` if this plugin does not support the
-        revert operation, ``SnapmBusyError`` if the snapshot is already in the
-        process of being reverted to another snapshot state or
-        ``SnapmPluginError`` if another reason prevents the snapshot from being
-        merged.
+                 revert operation, ``SnapmBusyError`` if the snapshot is already
+                 in the process of being reverted to another snapshot state or
+                 ``SnapmPluginError`` if another reason prevents the snapshot
+                 from being merged.
         """
         raise NotImplementedError
 
