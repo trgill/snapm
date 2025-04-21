@@ -25,7 +25,18 @@ from ._util import LvmLoopBacked, StratisLoopBacked
 boom.set_boot_path(BOOT_ROOT_TEST)
 
 
-class CommandTestsSimple(unittest.TestCase):
+class CommandTestsBase(unittest.TestCase):
+    def get_debug_main_args(self):
+        """
+        Return an argument array (in the form of sys.argv) reflecting the
+        ``bin/snapm`` command, with verbose logging and debug enabled.
+
+        :returns: A list of command arguments.
+        """
+        return [os.path.join(os.getcwd(), "bin/snapm"), "-vv", "--debug=all"]
+
+
+class CommandTestsSimple(CommandTestsBase):
     """
     Test command interfaces
     """
@@ -212,7 +223,7 @@ class CommandTestsSimple(unittest.TestCase):
 
 
 @unittest.skipIf(not have_root(), "requires root privileges")
-class CommandTests(unittest.TestCase):
+class CommandTests(CommandTestsBase):
     """
     Test command interfaces with devices
     """
