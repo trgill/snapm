@@ -340,37 +340,37 @@ class CommandTests(CommandTestsBase):
         args = self.get_debug_main_args()
         args += ["snapset", "create", "testset0"]
         args.extend(self.mount_points())
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
         args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "delete", "testset0"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
     def test_main_snapset_create_autoindex(self):
         args = self.get_debug_main_args()
         args += ["snapset", "create", "--autoindex", "testset0"]
         args.extend(self.mount_points())
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
         args += ["snapset", "delete", "testset0.0"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
     def test_main_snapset_delete(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
         args = self.get_debug_main_args()
         args += ["snapset", "delete", "testset0"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
     def test_main_snapset_rename(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
 
         args = self.get_debug_main_args()
         args += ["snapset", "rename", "testset0", "testset1"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
         args += ["snapset", "delete", "testset1"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
     def test_main_snapset_rename_missing_newname(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
@@ -389,7 +389,7 @@ class CommandTests(CommandTestsBase):
 
         args = self.get_debug_main_args()
         args += ["snapset", "split", "testset0", "testset1", to_split]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
         # Refresh manager context
         self.manager.discover_snapshot_sets()
@@ -406,7 +406,7 @@ class CommandTests(CommandTestsBase):
 
         args = self.get_debug_main_args()
         args += ["snapset", "prune", "testset0", to_prune]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
 
         # Refresh manager context
         self.manager.discover_snapshot_sets()
@@ -420,18 +420,21 @@ class CommandTests(CommandTestsBase):
 
         args = self.get_debug_main_args()
         args += ["snapset", "list"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
+
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_main_snapset_list_verbose(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
 
         args = [os.path.join(os.getcwd(), "bin/snapm"), "-v", "snapset", "list"]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
+
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_main_snapset_list_very_verbose_debug(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
+
         args = [
             os.path.join(os.getcwd(), "bin/snapm"),
             "-vv",
@@ -439,7 +442,8 @@ class CommandTests(CommandTestsBase):
             "snapset",
             "list",
         ]
-        command.main(args)
+        self.assertEqual(command.main(args), 0)
+
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_main_snapset_list_bad_debug(self):
@@ -451,8 +455,7 @@ class CommandTests(CommandTestsBase):
             "snapset",
             "list",
         ]
-        r = command.main(args)
-        self.assertEqual(r, 1)
+        self.assertEqual(command.main(args), 1)
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_main_snapshot_activate(self):
