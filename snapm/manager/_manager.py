@@ -544,6 +544,20 @@ class Manager:
             index = self._find_next_index(name)
             name = f"{name}.{index}"
 
+        _log_debug(
+            "Attempting to create snapshot set '%s' from source specs %s",
+            name,
+            ", ".join(source_specs),
+        )
+
+        _log_debug(
+            "Create arguments: default_size_policy=%s boot=%s revert=%s autoindex=%s",
+            default_size_policy,
+            boot,
+            revert,
+            autoindex,
+        )
+
         # Parse size policies and normalise mount paths
         (sources, size_policies) = _parse_source_specs(
             source_specs, default_size_policy
