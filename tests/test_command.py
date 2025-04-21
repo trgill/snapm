@@ -330,13 +330,13 @@ class CommandTests(unittest.TestCase):
         command.main(args)
 
     def test_main_snapset_create_autoindex(self):
-        args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "create", "--autoindex"]
+        args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "create", "--autoindex", "testset0"]
         args.extend(self.mount_points())
+        command.main(args)
 
         args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "delete", "testset0.0"]
         command.main(args)
 
-        command.main(args)
     def test_main_snapset_delete(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
         args = [os.path.join(os.getcwd(), "bin/snapm"), "snapset", "delete", "testset0"]
