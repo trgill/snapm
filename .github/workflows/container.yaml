@@ -1,0 +1,43 @@
+---
+name: Snapshot Manager DBus Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  container-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Run apt-get update
+        run: sudo apt-get -q update
+      - name: Install Podman
+        run: >
+          DEBIAN_FRONTEND=noninteractive
+          sudo apt-get install -y podman
+      - name: Reset podman
+        run: >
+          podman system reset -f
+      - name: Prep container files
+        run: >
+          make -C container_tests prep
+      - name: Build container image
+        run: >
+          make -C container_tests build
+      - name: Run test container
+        run: >
+          make -C container_tests run
+      - name: Install snapm in test container
+        run: >
+          make -C container_tests install
+      - name: Run tests in test container
+        run: >
+          make -C container_tests test
+      - name: Report coverage
+        run: >
+          make -C container_tests report
