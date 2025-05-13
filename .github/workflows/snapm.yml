@@ -107,7 +107,7 @@ jobs:
           bandit --skip B101,B303,B404,B603 -r snapm
       - name: Run test suite with coverage
         run: >
-          sudo python3-coverage run /usr/bin/pytest-3 --log-level=debug -v
+          sudo python3-coverage run /usr/bin/pytest-3 --log-level=debug -v tests/
       - name: Report coverage
         run: >
           python3-coverage report -m --include "./snapm/*"
