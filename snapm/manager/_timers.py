@@ -99,12 +99,12 @@ def _write_drop_in(drop_in_dir: str, drop_in_file: str, calendarspec: CalendarSp
                 os.fsync(dir_fd)
             finally:
                 os.close(dir_fd)
-        except OSError as err:
+        except OSError as err:  # pragma: no cover
             os.unlink(tmp_path)
             raise SnapmTimerError(
                 f"Filesystem error while writing drop-in file: {err}"
             ) from err
-    except OSError as err:
+    except OSError as err:  # pragma: no cover
         raise SnapmTimerError(f"Filesystem error: {err}") from err
 
 
@@ -120,7 +120,7 @@ def _remove_drop_in(drop_in_dir: str, drop_in_file: str):
     try:
         os.unlink(drop_in_file)
         os.rmdir(drop_in_dir)
-    except OSError as err:
+    except OSError as err:  # pragma: no cover
         _log_error(
             "Error cleaning up unit drop-in directory '%s': %s", drop_in_dir, err
         )
@@ -166,7 +166,7 @@ def _enable_timer(unit_fmt: str, instance: str, calendarspec: CalendarSpec):
         # Reload systemd to register the new unit
         manager.Reload()
 
-    except dbus.DBusException as err:
+    except dbus.DBusException as err:  # pragma: no cover
         raise SnapmTimerError(f"DBus error: {err}") from err
 
 
@@ -206,13 +206,13 @@ def _start_timer(unit_fmt: str, instance: str):
                 if active_state == "active":
                     _log_info("%s is active.", unit_name)
                     return
-            except dbus.DBusException:
+            except dbus.DBusException:  # pragma: no cover
                 pass
             time.sleep(0.1)
 
-        raise SnapmTimerError(f"Failed to activate {unit_name}.")
+        raise SnapmTimerError(f"Failed to activate {unit_name}.")  # pragma: no cover
 
-    except dbus.DBusException as err:
+    except dbus.DBusException as err:  # pragma: no cover
         raise SnapmTimerError(f"DBus error: {err}") from err
 
 
@@ -239,7 +239,7 @@ def _stop_timer(unit_fmt: str, instance: str):
 
         _log_info("%s has been stopped.", unit_name)
 
-    except dbus.DBusException as err:
+    except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error: %s", err)
         raise SnapmTimerError(f"DBus error: {err}") from err
 
@@ -273,7 +273,7 @@ def _disable_timer(unit_fmt: str, instance: str):
 
         _log_info("%s has been disabled and stopped.", unit_name)
 
-    except dbus.DBusException as err:
+    except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error disabling timer: %s", err)
         raise SnapmTimerError(f"Failed to disable timer unit: {err}") from err
 
