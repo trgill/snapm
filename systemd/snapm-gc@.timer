@@ -4,6 +4,8 @@ Documentation=man:snapm(8) man:snapm-conf(5)
 
 [Timer]
 Unit=snapm-gc@%i.service
+# All instances should override this via drop-in
+OnCalendar=daily
 
 [Install]
 WantedBy=timers.target
