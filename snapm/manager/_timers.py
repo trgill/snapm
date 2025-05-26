@@ -66,6 +66,7 @@ _ORG_FREEDESTOP_DBUS_PROPS = "org.freedesktop.DBus.Properties"
 # Constants for timer unit drop-in file
 _10_ON_CALENDAR_CONF = "10-oncalendar.conf"
 _DROP_IN_FILE_MODE = 0o644
+_DROP_IN_DIR_FMT = f"{_ETC_SYSTEMD_SYSTEM}/%s.d"
 
 
 def _write_drop_in(drop_in_dir: str, drop_in_file: str, calendarspec: CalendarSpec):
@@ -143,7 +144,7 @@ def _enable_timer(unit_fmt: str, instance: str, calendarspec: CalendarSpec):
            desired OnCalendar expression.
     """
     unit_name = unit_fmt % instance
-    drop_in_dir = f"{_ETC_SYSTEMD_SYSTEM}/{unit_name}.d"
+    drop_in_dir = _DROP_IN_DIR_FMT % unit_name
     drop_in_file = os.path.join(drop_in_dir, _10_ON_CALENDAR_CONF)
 
     _write_drop_in(drop_in_dir, drop_in_file, calendarspec)
@@ -252,7 +253,7 @@ def _disable_timer(unit_fmt: str, instance: str):
     :param instance: A string naming the timer unit instance.
     """
     unit_name = unit_fmt % instance
-    drop_in_dir = f"{_ETC_SYSTEMD_SYSTEM}/{unit_name}.d"
+    drop_in_dir = _DROP_IN_DIR_FMT % unit_name
     drop_in_file = os.path.join(drop_in_dir, _10_ON_CALENDAR_CONF)
 
     try:
