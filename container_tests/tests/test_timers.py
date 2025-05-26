@@ -12,6 +12,10 @@ from snapm.manager._timers import (
     _TIMER_STOP,
     _UNIT_CREATE,
     _UNIT_GC,
+    # public interface
+    TimerType,
+    TimerStatus,
+    Timer,
 )
 from snapm.manager._calendar import CalendarSpec
 
@@ -125,3 +129,77 @@ class TimerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmArgumentError) as cm:
             _timer(_TIMER_DISABLE, _UNIT_CREATE, "hourly", calendarspec="hourly")
             self.assertTrue("does not accept calendarspec" in cm.exception)
+
+    def test_Timer_valid_type_and_calendar_string(self):
+        t = Timer(TimerType.CREATE, "hourly", "hourly")
+        self.assertTrue(t is not None)
+        self.assertEqual(t.status, TimerStatus.DISABLED)
+
+    def test_Timer_valid_type_and_CalendarSpec(self):
+        cs = CalendarSpec("hourly")
+        t = Timer(TimerType.CREATE, "hourly", cs)
+        self.assertTrue(t is not None)
+        self.assertEqual(t.status, TimerStatus.DISABLED)
+
+    def test_Timer_valid_type_invalid_calendar_string_raises(self):
+        with self.assertRaises(snapm.SnapmArgumentError) as cm:
+            t = Timer(TimerType.CREATE, "hourly", "quux")
+            self.assertTrue("invalid calendarspec string" in cm.exception)
+
+    def test_Timer_invalid_type_raises(self):
+        with self.assertRaises(snapm.SnapmArgumentError) as cm:
+            t = Timer("NotATimerType", "hourly", "hourly")
+            self.assertTrue("Invalid timer type" in cm.exception)
+
+    def timer_assert_enable_start_stop_disable(self, t):
+        self.assertEqual(t.status, TimerStatus.DISABLED)
+
+        t.enable()
+        self.assertEqual(t.status, TimerStatus.ENABLED)
+        self.assertTrue(t.enabled)
+
+        t.start()
+        self.assertEqual(t.status, TimerStatus.RUNNING)
+        self.assertTrue(t.running)
+
+        self.assertTrue(t.next_elapse is not None)
+        self.assertTrue(t.from_now is not None)
+        self.assertTrue(t.occurs)
+
+        t.stop()
+        self.assertEqual(t.status, TimerStatus.ENABLED)
+
+        t.disable()
+        self.assertEqual(t.status, TimerStatus.DISABLED)
+
+    def test_Timer_CREATE_enable_start_stop_disable_hourly(self):
+        t = Timer(TimerType.CREATE, "hourly", "hourly")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_GC_enable_start_stop_disable_hourly(self):
+        t = Timer(TimerType.GC, "hourly", "hourly")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_CREATE_enable_start_stop_disable_daily(self):
+        t = Timer(TimerType.CREATE, "daily", "daily")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_GC_enable_start_stop_disable_daily(self):
+        t = Timer(TimerType.GC, "daily", "daily")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_CREATE_enable_start_stop_disable_weekly(self):
+        t = Timer(TimerType.CREATE, "weekly", "weekly")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_GC_enable_start_stop_disable_weekly(self):
+        t = Timer(TimerType.GC, "weekly", "weekly")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_CREATE_enable_start_stop_disable_monthly(self):
+        t = Timer(TimerType.CREATE, "monthly", "monthly")
+        self.timer_assert_enable_start_stop_disable(t)
+
+    def test_Timer_GC_enable_start_stop_disable_monthly(self):
+        t = Timer(TimerType.GC, "monthly", "monthly")
+        self.timer_assert_enable_start_stop_disable(t)
