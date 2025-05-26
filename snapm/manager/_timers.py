@@ -27,31 +27,32 @@ _log_warn = _log.warning
 _log_error = _log.error
 
 # Constants for timer template units
-UNIT_CREATE = "create"
-UNIT_GC = "gc"
+_UNIT_CREATE = "create"
+_UNIT_GC = "gc"
 
 _VALID_UNITS = [
-    UNIT_CREATE,
-    UNIT_GC,
+    _UNIT_CREATE,
+    _UNIT_GC,
 ]
 
 # Constants for timer operations
-TIMER_ENABLE = "ENABLE"
-TIMER_DISABLE = "DISABLE"
-TIMER_START = "START"
-TIMER_STOP = "STOP"
+_TIMER_ENABLE = "ENABLE"
+_TIMER_DISABLE = "DISABLE"
+_TIMER_START = "START"
+_TIMER_STOP = "STOP"
 
 _VALID_OPS = [
-    TIMER_ENABLE,
-    TIMER_DISABLE,
-    TIMER_START,
-    TIMER_STOP,
+    _TIMER_ENABLE,
+    _TIMER_DISABLE,
+    _TIMER_START,
+    _TIMER_STOP,
+    _TIMER_STATUS,
 ]
 
 # Format strings for snapm managed systemd units
 _UNIT_FORMATS = {
-    UNIT_CREATE: "snapm-create@%s.timer",
-    UNIT_GC: "snapm-gc@%s.timer",
+    _UNIT_CREATE: "snapm-create@%s.timer",
+    _UNIT_GC: "snapm-gc@%s.timer",
 }
 
 # Constants for systemd paths
@@ -283,14 +284,14 @@ def _disable_timer(unit_fmt: str, instance: str):
 
 _OP_FNS = {
     # TIMER_ENABLE is special as it takes an additional calendarspec arg
-    TIMER_ENABLE: _enable_timer,
-    TIMER_DISABLE: _disable_timer,
-    TIMER_START: _start_timer,
-    TIMER_STOP: _stop_timer,
+    _TIMER_ENABLE: _enable_timer,
+    _TIMER_DISABLE: _disable_timer,
+    _TIMER_START: _start_timer,
+    _TIMER_STOP: _stop_timer,
 }
 
 
-def timer(op: str, unit: str, instance: str, calendarspec=None):
+def _timer(op: str, unit: str, instance: str, calendarspec=None):
     """
     Enable, disable, start, or stop a systemd timer unit.
 
@@ -330,13 +331,13 @@ def timer(op: str, unit: str, instance: str, calendarspec=None):
         raise SnapmArgumentError(f"Invalid timer unit: {unit}")
     if not instance:
         raise SnapmArgumentError("Timer instance cannot be empty")
-    if op != TIMER_ENABLE and calendarspec is not None:
+    if op != _TIMER_ENABLE and calendarspec is not None:
         raise SnapmArgumentError(f"Timer {op} does not accept calendarspec=")
 
     fmt = _UNIT_FORMATS[unit]
     op_fn = _OP_FNS[op]
 
-    if op == TIMER_ENABLE:
+    if op == _TIMER_ENABLE:
         if not calendarspec:
             raise SnapmArgumentError(f"Timer {op} requires non-empty calendarspec")
         if not isinstance(calendarspec, CalendarSpec):
@@ -353,11 +354,4 @@ def timer(op: str, unit: str, instance: str, calendarspec=None):
 
 
 __all__ = [
-    "UNIT_CREATE",
-    "UNIT_GC",
-    "TIMER_ENABLE",
-    "TIMER_DISABLE",
-    "TIMER_START",
-    "TIMER_STOP",
-    "timer",
 ]
