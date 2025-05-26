@@ -12,6 +12,7 @@ import os
 import time
 import logging
 import tempfile
+from enum import Enum
 
 import dbus
 
@@ -412,5 +413,164 @@ def _timer(op: str, unit: str, instance: str, calendarspec=None):
     return op_fn(fmt, instance)
 
 
+class TimerType(Enum):
+    """
+    Enum class representing the available timer types.
+    """
+
+    CREATE = _UNIT_CREATE
+    GC = _UNIT_GC
+
+
+class TimerStatus(Enum):
+    """
+    Enum class representing the possible timer status values.
+    """
+
+    DISABLED = "disable"
+    ENABLED = "enabled"
+    RUNNING = "running"
+    STOPPED = "stopped"
+    INVALID = "invalid"
+
+
+class Timer:
+    """
+    High-level interface for managing schedling timers.
+    """
+
+    def __init__(
+        self, timer_type: TimerType, name: str, calendarspec: str | CalendarSpec
+    ):
+        """
+        Initialise a new ``Timer`` object from the provided arguments.
+
+        :param type: A ``TimerType`` enum value representing the type of timer
+                     to create.
+        :param name: The name of the timer. The value is used as the instance
+                     part of the timer unit name.
+        :param calendarspec: A valid calendarspec string, or an instance of the
+                             ``CalendarSpec`` class representing the trigger
+                             condition for the timer.
+        """
+        if not isinstance(timer_type, TimerType):
+            raise SnapmArgumentError(f"Invalid timer type: {timer_type}")
+
+        self.timer_type = timer_type
+        self.name = name
+        if not isinstance(calendarspec, CalendarSpec):
+            try:
+                self.calendarspec = CalendarSpec(calendarspec)
+            except ValueError as err:
+                raise SnapmArgumentError("Timer: invalid calendarspec string") from err
+        else:
+            self.calendarspec = calendarspec
+
+    def enable(self):
+        """
+        Attempt to enable this ``Timer`` instance. Following a successful call
+        to ``Timer.enable()`` the systemd unit is configured and loaded, and
+        the ``Timer.status`` is ``TimerStatus.ENABLED``.
+
+        :rtype: None
+        """
+        return _timer(
+            _TIMER_ENABLE, self.timer_type.value, self.name, self.calendarspec
+        )
+
+    def start(self):
+        """
+        Attempt to start this ``Timer`` instance. Following a successful call
+        to ``Timer.start()`` the systemd unit is 'active' / 'waiting' and
+        will be invoked when the next elapse time is reached. The
+        ``Timer.status`` is ``TimerStatus.RUNNING``.
+
+        :rtype: None
+        """
+        return _timer(_TIMER_START, self.timer_type.value, self.name, None)
+
+    def stop(self):
+        """
+        Attempt to stop this ``Timer`` instance. Following a successful call
+        to ``Timer.stop()`` the systemd unit is 'loaded' / 'dead' and
+        the ``Timer.status`` is ``TimerStatus.ENABLED``.
+
+        :rtype: None
+        """
+        return _timer(_TIMER_STOP, self.timer_type.value, self.name, None)
+
+    def disable(self):
+        """
+        Attempt to disable this ``Timer`` instance. Following a successful call
+        to ``Timer.disable()`` the systemd unit is un-configured and no longer
+        loaded. The ``Timer.status`` is ``TimerStatus.DISABLED``.
+
+        :rtype: None
+        """
+        return _timer(_TIMER_DISABLE, self.timer_type.value, self.name, None)
+
+    @property
+    def status(self):
+        """
+        Return a ``TimerStatus`` instance reflecting the status of this timer.
+
+        :rtype: ``TimerStatus``
+        """
+        return _timer(_TIMER_STATUS, self.timer_type.value, self.name, None)
+
+    @property
+    def enabled(self):
+        """
+        ``True`` if this ``Timer`` is enabled, and ``False`` otherwise.
+
+        :rtype: bool
+        """
+        return self.status == TimerStatus.ENABLED
+
+    @property
+    def running(self):
+        """
+        ``True`` if this ``Timer`` is running, and ``False`` otherwise.
+
+        :rtype: bool
+        """
+        return self.status == TimerStatus.RUNNING
+
+    @property
+    def next_elapse(self):
+        """
+        Return the next elapse time for this ``Timer`` object as an instance
+        of ``datetime.datetime``.
+
+        :returns: The next elapse time as a ``datetime`` object.
+        :rtype: ``datetime.datetime``
+        """
+        return self.calendarspec.next_elapse
+
+    @property
+    def from_now(self):
+        """
+        Return a string representation of the time remaining until this
+        ``Timer`` next elapses.
+
+        :returns: The time remaining until the next elapse as a string.
+        :rtype: str
+        """
+        return self.calendarspec.from_now
+
+    @property
+    def occurs(self):
+        """
+        ``True`` if this ``Timer`` will elapse in the future, and ``False``
+        otherwise.
+
+        :rtype: bool
+        """
+        return self.calendarspec.occurs
+
+
 __all__ = [
+    "TimerType",
+    "TimerStatus",
+    "Timer",
 ]
