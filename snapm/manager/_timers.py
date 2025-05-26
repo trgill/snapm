@@ -281,8 +281,9 @@ def _disable_timer(unit_fmt: str, instance: str):
     except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error disabling timer: %s", err)
         raise SnapmTimerError(f"Failed to disable timer unit: {err}") from err
+    finally:
+        _remove_drop_in(drop_in_dir, drop_in_file)
 
-    _remove_drop_in(drop_in_dir, drop_in_file)
 
 
 _OP_FNS = {
