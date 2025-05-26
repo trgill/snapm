@@ -213,7 +213,7 @@ def _start_timer(unit_fmt: str, instance: str):
                     return
             except dbus.DBusException:  # pragma: no cover
                 pass
-            time.sleep(0.1)
+            time.sleep(0.1)  # pragma: no cover
 
         raise SnapmTimerError(f"Failed to activate {unit_name}.")  # pragma: no cover
 
