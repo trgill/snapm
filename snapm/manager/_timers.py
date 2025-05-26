@@ -81,6 +81,9 @@ def _write_drop_in(drop_in_dir: str, drop_in_file: str, calendarspec: CalendarSp
     :param calendarspec: The CalendarSpec object representing the timer
                          configuration.
     """
+    _log_debug(
+        "Writing unit drop in file %s with CalendarSpec=%s", drop_in_file, calendarspec
+    )
     try:
         # Ensure the drop-in directory exists
         os.makedirs(drop_in_dir, exist_ok=True)
