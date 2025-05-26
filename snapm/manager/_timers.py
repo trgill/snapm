@@ -40,6 +40,7 @@ _TIMER_ENABLE = "ENABLE"
 _TIMER_DISABLE = "DISABLE"
 _TIMER_START = "START"
 _TIMER_STOP = "STOP"
+_TIMER_STATUS = "STATUS"
 
 _VALID_OPS = [
     _TIMER_ENABLE,
@@ -285,6 +286,59 @@ def _disable_timer(unit_fmt: str, instance: str):
         _remove_drop_in(drop_in_dir, drop_in_file)
 
 
+def _status_timer(unit_fmt: str, instance: str):
+    """
+    Obtain status of timer ``instance``. Returns an instance of ``TimerStatus``
+    reflecting the current state of the timer unit.
+    """
+    unit_name = unit_fmt % instance
+
+    try:
+        # Connect to the systemd DBus interface
+        bus = dbus.SystemBus()
+        systemd = bus.get_object(
+            _SYSTEMD_TOP_OBJECT,
+            _SYSTEMD_TOP_PATH,
+        )
+        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
+
+        try:
+            unit_obj_path = manager.GetUnit(unit_name)
+        except dbus.DBusException as err:  # pragma: no cover
+            if err.get_dbus_name() != "org.freedesktop.systemd1.NoSuchUnit":
+                raise err
+            return TimerStatus.DISABLED
+
+        unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
+        unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
+
+        load_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "LoadState")
+        active_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState")
+        sub_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "SubState")
+
+        _log_debug(
+            "timer(%s) unit state load: %s, active: %s, sub: %s",
+            instance,
+            load_state,
+            active_state,
+            sub_state,
+        )
+
+        if load_state == "loaded":
+            if active_state == "active":
+                if sub_state == "waiting":
+                    return TimerStatus.RUNNING
+                return TimerStatus.INVALID  # pragma: no cover
+            if active_state == "inactive":
+                if sub_state == "dead":
+                    return TimerStatus.ENABLED
+                return TimerStatus.INVALID  # pragma: no cover
+        return TimerStatus.INVALID  # pragma: no cover
+
+    except dbus.DBusException as err:  # pragma: no cover
+        _log_error("DBus error getting status for timer: %s", err)
+        raise SnapmTimerError(f"Failed to get timer unit status: {err}") from err
+
 
 _OP_FNS = {
     # TIMER_ENABLE is special as it takes an additional calendarspec arg
@@ -292,6 +346,7 @@ _OP_FNS = {
     _TIMER_DISABLE: _disable_timer,
     _TIMER_START: _start_timer,
     _TIMER_STOP: _stop_timer,
+    _TIMER_STATUS: _status_timer,
 }
 
 
