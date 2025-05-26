@@ -36,14 +36,9 @@ class CalendarSpec:
     Class representing systemd CalendarSpec expressions.
     """
 
-    def __init__(self, calendarspec: str):
+    def _refresh(self):
         """
-        Validate and parse a systemd calendarspec expression into a
-        CalendarSpec object.
-
-        :param calendarspec: A string containing an calendarspec expression.
-        :raises: ``ValueError`` if ``calendarspec`` is not a valid calendarspec
-                 expression.
+        Refresh this ``CalendarSpec`` object's time-dependent properties.
         """
 
         def strip_field(line):
@@ -70,7 +65,7 @@ class CalendarSpec:
 
             return timedelta(0)
 
-        sd_cmd_args = _sd_analyze_calendar + [calendarspec]
+        sd_cmd_args = _sd_analyze_calendar + [self._calendarspec]
         sd_cmd = run(
             sd_cmd_args,
             encoding="utf8",
@@ -79,7 +74,7 @@ class CalendarSpec:
         )
 
         if sd_cmd.returncode == 1:
-            raise ValueError(f"Invalid CalendarSpec expression: {calendarspec}")
+            raise ValueError(f"Invalid CalendarSpec expression: {self._calendarspec}")
         if sd_cmd.returncode != 0:
             raise SnapmCalloutError(
                 f"Error calling systemd-analyze: {sd_cmd.stderr.decode('utf8')}"
@@ -96,20 +91,76 @@ class CalendarSpec:
             if line.startswith(_NEXT_ELAPSE):
                 date_str = strip_field(line)
                 if date_str == _NEVER:
-                    self.next_elapse = None
-                    self.in_utc = None
-                    self.from_now = _NEVER
+                    self._next_elapse = None
+                    self._in_utc = None
+                    self._from_now = _NEVER
                     continue
-                self.next_elapse = datetime.strptime(date_str, _TIME_FMT) + carry_usecs
+                self._next_elapse = datetime.strptime(date_str, _TIME_FMT) + carry_usecs
                 if date_str.endswith("UTC"):
-                    self.in_utc = True
+                    self._in_utc = True
             if line.startswith(_IN_UTC):
                 date_str = strip_field(line)
-                self.in_utc = datetime.strptime(date_str, _TIME_FMT) + carry_usecs
+                self._in_utc = datetime.strptime(date_str, _TIME_FMT) + carry_usecs
             if line.startswith(_FROM_NOW):
-                self.from_now = strip_field(line)
+                self._from_now = strip_field(line)
 
+    def _cond_refresh(self):
+        """
+        Refresh this ``CalendarSpec`` object's time-dependent properties if the
+        current ``next_elapse`` value is in the past.
+        """
+        # CalendarSpec instances that never occur do not need to be refreshed.
+        if self._next_elapse is not None and self._next_elapse < datetime.now():
+            self._refresh()
+
+    def __init__(self, calendarspec: str):
+        """
+        Validate and parse a systemd calendarspec expression into a
+        CalendarSpec object.
+
+        :param calendarspec: A string containing an calendarspec expression.
+        :raises: ``ValueError`` if ``calendarspec`` is not a valid calendarspec
+                 expression.
+        """
         self._calendarspec = calendarspec
+        self._refresh()
+
+    @property
+    def next_elapse(self):
+        """
+        Return the next elapse time for this ``CalendarSpec`` object as an
+        instance of ``datetime.datetime``.
+
+        :returns: The next elapse time as a ``datetime`` object.
+        :rtype: ``datetime.datetime``
+        """
+        self._cond_refresh()
+        return self._next_elapse
+
+    @property
+    def in_utc(self):
+        """
+        Return the next elapse time for this ``CalendarSpec`` object as an
+        instance of ``datetime.datetime`` in UTC.
+
+        :returns: The next elapse time as a UTC ``datetime`` object.
+        :rtype: ``datetime.datetime``
+        """
+        self._cond_refresh()
+        self._cond_refresh()
+        return self._in_utc
+
+    @property
+    def from_now(self):
+        """
+        Return a string representation of the time remaining until this
+        ``CalendarSpec`` next elapses.
+
+        :returns: The time remaining until the next elapse as a string.
+        :rtype: str
+        """
+        self._cond_refresh()
+        return self._from_now
 
     @property
     def occurs(self):
