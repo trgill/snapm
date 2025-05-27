@@ -26,7 +26,7 @@ snapm.manager module
     :show-inheritance:
 
 snapm.manager._boot module
-==========================
+--------------------------
 
 .. automodule:: snapm.manager._boot
     :members:
@@ -37,7 +37,7 @@ snapm.manager._boot module
     :show-inheritance:
 
 snapm.manager._calendar module
-==========================
+------------------------------
 
 .. automodule:: snapm.manager._calendar
     :members:
@@ -48,7 +48,7 @@ snapm.manager._calendar module
     :show-inheritance:
 
 snapm.manager._timers module
-==========================
+----------------------------
 
 .. automodule:: snapm.manager._timers
     :members:
