@@ -448,7 +448,7 @@ class Selection:
         Returns ``None`` if the object passes the check, or raise
         ``ValueError`` if invalid criteria exist.
 
-        :param snapshot_set ``Selection`` may include SnapshotSet data
+        :param snapshot_set: ``Selection`` may include SnapshotSet data
         :param snapshot: ``Selection`` may include Snapshot data
         :returns: ``None`` on success
         :rtype: ``NoneType``
