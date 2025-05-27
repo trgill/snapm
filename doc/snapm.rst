@@ -28,7 +28,7 @@ snapm.manager module
 snapm.manager._boot module
 ==========================
 
-.. automodule:: snapm.mqnqger._boot
+.. automodule:: snapm.manager._boot
     :members:
     :special-members:
     :private-members:
@@ -39,7 +39,7 @@ snapm.manager._boot module
 snapm.manager._calendar module
 ==========================
 
-.. automodule:: snapm.mqnqger._calendar
+.. automodule:: snapm.manager._calendar
     :members:
     :special-members:
     :private-members:
@@ -50,7 +50,7 @@ snapm.manager._calendar module
 snapm.manager._timers module
 ==========================
 
-.. automodule:: snapm.mqnqger._timers
+.. automodule:: snapm.manager._timers
     :members:
     :special-members:
     :private-members:
