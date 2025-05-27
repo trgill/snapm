@@ -25,6 +25,39 @@ snapm.manager module
     :undoc-members:
     :show-inheritance:
 
+snapm.manager._boot module
+==========================
+
+.. automodule:: snapm.mqnqger._boot
+    :members:
+    :special-members:
+    :private-members:
+    :exclude-members: __dict__, __module__, __weakref__
+    :undoc-members:
+    :show-inheritance:
+
+snapm.manager._calendar module
+==========================
+
+.. automodule:: snapm.mqnqger._calendar
+    :members:
+    :special-members:
+    :private-members:
+    :exclude-members: __dict__, __module__, __weakref__
+    :undoc-members:
+    :show-inheritance:
+
+snapm.manager._tiemrs module
+==========================
+
+.. automodule:: snapm.mqnqger._timers
+    :members:
+    :special-members:
+    :private-members:
+    :exclude-members: __dict__, __module__, __weakref__
+    :undoc-members:
+    :show-inheritance:
+
 snapm.command module
 --------------------
 
