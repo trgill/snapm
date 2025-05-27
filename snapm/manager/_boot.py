@@ -108,7 +108,7 @@ def _create_default_os_profile():
     """
     Create a default boom OsProfile for the running system.
     This uses the boom API to run the equivalent of:
-      `boom profile create --from-host`.
+    ``boom profile create --from-host``.
     """
     options = boom.command.os_options_from_cmdline()
     _log_info(
