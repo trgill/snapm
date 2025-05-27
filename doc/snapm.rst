@@ -47,7 +47,7 @@ snapm.manager._calendar module
     :undoc-members:
     :show-inheritance:
 
-snapm.manager._tiemrs module
+snapm.manager._timers module
 ==========================
 
 .. automodule:: snapm.mqnqger._timers
