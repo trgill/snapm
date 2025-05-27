@@ -360,15 +360,15 @@ def _timer(op: str, unit: str, instance: str, calendarspec=None):
 
     Valid operations are:
 
-        TIMER_ENABLE  - Create and enable a new timer
-        TIMER_DISABLE - Disable and remove an existing timer
-        TIMER_START   - Start an existing timer
-        TIMER_STOP    - Stop an existing timer
+        ``_TIMER_ENABLE``  - Create and enable a new timer
+        ``_TIMER_DISABLE`` - Disable and remove an existing timer
+        ``_TIMER_START``   - Start an existing timer
+        ``_TIMER_STOP``    - Stop an existing timer
 
     Valid units are:
 
-        UNIT_CREATE  - An instance of the snapset create timer
-        UNIT_GC      - An instance of the snapset gc timer
+        ``_UNIT_CREATE``  - An instance of the snapset create timer
+        ``_UNIT_GC``      - An instance of the snapset gc timer
 
     The ``instance`` is a unique descriptive name for the timer that
     is used as the instance portion of the unit name when template
