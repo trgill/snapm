@@ -491,6 +491,40 @@ class _Lvm2(Plugin):
 
     max_name_len = LVM_MAX_NAME_LEN
 
+    def _run(
+        self,
+        *popenargs,
+        # subprocess.run() hits the same pylint warning.
+        input=None,  # pylint: disable=redefined-builtin
+        capture_output=False,
+        timeout=None,
+        check=False,
+        **kwargs,
+    ):
+        """
+        Thin wrapper around ``subprocess.run`` to enforce lvm environment
+        sanitization.
+
+        Refer to the function documentation for the ``run`` function for a full
+        description of arguments and keyword arguments: ``_Lvm2.run()`` behaves
+        identically, other than setting the ``env`` keyword argument to the
+        value of ``self._env``.
+
+        Callers can still pass ``env`` to ``_run()`` calls: in this case
+        caller's ``env`` value is merged with the dictionary passed to the
+        underlying ``run()`` call, potentially overriding the values contained
+        in ``self._env``.
+        """
+        kwargs["env"] = self._env | kwargs["env"] if "env" in kwargs else self._env
+        return run(
+            *popenargs,
+            input=input,
+            capture_output=capture_output,
+            timeout=timeout,
+            check=check,
+            **kwargs,
+        )
+
     def vg_lv_from_device_path(self, devpath):
         """
         Return a ``(vg_name, lv_name)`` tuple for the LVM device at
