@@ -406,31 +406,6 @@ def filter_thin_snapshot(lv_dict):
     return True
 
 
-def _activate(active, name, silent=False):
-    """
-    Call lvchange to activate or deactivate an LVM2 volume.
-
-    :param name: The name of the LV to operate on.
-    :param silent: ``True`` if errors should not be propagated or
-                   ``False`` otherwise.
-    """
-    lvchange_cmd = [
-        LVCHANGE_CMD,
-        LVCHANGE_YES,
-        LVCHANGE_IGNOREACTIVATIONSKIP,
-        LVCHANGE_ACTIVATE,
-        active,
-        name,
-    ]
-    try:
-        run(lvchange_cmd, capture_output=True, check=True)
-    except CalledProcessError as err:
-        if not silent:
-            raise SnapmCalloutError(
-                f"{LVCHANGE_CMD} failed with: {_decode_stderr(err)}"
-            ) from err
-
-
 class _Lvm2(Plugin):
     """
     Abstract base class for LVM2 snapshot plugins.
@@ -696,6 +671,30 @@ class _Lvm2(Plugin):
         # Check LVM2 minimum version requirements.
         self._check_lvm_version()
 
+    def _activate(self, active, name, silent=False):
+        """
+        Call lvchange to activate or deactivate an LVM2 volume.
+
+        :param name: The name of the LV to operate on.
+        :param silent: ``True`` if errors should not be propagated or
+                       ``False`` otherwise.
+        """
+        lvchange_cmd = [
+            LVCHANGE_CMD,
+            LVCHANGE_YES,
+            LVCHANGE_IGNOREACTIVATIONSKIP,
+            LVCHANGE_ACTIVATE,
+            active,
+            name,
+        ]
+        try:
+            self._run(lvchange_cmd, capture_output=True, check=True)
+        except CalledProcessError as err:
+            if not silent:
+                raise SnapmCalloutError(
+                    f"{LVCHANGE_CMD} failed with: {_decode_stderr(err)}"
+                ) from err
+
     def discover_snapshots(self):
         """
         Discover snapshots managed by this plugin class.
@@ -870,7 +869,7 @@ class _Lvm2(Plugin):
         :param name: The name of the snapshot to be activated.
         """
         self._log_debug("Activating %s snapshot %s", self.name, name)
-        _activate(LVCHANGE_ACTIVE_YES, name)
+        self._activate(LVCHANGE_ACTIVE_YES, name)
 
     def deactivate_snapshot(self, name):
         """
@@ -879,7 +878,7 @@ class _Lvm2(Plugin):
         :param name: The name of the snapshot to be deactivated.
         """
         self._log_debug("Deactivating %s snapshot %s", self.name, name)
-        _activate(LVCHANGE_ACTIVE_NO, name, silent=True)
+        self._activate(LVCHANGE_ACTIVE_NO, name, silent=True)
 
     def set_autoactivate(self, name, auto=False):
         """
