@@ -219,28 +219,6 @@ def _check_lvm_present():
         raise SnapmNotFoundError("LVM2 commands not found")
 
 
-def _get_lvm_version():
-    """
-    Return the installed version of LVM2 as a tuple.
-
-    :returns: A version tuple (major, minor, patch) of LVM2
-    """
-
-    def _version_string_to_tuple(version):
-        return tuple(map(int, version.split(".")))
-
-    lvm_cmd_args = [LVM_CMD, LVM_VERSION]
-    lvm_cmd = run(lvm_cmd_args, capture_output=True, check=True)
-    lvm_version_info = str.strip(lvm_cmd.stdout.decode("utf8"))
-    for line in lvm_version_info.splitlines():
-        if LVM_VERSION_STR in line:
-            (_, _, version, _) = line.split()
-            if "(" in version:
-                version, _ = version.split("(", maxsplit=1)
-            return _version_string_to_tuple(version)
-    return (0, 0, 0)
-
-
 def is_lvm_device(devpath):
     """
     Test whether ``devpath`` is an LVM device.
@@ -525,6 +503,27 @@ class _Lvm2(Plugin):
             **kwargs,
         )
 
+    def _get_lvm_version(self):
+        """
+        Return the installed version of LVM2 as a tuple.
+
+        :returns: A version tuple (major, minor, patch) of LVM2
+        """
+
+        def _version_string_to_tuple(version):
+            return tuple(map(int, version.split(".")))
+
+        lvm_cmd_args = [LVM_CMD, LVM_VERSION]
+        lvm_cmd = self._run(lvm_cmd_args, capture_output=True, check=True)
+        lvm_version_info = str.strip(lvm_cmd.stdout.decode("utf8"))
+        for line in lvm_version_info.splitlines():
+            if LVM_VERSION_STR in line:
+                (_, _, version, _) = line.split()
+                if "(" in version:
+                    version, _ = version.split("(", maxsplit=1)
+                return _version_string_to_tuple(version)
+        return (0, 0, 0)
+
     def vg_lv_from_device_path(self, devpath):
         """
         Return a ``(vg_name, lv_name)`` tuple for the LVM device at
@@ -660,7 +659,7 @@ class _Lvm2(Plugin):
             return f"{value[0]}.{value[1]}.{value[2]}"
 
         try:
-            lvm_version = _get_lvm_version()
+            lvm_version = self._get_lvm_version()
         except CalledProcessError as err:
             raise SnapmPluginError(
                 f"Error getting LVM2 version: {_decode_stderr(err)}"
