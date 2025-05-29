@@ -35,7 +35,8 @@ class Lvm2Tests(unittest.TestCase):
         self._old_path = cur_path
         os.environ["PATH"] = bin_path + os.pathsep + cur_path
 
-    def test_is_lvm_device(self):
+    def test_lvm2cow_is_lvm_device(self):
+        lvm2cow = lvm2.Lvm2Cow(log)
         devs = {
             "/dev/mapper/fedora-home": True,
             "/dev/mapper/fedora-root": True,
@@ -44,7 +45,19 @@ class Lvm2Tests(unittest.TestCase):
             "/dev/mapper/mpatha": False,
         }
         for dev in devs.keys():
-            self.assertEqual(lvm2.is_lvm_device(dev), devs[dev])
+            self.assertEqual(lvm2cow._is_lvm_device(dev), devs[dev])
+
+    def test_lvm2thin_is_lvm_device(self):
+        lvm2thin = lvm2.Lvm2Cow(log)
+        devs = {
+            "/dev/mapper/fedora-home": True,
+            "/dev/mapper/fedora-root": True,
+            "/dev/mapper/fedora-var": True,
+            "/dev/mapper/stratis-1-1c7c941a2dba4eb78d57d3fb01aacc61-thin-fs-202ea1667fa54123bd24f0c353b9914c": False,
+            "/dev/mapper/mpatha": False,
+        }
+        for dev in devs.keys():
+            self.assertEqual(lvm2thin._is_lvm_device(dev), devs[dev])
 
     def test_vg_lv_from_device_path(self):
         lvm2cow = lvm2.Lvm2Cow(log)

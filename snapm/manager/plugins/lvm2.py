@@ -219,37 +219,6 @@ def _check_lvm_present():
         raise SnapmNotFoundError("LVM2 commands not found")
 
 
-def is_lvm_device(devpath):
-    """
-    Test whether ``devpath`` is an LVM device.
-
-    Return ``True`` if the device at ``devpath`` is an LVM device or
-    ``False`` otherwise.
-    """
-
-    if devpath.startswith(DEV_MAPPER_PREFIX):
-        dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
-    else:
-        dm_name = devpath
-
-    dmsetup_cmd_args = [
-        DMSETUP_CMD,
-        DMSETUP_INFO,
-        DMSETUP_COLUMNS,
-        DMSETUP_NO_HEADINGS,
-        DMSETUP_FIELDS_UUID,
-        dm_name,
-    ]
-    try:
-        dmsetup_cmd = run(dmsetup_cmd_args, capture_output=True, check=True)
-    except CalledProcessError as err:
-        raise SnapmCalloutError(
-            f"Error calling {DMSETUP_CMD}: {_decode_stderr(err)}"
-        ) from err
-    uuid = dmsetup_cmd.stdout.decode("utf8").strip()
-    return uuid.startswith(LVM_UUID_PREFIX)
-
-
 def vg_lv_from_origin(origin):
     """
     Return a ``(vg_name, lv_name)`` tuple for the LVM device with origin
@@ -502,6 +471,36 @@ class _Lvm2(Plugin):
             check=check,
             **kwargs,
         )
+
+    def _is_lvm_device(self, devpath):
+        """
+        Test whether ``devpath`` is an LVM device.
+
+        Return ``True`` if the device at ``devpath`` is an LVM device or
+        ``False`` otherwise.
+        """
+
+        if devpath.startswith(DEV_MAPPER_PREFIX):
+            dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
+        else:
+            dm_name = devpath
+
+        dmsetup_cmd_args = [
+            DMSETUP_CMD,
+            DMSETUP_INFO,
+            DMSETUP_COLUMNS,
+            DMSETUP_NO_HEADINGS,
+            DMSETUP_FIELDS_UUID,
+            dm_name,
+        ]
+        try:
+            dmsetup_cmd = self._run(dmsetup_cmd_args, capture_output=True, check=True)
+        except CalledProcessError as err:
+            raise SnapmCalloutError(
+                f"Error calling {DMSETUP_CMD}: {_decode_stderr(err)}"
+            ) from err
+        uuid = dmsetup_cmd.stdout.decode("utf8").strip()
+        return uuid.startswith(LVM_UUID_PREFIX)
 
     def _get_lvm_version(self):
         """
@@ -756,7 +755,7 @@ class _Lvm2(Plugin):
             device = mount_point
         else:
             device = device_from_mount_point(mount_point)
-        if not is_lvm_device(device):
+        if not self._is_lvm_device(device):
             return None
         (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         return path_join(DEV_PREFIX, vg_name, lv_name)
@@ -1008,7 +1007,7 @@ class Lvm2Cow(_Lvm2):
         else:
             device = device_from_mount_point(source)
 
-        if not is_lvm_device(device):
+        if not self._is_lvm_device(device):
             return False
         (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
@@ -1209,7 +1208,7 @@ class Lvm2Thin(_Lvm2):
         else:
             device = device_from_mount_point(source)
 
-        if not is_lvm_device(device):
+        if not self._is_lvm_device(device):
             return False
         (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
