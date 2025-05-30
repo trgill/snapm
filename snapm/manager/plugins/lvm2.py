@@ -665,6 +665,9 @@ class _Lvm2(Plugin):
         # Sanitize environment for LVM2 callouts.
         self._env = self._sanitize_environment()
 
+        # Export LC_ALL=C
+        self._env["LC_ALL"] = "C"
+
         # Check for presence of required LVM2 binaries.
         _check_lvm_present()
 
