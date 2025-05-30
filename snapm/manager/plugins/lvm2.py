@@ -53,7 +53,6 @@ LVM_COW_SNAPSHOT_NAME_LEN = 4
 LVM_REPORT_FORMAT = "--reportformat"
 LVM_JSON = "json"
 LVM_JSON_STD = "json_std"
-LVM_BASIC = "basic"
 LVM_OPTIONS = "--options"
 LVM_UNITS = "--units"
 LVM_BYTES = "b"
@@ -507,7 +506,7 @@ class _Lvm2(Plugin):
             LVS_CMD,
             LVS_NO_HEADINGS,
             LVM_REPORT_FORMAT,
-            LVM_BASIC,
+            self._json_fmt,
             LVM_OPTIONS,
             LVS_FIELD_MIN_OPTIONS,
             devpath,
@@ -518,9 +517,9 @@ class _Lvm2(Plugin):
             raise SnapmCalloutError(
                 f"Error calling {LVS_CMD}: {_decode_stderr(err)}"
             ) from err
-        name = lvs_cmd.stdout.decode("utf8").strip()
-        name_parts = name.split(" ")
-        return (name_parts[0], name_parts[1])
+        lvs_dict = loads(lvs_cmd.stdout)
+        lv_dict = lvs_dict[LVS_REPORT][0][LVS_LV][0]
+        return (lv_dict["vg_name"], lv_dict["lv_name"])
 
     def pool_name_from_vg_lv(self, vg_lv):
         """

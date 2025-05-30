@@ -113,6 +113,136 @@ fedora_srv_snapset_backup_1693921253_srv = """  {
       ]
   }"""
 
+fedora_home_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"home"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_root_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"root"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_var_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"var"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_appdata_datavol1_test_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"appdata", "lv_name":"datavol1-test"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_vg_test0_lv_test0_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"vg_test0", "lv_name":"lv_test0"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_data_snapset_backup_1693921253_data_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"root"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_home_snapset_backup_1693921253_home_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"home_snapset_backup_1693921253_-home"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_opt_snapset_backup_1693921253_opt_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"opt_snapset_backup_1693921253_-opt"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_root_snapset_backup_1693921253_root_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"root_snapset_backup_1693921253_-"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
+fedora_srv_snapset_backup_1693921253_srv_vg_lv_name = """  {
+      "report": [
+          {
+              "lv": [
+                  {"vg_name":"fedora", "lv_name":"srv_snapset_backup_1693921253_-srv"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }"""
+
 default = """  {
       "report": [
           {
@@ -162,20 +292,17 @@ dev_map = {
     "fedora/srv-snapset_backup_1693921253_-srv": fedora_srv_snapset_backup_1693921253_srv,
 }
 
-mapper_dev_map = {
-    "fedora-home": "fedora home",
-    "fedora-root": "fedora root",
-    "fedora-var": "fedora var",
-    "appdata-datavol1--test": "appdata datavol1-test",
-    "vg_test0-lv_test0": "vg_test0 lv_test0",
-}
-
-vg_lv_dev_map = {
-    "fedora/home": "fedora home",
-    "fedora/root": "fedora root",
-    "fedora/var": "fedora var",
-    "appdata/datavol1-test": "appdata datavol1-test",
-    "vg_test0/lv_test0": "vg_test0 lv_test0",
+vg_name_lv_name_map = {
+    "fedora/home": fedora_home_vg_lv_name,
+    "fedora-home": fedora_home_vg_lv_name,
+    "fedora/root": fedora_root_vg_lv_name,
+    "fedora-root": fedora_root_vg_lv_name,
+    "fedora/var": fedora_var_vg_lv_name,
+    "fedora-var": fedora_var_vg_lv_name,
+    "appdata-datavol1--test": fedora_appdata_datavol1_test_vg_lv_name,
+    "appdata/datavol1-test": fedora_appdata_datavol1_test_vg_lv_name,
+    "vg_test0-lv_test0": fedora_vg_test0_lv_test0_vg_lv_name,
+    "vg_test0/lv_test0": fedora_vg_test0_lv_test0_vg_lv_name,
 }
 
 
@@ -204,12 +331,11 @@ def main(args):
             return 0
     elif args.options == LVS_VG_LV_FIELD_OPTIONS:
         if args.vg_lv.startswith("/dev/mapper/"):
-            dm_dev = args.vg_lv.removeprefix("/dev/mapper/")
-            print(mapper_dev_map[dm_dev])
-            return 0
-        else:
-            vg_lv = args.vg_lv.removeprefix("/dev/")
-            print(vg_lv_dev_map[vg_lv])
+            dev = args.vg_lv.removeprefix("/dev/mapper/")
+        elif args.vg_lv.startswith("/dev/"):
+            dev = args.vg_lv.removeprefix("/dev/")
+        if dev in vg_name_lv_name_map:
+            print(vg_name_lv_name_map[dev])
             return 0
     return 1
 
