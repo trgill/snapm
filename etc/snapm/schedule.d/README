@@ -1,0 +1,2 @@
+This directory contains JSON-formatted schedule configuration files:
+see snapm-schedule.d(5) for details of the file format.
