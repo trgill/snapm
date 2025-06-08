@@ -78,6 +78,12 @@ rm -f doc/*.rst doc/Makefile doc/conf.py
 %install
 %pyproject_install
 
+mkdir -p ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
+%{__install} -p -m 644 etc/%{name}/snapm.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}
+%{__install} -p -m 644 etc/%{name}/plugins.d/lvm2-cow.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
+%{__install} -p -m 644 etc/%{name}/plugins.d/lvm2-thin.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
+%{__install} -p -m 644 etc/%{name}/plugins.d/stratis.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
+
 mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
 %{__install} -p -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
 
@@ -90,6 +96,8 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
 %doc README.md
 %{_bindir}/snapm
 %doc %{_mandir}/man*/snapm.*
+%attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/snapm.conf
+%attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/plugins.d/*
 
 %files -n python3-snapm
 # license for snapm (Apache-2.0)
