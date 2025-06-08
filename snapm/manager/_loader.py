@@ -36,7 +36,7 @@ def _import_plugin_module(fqname: str):
     try:
         _log_debug("Importing plugin module %s", fqname)
         return importlib.import_module(fqname)
-    except (ModuleNotFoundError, ImportError) as e:
+    except (ModuleNotFoundError, ImportError, SyntaxError) as e:
         _log_error("Error importing plugin %s: %s", fqname, e)
         return None
 

@@ -452,7 +452,14 @@ class Manager:
         self._boot_cache.refresh_cache()
         _log_debug("Discovering snapshot sets for %s plugins", len(self.plugins))
         for plugin in self.plugins:
-            snapshots.extend(plugin.discover_snapshots())
+            try:
+                snapshots.extend(plugin.discover_snapshots())
+            # pylint: disable=broad-except
+            except (Exception, SnapmError) as err:
+                _log_warn(
+                    "Snapshot discovery failed for plugin '%s': %s", plugin.name, err
+                )
+                continue
         _log_debug("Discovered %s managed snapshots", len(snapshots))
         for snapshot in snapshots:
             snapset_names.add(snapshot.snapset_name)
