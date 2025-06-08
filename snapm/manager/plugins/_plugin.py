@@ -35,6 +35,38 @@ DMSETUP_REPORT_SEP = ":"
 # Fields: origin_name-snapset_snapset-name_timestamp_mount-point
 SNAPSHOT_NAME_FORMAT = "%s-snapset_%s_%d_%s"
 
+#: Plugin configuration Limits section
+_PLUGIN_CFG_LIMITS = "Limits"
+
+#: Plugin configuration snapshots per origin
+_PLUGIN_CFG_SNAPS_PER_ORIGIN = "MaxSnapshotsPerOrigin"
+
+#: Plugin configuration snapshots per pool
+_PLUGIN_CFG_SNAPS_PER_POOL = "MaxSnapshotsPerPool"
+
+
+class PluginLimits:
+    """
+    Per-plugin resource limits.
+    """
+
+    def __init__(self, cfg):
+        """
+        Initialise a new ``PluginLimits`` instance.
+        """
+        self.snapshots_per_origin = 0
+        self.snapshots_per_pool = 0
+
+        if cfg.has_section(_PLUGIN_CFG_LIMITS):
+            if cfg.has_option(_PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_ORIGIN):
+                self.snapshots_per_origin = cfg.getint(
+                    _PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_ORIGIN
+                )
+            if cfg.has_option(_PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_POOL):
+                self.snapshots_per_pool = cfg.getint(
+                    _PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_POOL
+                )
+
 
 class Plugin:
     """
@@ -48,6 +80,8 @@ class Plugin:
     def __init__(self, logger, plugin_cfg):
         self.size_map = None
         self.logger = logger
+
+        self.limits = PluginLimits(plugin_cfg)
 
     def _log_error(self, *args):
         """

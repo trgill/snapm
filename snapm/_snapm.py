@@ -277,6 +277,12 @@ class SnapmTimerError(SnapmError):
     """
 
 
+class SnapmLimitError(SnapmError):
+    """
+    A configured resource limit would be exceeded.
+    """
+
+
 #
 # Selection criteria class
 #
@@ -1635,6 +1641,7 @@ __all__ = [
     "SnapmRecursionError",
     "SnapmArgumentError",
     "SnapmTimerError",
+    "SnapmLimitError",
     "Selection",
     "size_fmt",
     "is_size_policy",
