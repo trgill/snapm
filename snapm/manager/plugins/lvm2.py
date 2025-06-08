@@ -24,6 +24,7 @@ from snapm import (
     SnapmNoSpaceError,
     SnapmNotFoundError,
     SnapmPluginError,
+    SnapmLimitError,
     SizePolicy,
     SnapStatus,
     Snapshot,
@@ -351,6 +352,14 @@ class Lvm2ThinSnapshot(Lvm2Snapshot):
     """
     Class for LVM2 thin snapshot objects.
     """
+
+    @property
+    def pool(self):
+        """
+        Return the pool name for this ``Lvm2ThinSnapshot``.
+        """
+        lv_dict = self._get_lv_dict_cache()
+        return lv_dict[LVS_POOL_LV]
 
     @property
     def free(self):
@@ -960,6 +969,7 @@ class Lvm2Cow(_Lvm2):
 
     def __init__(self, logger, plugin_cfg):
         super().__init__(logger, plugin_cfg)
+        self.origins = {}
 
     def discover_snapshots(self):
         """
@@ -995,6 +1005,23 @@ class Lvm2Cow(_Lvm2):
                             lv_dict=lv_dict,
                         )
                     )
+
+        for snapshot in snapshots:
+            if snapshot.origin not in self.origins:
+                self.origins[snapshot.origin] = 1
+            else:
+                self.origins[snapshot.origin] += 1
+
+        if self.limits.snapshots_per_origin > 0:
+            for origin, count in self.origins.items():
+                if count > self.limits.snapshots_per_origin:
+                    self._log_warn(
+                        "Snapshots for origin '%s' exceeds MaxSnapshotsPerOrigin (%d > %d)",
+                        origin,
+                        count,
+                        self.limits.snapshots_per_origin,
+                    )
+
         return snapshots
 
     def can_snapshot(self, source):
@@ -1013,6 +1040,7 @@ class Lvm2Cow(_Lvm2):
 
         if not self._is_lvm_device(device):
             return False
+
         (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
@@ -1023,6 +1051,7 @@ class Lvm2Cow(_Lvm2):
             )
         if lv_attr[0] != LVM_LV_TYPE_DEFAULT and lv_attr[0] != LVM_COW_ORIGIN_ATTR:
             return False
+
         return True
 
     def _check_free_space(self, origin, mount_point, size_policy):
@@ -1048,6 +1077,26 @@ class Lvm2Cow(_Lvm2):
             )
         return snapshot_min_size
 
+    def _check_limits(self, origin: str):
+        """
+        Check ``origin`` against configured plugin limits: return ``True`` if
+        adding a new snapshot of this origin would exceed limits, and ``False``
+        otherwise.
+
+        :param origin: The origin volume to check.
+        :type origin: ``str``
+        :returns: ``True`` if adding a new snapshot would exceed limits, or
+                 ``False`` otherwise.
+        :rtype: ``bool``
+        """
+        if not self.limits.snapshots_per_origin:
+            return False
+        if origin not in self.origins:
+            return False
+        if self.origins[origin] + 1 > self.limits.snapshots_per_origin:
+            return True
+        return False
+
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
@@ -1061,6 +1110,11 @@ class Lvm2Cow(_Lvm2):
         self.size_map[vg_name][lv_name] = self._check_free_space(
             origin, mount_point, size_policy
         )
+        if self._check_limits(origin):
+            raise SnapmLimitError(
+                f"Adding snapshot of {mount_point} would exceed MaxSnapshotsPerOrigin "
+                f"for {origin} ({self.limits.snapshots_per_origin})"
+            )
 
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
@@ -1093,6 +1147,12 @@ class Lvm2Cow(_Lvm2):
             raise SnapmCalloutError(
                 f"{LVCREATE_CMD} failed with: {_decode_stderr(err)}"
             ) from err
+
+        if origin not in self.origins:
+            self.origins[origin] = 1
+        else:
+            self.origins[origin] += 1
+
         return Lvm2CowSnapshot(
             f"{vg_name}/{snapshot_name}",
             snapset_name,
@@ -1170,6 +1230,7 @@ class Lvm2Thin(_Lvm2):
 
     def __init__(self, logger, plugin_cfg):
         super().__init__(logger, plugin_cfg)
+        self.pools = {}
 
     def discover_snapshots(self):
         snapshots = []
@@ -1200,6 +1261,23 @@ class Lvm2Thin(_Lvm2):
                             lv_dict=lv_dict,
                         )
                     )
+
+        for snapshot in snapshots:
+            if snapshot.pool not in self.pools:
+                self.pools[snapshot.pool] = 1
+            else:
+                self.pools[snapshot.pool] += 1
+
+        if self.limits.snapshots_per_pool > 0:
+            for pool, count in self.pools.items():
+                if count > self.limits.snapshots_per_pool:
+                    self._log_warn(
+                        "Snapshots for pool '%s' exceeds MaxSnapshotsPerPool (%d > %d)",
+                        pool,
+                        count,
+                        self.limits.snapshots_per_pool,
+                    )
+
         return snapshots
 
     def can_snapshot(self, source):
@@ -1217,6 +1295,7 @@ class Lvm2Thin(_Lvm2):
 
         if not self._is_lvm_device(device):
             return False
+
         (vg_name, lv_name) = self.vg_lv_from_device_path(device)
         lvs_dict = self.get_lvs_json_report(f"{vg_name}/{lv_name}")
         lv_report = lvs_dict[LVS_REPORT][0][LVS_LV][0]
@@ -1227,9 +1306,20 @@ class Lvm2Thin(_Lvm2):
             )
         if lv_attr[0] != LVM_THIN_VOL_ATTR:
             return False
+
         return True
 
     def _check_free_space(self, origin, pool_name, mount_point, size_policy):
+        """
+        Check for available space in pool ``pool_name`` for the specified
+        mount point.
+
+        :param pool_name: The name of the pool to check.
+        :param mount_point: The mount point path to check.
+        :returns: The space used on the mount point.
+        :raises: ``SnapmNoSpaceError`` if the minimum snapshot size exceeds the
+                 available space.
+        """
         vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
         lv_size = self.lv_dev_size(vg_name, lv_name)
@@ -1247,6 +1337,26 @@ class Lvm2Thin(_Lvm2):
             )
         return snapshot_min_size
 
+    def _check_limits(self, pool: str) -> bool:
+        """
+        Check ``pool`` against configured plugin limits: return ``True`` if
+        adding a new snapshot of this pool would exceed limits, and ``False``
+        otherwise.
+
+        :param pool: The pool volume to check.
+        :type pool: ``str``
+        :returns: ``True`` if adding a new snapshot would exceed limits, or
+                 ``False`` otherwise.
+        :rtype: ``bool``
+        """
+        if not self.limits.snapshots_per_pool:
+            return False
+        if pool not in self.pools:
+            return False
+        if self.pools[pool] + 1 > self.limits.snapshots_per_pool:
+            return True
+        return False
+
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
@@ -1263,6 +1373,11 @@ class Lvm2Thin(_Lvm2):
         self.size_map[vg_name][pool_name][lv_name] = self._check_free_space(
             origin, pool_name, mount_point, size_policy
         )
+        if self._check_limits(pool_name):
+            raise SnapmLimitError(
+                f"Adding snapshot of {mount_point} would exceed MaxSnapshotsPerPool "
+                f"for {pool_name} ({self.limits.snapshots_per_pool})"
+            )
 
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
@@ -1278,6 +1393,7 @@ class Lvm2Thin(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
+        pool_name = self.pool_name_from_vg_lv(origin)
 
         lvcreate_cmd = [
             LVCREATE_CMD,
@@ -1292,6 +1408,12 @@ class Lvm2Thin(_Lvm2):
             raise SnapmCalloutError(
                 f"{LVCREATE_CMD} failed with: {_decode_stderr(err)}"
             ) from err
+
+        if pool_name not in self.pools:
+            self.pools[pool_name] = 1
+        else:
+            self.pools[pool_name] += 1
+
         return Lvm2ThinSnapshot(
             f"{vg_name}/{snapshot_name}",
             snapset_name,
