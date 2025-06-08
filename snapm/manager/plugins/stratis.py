@@ -29,6 +29,7 @@ from snapm import (
     SnapmNoSpaceError,
     SnapmNotFoundError,
     SnapmPluginError,
+    SnapmLimitError,
     SizePolicy,
     SnapStatus,
     Snapshot,
@@ -431,6 +432,7 @@ class Stratis(Plugin):
         :param logger: The logger to pass to the Plugin class.
         """
         super().__init__(logger, plugin_cfg)
+        self.pools = {}
         try:
             check_stratisd_version()
         except DBusException as err:
@@ -508,6 +510,22 @@ class Stratis(Plugin):
                     )
                 )
 
+        for snapshot in snapshots:
+            if snapshot.pool_name not in self.pools:
+                self.pools[snapshot.pool_name] = 1
+            else:
+                self.pools[snapshot.pool_name] += 1
+
+        if self.limits.snapshots_per_pool > 0:
+            for pool, count in self.pools.items():
+                if count > self.limits.snapshots_per_pool:
+                    self._log_warn(
+                        "Snapshots for pool '%s' exceeds MaxSnapshotsPerPool (%d > %d)",
+                        pool,
+                        count,
+                        self.limits.snapshots_per_pool,
+                    )
+
         return snapshots
 
     def can_snapshot(self, source):
@@ -558,6 +576,26 @@ class Stratis(Plugin):
             )
         return snapshot_min_size
 
+    def _check_limits(self, pool: str) -> bool:
+        """
+        Check ``pool`` against configured plugin limits: return ``True`` if
+        adding a new snapshot of this pool would exceed limits, and ``False``
+        otherwise.
+
+        :param pool: The pool volume to check.
+        :type pool: ``str``
+        :returns: ``True`` if adding a new snapshot would exceed limits, or
+                 ``False`` otherwise.
+        :rtype: ``bool``
+        """
+        if not self.limits.snapshots_per_pool:
+            return False
+        if pool not in self.pools:
+            return False
+        if self.pools[pool] + 1 > self.limits.snapshots_per_pool:
+            return True
+        return False
+
     # pylint: disable=too-many-arguments
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
@@ -585,6 +623,12 @@ class Stratis(Plugin):
             self.size_map[pool_name] = {}
             self.size_map[pool_name][fs_name] = self._check_free_space(
                 managed_objects, origin, mount_point, size_policy
+            )
+
+        if self._check_limits(pool_name):
+            raise SnapmLimitError(
+                f"Adding snapshot of {mount_point} would exceed MaxSnapshotsPerPool "
+                f"for {pool_name} ({self.limits.snapshots_per_pool})"
             )
 
     # pylint: disable=too-many-arguments
