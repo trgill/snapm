@@ -9,12 +9,15 @@
 Manager interface and plugin infrastructure.
 """
 from subprocess import run, CalledProcessError
+from dataclasses import dataclass, field
+from configparser import ConfigParser
 import logging
 from time import time
 from math import floor
 from stat import S_ISBLK
 from os import stat
-from os.path import exists, ismount, normpath, samefile
+from os.path import exists, ismount, join, normpath, samefile
+from typing import List
 
 from snapm import (
     SNAPM_DEBUG_MANAGER,
@@ -61,6 +64,56 @@ _log_warn = _log.warning
 _log_error = _log.error
 
 JOURNALCTL_CMD = "journalctl"
+
+#: Base directory for snapm configuration
+_SNAPM_CFG_DIR = "/etc/snapm"
+
+#: Main configuration file path
+_SNAPM_CFG_PATH = join(_SNAPM_CFG_DIR, "snapm.conf")
+
+#: Main configuration file section
+_SNAPM_CFG_GLOBAL = "Global"
+
+#: DisablePlugins configuration key
+_SNAPM_CFG_DISABLE_PLUGINS = "DisablePlugins"
+
+#: Path to directory for plugin configuration files
+_PLUGINS_D_PATH = join(_SNAPM_CFG_DIR, "plugins.d")
+
+
+@dataclass
+class SnapmConfig:
+    """
+    Manager configuration.
+    """
+
+    disable_plugins: List[str] = field(default_factory=list)
+
+    @classmethod
+    def from_file(cls, config_file: str) -> "SnapmConfig":
+        """
+        Load ``SnapmConfig`` from an INI-style configuration file located at
+        ``config_file``.
+
+        :param config_file: path to snapm.conf
+        :type config_file: ``str``.
+        :returns: A ``SnapmConfig`` instance initialised from ``config_file``.
+        :rtype: ``SnapmConfig``
+        """
+        disable_plugins = []
+
+        if not exists(config_file):
+            return SnapmConfig()
+
+        _log_debug("Loading configuration from '%s'", config_file)
+        cfg = ConfigParser()
+        cfg.read([config_file])
+        if cfg.has_section(_SNAPM_CFG_GLOBAL):
+            if cfg.has_option(_SNAPM_CFG_GLOBAL, _SNAPM_CFG_DISABLE_PLUGINS):
+                plugins = cfg[_SNAPM_CFG_GLOBAL][_SNAPM_CFG_DISABLE_PLUGINS]
+                disable_plugins += [plug.strip() for plug in plugins.split(",")]
+
+        return SnapmConfig(disable_plugins=disable_plugins)
 
 
 # pylint: disable=too-many-return-statements
@@ -262,10 +315,15 @@ class Manager:
         self.snapshot_sets = []
         self.by_name = {}
         self.by_uuid = {}
+        snapm_config = SnapmConfig.from_file(_SNAPM_CFG_PATH)
+        self.disable_plugins = snapm_config.disable_plugins
         check_boom_config()
         self._boot_cache = BootCache()
         plugin_classes = load_plugins()
         for plugin_class in plugin_classes:
+            if plugin_class.name in self.disable_plugins:
+                _log_debug("Skipping diabled plugin '%s'", plugin_class.name)
+                continue
             _log_debug("Loading plugin class '%s'", plugin_class.__name__)
             try:
                 plugin = plugin_class(_log)

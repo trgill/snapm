@@ -40,6 +40,9 @@ jobs:
       - name: Install Snapshot Manager
         run: >
           sudo pip install -v .
+      - name: Copy configuration to /etc
+        run: >
+          sudo cp -r etc/snapm /etc
       - name: Check out boom
         run: git clone https://github.com/snapshotmanager/boom-boot
         working-directory: /var/tmp
