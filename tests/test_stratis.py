@@ -12,6 +12,8 @@ import psutil
 import os
 from subprocess import run
 
+from configparser import ConfigParser
+
 from dbus_client_gen import DbusClientUniqueResultError
 
 log = logging.getLogger()
@@ -178,7 +180,7 @@ class StratisTests(unittest.TestCase):
     def test_stratis_discover_snapshots(self):
         self._stratis.create_snapshot("fs1", "fs1-snapset_test_1721136677_-opt")
         self._stratis.create_snapshot("fs2", "fs2-snapset_test_1721136677_-data")
-        stratis_plugin = stratis.Stratis(log)
+        stratis_plugin = stratis.Stratis(log, ConfigParser())
         snapshots = stratis_plugin.discover_snapshots()
         self.assertEqual(len(snapshots), 2)
 
@@ -187,7 +189,7 @@ class StratisTests(unittest.TestCase):
         run(systemctl_stop_args, check=True)
 
         with self.assertRaises(SnapmNotFoundError) as cm:
-            stratis_plugin = stratis.Stratis(log)
+            stratis_plugin = stratis.Stratis(log, ConfigParser())
 
         systemctl_start_args = _systemctl_args("start")
         run(systemctl_start_args, check=True)

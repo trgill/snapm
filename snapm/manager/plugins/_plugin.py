@@ -45,7 +45,7 @@ class Plugin:
     version = "0.1.0"
     snapshot_class = Snapshot
 
-    def __init__(self, logger):
+    def __init__(self, logger, plugin_cfg):
         self.size_map = None
         self.logger = logger
 

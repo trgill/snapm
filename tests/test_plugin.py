@@ -8,6 +8,8 @@
 import unittest
 import logging
 
+from configparser import ConfigParser
+
 log = logging.getLogger()
 
 import snapm.manager.plugins as plugins
@@ -38,12 +40,12 @@ class PluginTests(unittest.TestCase):
         log.debug("Tearing down %s", self._testMethodName)
 
     def test_plugin_info(self):
-        p = plugins.Plugin(log)
+        p = plugins.Plugin(log, ConfigParser())
         info = p.info()
         self.assertEqual(info, {"name": "plugin", "version": "0.1.0"})
 
     def _plugin_base_not_implemented_raises(self, method, args):
-        p = plugins.Plugin(log)
+        p = plugins.Plugin(log, ConfigParser())
         with self.assertRaises(NotImplementedError):
             getattr(p, method)(*args)
 

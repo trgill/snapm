@@ -424,13 +424,13 @@ class Stratis(Plugin):
     version = "0.1.0"
     snapshot_class = StratisSnapshot
 
-    def __init__(self, logger):
+    def __init__(self, logger, plugin_cfg):
         """
         Initialise the Stratis plugin.
 
         :param logger: The logger to pass to the Plugin class.
         """
-        super().__init__(logger)
+        super().__init__(logger, plugin_cfg)
         try:
             check_stratisd_version()
         except DBusException as err:

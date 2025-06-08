@@ -10,6 +10,8 @@ import logging
 import os.path
 import os
 
+from configparser import ConfigParser
+
 log = logging.getLogger()
 
 import snapm.manager.plugins.lvm2 as lvm2
@@ -36,7 +38,7 @@ class Lvm2Tests(unittest.TestCase):
         os.environ["PATH"] = bin_path + os.pathsep + cur_path
 
     def test_lvm2cow_is_lvm_device(self):
-        lvm2cow = lvm2.Lvm2Cow(log)
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
         devs = {
             "/dev/mapper/fedora-home": True,
             "/dev/mapper/fedora-root": True,
@@ -48,7 +50,7 @@ class Lvm2Tests(unittest.TestCase):
             self.assertEqual(lvm2cow._is_lvm_device(dev), devs[dev])
 
     def test_lvm2thin_is_lvm_device(self):
-        lvm2thin = lvm2.Lvm2Cow(log)
+        lvm2thin = lvm2.Lvm2Cow(log, ConfigParser())
         devs = {
             "/dev/mapper/fedora-home": True,
             "/dev/mapper/fedora-root": True,
@@ -60,7 +62,7 @@ class Lvm2Tests(unittest.TestCase):
             self.assertEqual(lvm2thin._is_lvm_device(dev), devs[dev])
 
     def test_vg_lv_from_device_path(self):
-        lvm2cow = lvm2.Lvm2Cow(log)
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
         devs = {
             "/dev/mapper/fedora-home": ("fedora", "home"),
             "/dev/mapper/fedora-root": ("fedora", "root"),
@@ -93,7 +95,7 @@ class Lvm2Tests(unittest.TestCase):
             self.assertEqual(lvm2.vg_lv_from_origin(dev), devs[dev])
 
     def test_pool_name_from_vg_lv(self):
-        lvm2thin = lvm2.Lvm2Thin(log)
+        lvm2thin = lvm2.Lvm2Thin(log, ConfigParser())
         devs = {
             "fedora/srv": "pool0",
             "fedora/home": "",
@@ -102,12 +104,12 @@ class Lvm2Tests(unittest.TestCase):
             self.assertEqual(lvm2thin.pool_name_from_vg_lv(dev), devs[dev])
 
     def test_pool_name_from_vg_lv_bad_lv(self):
-        lvm2thin = lvm2.Lvm2Thin(log)
+        lvm2thin = lvm2.Lvm2Thin(log, ConfigParser())
         with self.assertRaises(SnapmCalloutError) as cm:
             lvm2thin.pool_name_from_vg_lv("some/lv")
 
     def test_pool_free_space(self):
-        lvm2thin = lvm2.Lvm2Thin(log)
+        lvm2thin = lvm2.Lvm2Thin(log, ConfigParser())
         pools = {
             ("fedora", "pool0"): 933940639,
             ("fedora", "pool1"): 1073741824,
@@ -121,7 +123,7 @@ class Lvm2Tests(unittest.TestCase):
                     lvm2thin.pool_free_space(pool[0], pool[1])
 
     def test_vg_free_space(self):
-        lvm2cow = lvm2.Lvm2Cow(log)
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
         groups = {
             "fedora": 9097445376,
             "vg_hex": 16903045120,
@@ -136,13 +138,13 @@ class Lvm2Tests(unittest.TestCase):
                     lvm2cow.vg_free_space(vg)
 
     def test_lvm2cow_discover_snapshots(self):
-        lvm2cow = lvm2.Lvm2Cow(log)
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
         snapshots = lvm2cow.discover_snapshots()
         # FIXME: hardcoded value based on test data
         self.assertEqual(len(snapshots), 11)
 
     def test_lvm2thin_discover_snapshots(self):
-        lvm2thin = lvm2.Lvm2Thin(log)
+        lvm2thin = lvm2.Lvm2Thin(log, ConfigParser())
         snapshots = lvm2thin.discover_snapshots()
         # FIXME: hardcoded value based on test data
         self.assertEqual(len(snapshots), 5)

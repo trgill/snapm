@@ -655,8 +655,8 @@ class _Lvm2(Plugin):
                 env.pop(var)
         return env
 
-    def __init__(self, logger):
-        super().__init__(logger)
+    def __init__(self, logger, plugin_cfg):
+        super().__init__(logger, plugin_cfg)
 
         # Default to using json_std when available.
         self._json_fmt = LVM_JSON_STD
@@ -958,6 +958,9 @@ class Lvm2Cow(_Lvm2):
 
     max_name_len = LVM_MAX_NAME_LEN - LVM_COW_SNAPSHOT_NAME_LEN
 
+    def __init__(self, logger, plugin_cfg):
+        super().__init__(logger, plugin_cfg)
+
     def discover_snapshots(self):
         """
         Discover snapshots managed by the lvm2-cow plugin.
@@ -1164,6 +1167,9 @@ class Lvm2Thin(_Lvm2):
     snapshot_class = Lvm2ThinSnapshot
 
     max_name_len = LVM_MAX_NAME_LEN
+
+    def __init__(self, logger, plugin_cfg):
+        super().__init__(logger, plugin_cfg)
 
     def discover_snapshots(self):
         snapshots = []

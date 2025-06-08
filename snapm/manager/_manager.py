@@ -326,7 +326,12 @@ class Manager:
                 continue
             _log_debug("Loading plugin class '%s'", plugin_class.__name__)
             try:
-                plugin = plugin_class(_log)
+                plugin_cfg = self._load_plugin_config(plugin_class.name)
+                try:
+                    plugin = plugin_class(_log, plugin_cfg)
+                except TypeError as err:
+                    _log_debug("Failed to load plugin '%s': %s", plugin_class.name, err)
+                    continue
                 self.plugins.append(plugin)
             except SnapmNotFoundError as err:
                 _log_debug(
@@ -337,6 +342,24 @@ class Manager:
             except SnapmPluginError as err:
                 _log_error("Disabling plugin %s: %s", plugin_class.__name__, err)
         self.discover_snapshot_sets()
+
+    def _load_plugin_config(self, plugin_name: str) -> ConfigParser:
+        """
+        Load optional configuration file for plugin ``plugin_name``.
+
+        :param plugin_name: The name of the plugin to load config for.
+        :type plugin_name: ``str``
+        :returns: A (possibly empty) ``ConfigParser`` instance.
+        :rtype: ``ConfigParser``
+        """
+        plugin_conf_file = join(_PLUGINS_D_PATH, f"{plugin_name}.conf")
+        cfg = ConfigParser()
+
+        if exists(plugin_conf_file):
+            _log_debug("Loading plugin configuration from '%s'", plugin_conf_file)
+            cfg.read([plugin_conf_file])
+
+        return cfg
 
     def _find_and_verify_plugins(
         self, sources, size_policies, _requested_provider=None
