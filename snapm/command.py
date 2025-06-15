@@ -1377,6 +1377,38 @@ def set_debug(debug_arg):
     set_debug_mask(mask)
 
 
+def _add_create_args(parser):
+    """
+    Add create command arguments.
+    """
+    parser.add_argument(
+        "sources",
+        metavar="SOURCE",
+        type=str,
+        nargs="+",
+        help="A device or mount point path to include in this snapshot set",
+    )
+    parser.add_argument(
+        "-s",
+        "--size-policy",
+        type=str,
+        action="store",
+        help="A default size policy for fixed size snapshots",
+    )
+    parser.add_argument(
+        "-b",
+        "--bootable",
+        action="store_true",
+        help="Create a boot entry for this snapshot set",
+    )
+    parser.add_argument(
+        "-r",
+        "--revert",
+        action="store_true",
+        help="Create a revert boot entry for this snapshot set",
+    )
+
+
 def _add_identifier_args(parser, snapset=False, snapshot=False):
     """
     Add snapshot set or snapshot identifier command line arguments.
@@ -1530,32 +1562,7 @@ def _add_snapset_subparser(type_subparser):
         action="store",
         help="The name of the snapshot set to create",
     )
-    snapset_create_parser.add_argument(
-        "sources",
-        metavar="SOURCE",
-        type=str,
-        nargs="+",
-        help="A device or mount point path to include in this snapshot set",
-    )
-    snapset_create_parser.add_argument(
-        "-s",
-        "--size-policy",
-        type=str,
-        action="store",
-        help="A default size policy for fixed size snapshots",
-    )
-    snapset_create_parser.add_argument(
-        "-b",
-        "--bootable",
-        action="store_true",
-        help="Create a boot entry for this snapshot set",
-    )
-    snapset_create_parser.add_argument(
-        "-r",
-        "--revert",
-        action="store_true",
-        help="Create a revert boot entry for this snapshot set",
-    )
+    _add_create_args(snapset_create_parser)
     snapset_create_parser.add_argument(
         "-a",
         "--autoindex",
