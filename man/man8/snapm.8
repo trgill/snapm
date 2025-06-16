@@ -1,4 +1,4 @@
-.TH SNAPM 8 "Dec 05 2024" "Linux" "MAINTENANCE COMMANDS"
+.TH SNAPM 8 "Jun 18 2025" "Linux" "MAINTENANCE COMMANDS"
 
 .de ARG_GLOBAL
 .  RI [ global_args ]
@@ -24,6 +24,13 @@
 ..
 .de ARG_PLUGIN_COMMANDS
 .  RI [ list ]
+..
+.
+.de ARG_SCHEDULE_TYPE
+.  RI schedule
+..
+.de ARG_SCHEDULE_COMMANDS
+.  RI [ create | delete | enable | disable | list | show | gc ]
 ..
 .
 ..
@@ -67,6 +74,18 @@ Snapm \(em Linux snapshot manager
 .  ad b
 ..
 .CMD_PLUGIN_COMMAND
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_COMMAND
+.  ad l
+.  ARG_GLOBAL
+.  ARG_SCHEDULE_TYPE
+.  ARG_SCHEDULE_COMMANDS
+.  ad b
+..
+.CMD_SCHEDULE_COMMAND
+.br
 .
 .HP
 .B snapm
@@ -380,10 +399,127 @@ Snapm \(em Linux snapshot manager
 .  RB [ --rows ]
 .  RB [ --separator
 .  IR separator ]
+.  RB [ --json ]
 .  ad b
 ..
 .CMD_PLUGIN_LIST
-
+.br
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_CREATE
+.  ad l
+.  BR schedule
+.  BR create
+.  RB [ -b | --bootable ]
+.  RB [ -C | --calendarspec
+.  IR calendarspec ]
+.  RB [ -r | --revert ]
+.  RB [ -s | --size-policy
+.  IR policy ]
+.  RB [ -p | --policy-type
+.  IR policy_type ]
+.  RB [ --keep-count
+.  IR count ]
+.  RB [ --keep-years
+.  IR years ]
+.  RB [ --keep-months
+.  IR months ]
+.  RB [ --keep-weeks
+.  IR weeks ]
+.  RB [ --keep-days
+.  IR days ]
+.  RB [ --keep-yearly
+.  IR yearly ]
+.  RB [ --keep-quarterly
+.  IR quarterly ]
+.  RB [ --keep-monthly
+.  IR monthly ]
+.  RB [ --keep-weekly
+.  IR weekly ]
+.  RB [ --keep-daily
+.  IR daily ]
+.  RB [ --keep-hourly
+.  IR hourly ]
+.  IR \fIschedule_name\fP
+.  IR \fIsource[size_policy]\fP ...
+.  ad b
+..
+.CMD_SCHEDULE_CREATE
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_DELETE
+.  ad l
+.  BR schedule
+.  BR delete
+.  IR name
+.  ad b
+..
+.CMD_SCHEDULE_DELETE
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_ENABLE
+.  ad l
+.  BR schedule
+.  BR enable
+.  IR name
+.  ad b
+..
+.CMD_SCHEDULE_ENABLE
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_DISABLE
+.  ad l
+.  BR schedule
+.  BR disable
+.  IR name
+.  ad b
+..
+.CMD_SCHEDULE_DISABLE
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_LIST
+.  ad l
+.  BR schedule
+.  BR list
+.  RB [ --nameprefixes ]
+.  RB [ --noheadings ]
+.  RB [ --options
+.  IR fields ]
+.  RB [ --sort
+.  IR fields ]
+.  RB [ --rows | --json ]
+.  RB [ --separator
+.  IR separator ]
+.  ad b
+..
+.CMD_SCHEDULE_LIST
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_SHOW
+.  ad l
+.  BR schedule
+.  BR show
+.  IR name
+.  ad b
+..
+.CMD_SCHEDULE_SHOW
+.
+.HP
+.B snapm
+.de CMD_SCHEDULE_GC
+.  ad l
+.  BR schedule
+.  BR gc
+.  IR name
+.  ad b
+..
+.CMD_SCHEDULE_GC
 .
 .PD
 .ad b
@@ -481,6 +617,82 @@ Output report columns as rows
 .BR --json
 .br
 Produce show or list output in JSON notation
+.
+.HP
+.BR --keep-count
+.IR count
+.br
+Retain \fBcount\fP snapshot sets when applying the COUNT garbage
+collection policy.
+.
+.HP
+.BR --keep-years
+.IR number_years
+.br
+Retain \fBnumber_years\fP snapshot sets when applying the AGE garbage
+collection policy.
+.
+.HP
+.BR --keey-months
+.IR number_months
+.br
+Retain \fBnumber_months\fP snapshot sets when applying the AGE garbage
+collection policy.
+.
+.HP
+.BR --keep-weeks
+.IR number_weeks
+.br
+Retain \fBnumber_weeks\fP snapshot sets when applying the AGE garbage
+collection policy.
+.
+.HP
+.BR --keep-days
+.IR number_days
+Retain \fBnumber_days\fP snapshot sets when applying the AGE garbage
+collection policy.
+.
+.HP
+.BR --keep-yearly
+.IR number_yearly
+.br
+Retain \fBnumber_yearly\fP yearly snapshot sets when applying the
+TIMELINE garbage collection policy.
+.
+.HP
+.BR --keep-quarterly
+.IR number_quarterly
+.br
+Retain \fBnumber_quarterly\fP quarterly snapshot sets when applying the
+TIMELINE garbage collection policy.
+.
+.HP
+.BR --keep-monthly
+.IR number_monthly
+.br
+Retain \fBnumber_monthly\fP monthly snapshot sets when applying the
+TIMELINE garbage collection policy.
+.
+.HP
+.BR --keep-weekly
+.IR number_weekly
+.br
+Retain \fBnumber_weekly\fP weekly snapshot sets when applying the
+TIMELINE garbage collection policy.
+.
+.HP
+.BR --keep-daily
+.IR number_daily
+.br
+Retain \fBnumber_daily\fP daily snapshot sets when applying the
+TIMELINE garbage collection policy.
+.
+.HP
+.BR --keep-hourly
+.IR number_hourly
+.br
+Retain \fBnumber_hourly\fP hourly snapshot sets when applying the
+TIMELINE garbage collection policy.
 .
 .HP
 .BR --separator
@@ -674,8 +886,7 @@ command line is treated as a basename and a new, non-negative integer
 index will be generated and appended to the \fBname\fP to construct a new,
 unique instance name. This can be used to group a series of snapshot sets
 of the same set of sources that are taken on a recurring schedule.
-
-.br
+.IP
 #
 .B snapm snapset create hourly --autoindex /:5%SIZE /var:5%SIZE
 .br
@@ -934,6 +1145,201 @@ option. The option expects a comma separated list of keys, with optional
 \fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
 that field respectively.
 .
+.P
+.B Schedule Commands
+.P
+.
+.HP
+.B snapm
+.CMD_SCHEDULE_CREATE
+.br
+Create a new snapshot set schedule.
+.IP
+Create a persistent schedule to automatically create snapshot sets
+according to the name and arguments given to the \fBsnapm schedule
+create\fP command.
+.IP
+New snapshot sets will be automatically created as configured by the
+specified calendar event expression (\fB--calendarspec\fP).
+.IP
+The \fBsnapm schedule create\fP command accepts the same set of
+arguments as the \fBsnapm snapset create\fP command and these are passed
+on to the snapshot sets created by the schedule.
+.IP
+A garbage collection policy specified by the \fB--policy-type\fP and
+configured by the corresponding \fB--keep-*\fP arguments is applied to
+automatically delete snapshot sets that are no longer required.
+.IP
+Newly created schedules are automatically enabled and will begin
+creating snapshot sets at the first expiry of the configured calendar
+expression.
+.IP
+#
+.B snapm schedule create --policy-type count --keep-count 2 --boot
+.B --revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
+.br
+Name: hourly
+.br
+SourceSpecs: /, /var
+.br
+DefaultSizePolicy: 25%SIZE
+.br
+.br
+Autoindex: False
+.br
+Calendarspec: hourly
+.br
+Boot: yes
+.br
+Revert: yes
+.br
+GcPolicy:
+.br
+    Name: hourly
+.br
+    Type: Count
+.br
+    Params: keep_count=2
+.br
+Enabled: yes
+.br
+Running: yes
+.
+.HP
+.B snapm
+.CMD_SCHEDULE_DELETE
+.br
+Delete snapshot set schedule.
+.IP
+Delete an existing snapshot set schedule by name. The specified schedule
+is disabled and removed from the system. Existing snapshot sets created
+by the schedule before its deletion remain and continue to be available
+until deleted by the user.
+.
+.HP
+.B snapm
+.CMD_SCHEDULE_ENABLE
+.br
+Enable existing snapshot set schedule.
+.IP
+Enable an existing snapshot set schedule by name. The specified schedule
+is enabled and will be started on subsequent reboots. To start the
+schedule immediately use the \fB--start\fP argument.
+.
+.HP
+.B snapm
+.CMD_SCHEDULE_DISABLE
+.br
+Disable existing snapshot set schedule.
+.IP
+Disable an existing snapshot set schedule by name. The specified
+schedule is stopped and disabled, and will no longer automatically start
+on subsequent reboots.
+.
+.HP
+.B snapm
+.CMD_SCHEDULE_LIST
+.br
+Output a tabular report of snapsets.
+.IP
+Displays a report with one snapset per line, containing fields describing the
+properties of the configured snapshot sets.
+.IP
+The list of fields to display is given with \fB-o|--options\fP as a comma
+separated list of field names. To obtain a list of available fields run
+\&'\fBsnapm snapset list -o help\fP'. If the list of fields begins with the
+\&'\fB+\fP' character the specified fields are appended to the default field
+list. Otherwise the given list of fields replaces the default set of report
+fields.
+.IP
+The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
+used to generate output in a machine readable form, suitable for setting shell
+or environment variables.
+.IP
+Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
+option. The option expects a comma separated list of keys, with optional
+\fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
+that field respectively.
+.IP
+#
+.B snapm schedule list
+.br
+ScheduleName ScheduleSources         SizePolicy Autoindex OnCalendar     Enabled
+.br
+custom       /, /home:100%SIZE, /var 50%SIZE    yes       *-*-1 01:00:00 yes
+.br
+hourly       /, /var                 25%SIZE    no        hourly         yes
+.br
+.
+.HP
+.B snapm
+.CMD_SCHEDULE_GC
+.br
+Run garbage collection for snapshot set schedule.
+.IP
+Run the configured garbage collection policy for the scheduled named
+\fBname\fP.
+.br
+Cleans up snapshot sets created by \fBname\fP, applying the configured
+cleanup policy and parameters given to \fBsnapm schedule create\fP.
+.SH SCHEDULING AND GARBAGE COLLECTION
+Snapshot manager supports automatically creating snapshot sets according to a
+user-defined schedule. A \fBgarbage collection policy\fP provides for
+automatically cleaning up snapshot sets that are no longer required according
+to a user defined policy and retention parameters.
+.IP
+Snapshot set schedules are created with the \fBsnapm schedule create\fP
+command. The command accepts the same set of arguments as \fBsnapm snapset
+create\fP allowing the properties of scheduled snapshot sets to be controlled
+by the user.
+.P
+.B Garbage collection policies
+.P
+.sp
+.PD 0
+.TP 16
+.B ALL
+Retain all snapshot sets. This policy accepts no parameters and never deletes
+snapshot sets automatically.
+.TP
+.B COUNT
+Retain a fixed number of snapshot sets. This policy accepts a single parameter,
+\fB--keep-count=count\fP and retains up to \fPcount\fB snapshot sets.
+.TP
+.B AGE
+Retain snapshot sets younger than specified age. This policy accepts up to
+four parameters (\fB--keep-years=years\fP, \fB--keep-months=months\fP,
+\fP--keep-weeks=weeks\fP, \fP--keep-days=days\fP) and retains snapshot sets
+that were created more recently than the specified age limit. The limit
+applied is the sum of the parameters given.
+.TP
+.B TIMELINE
+Retain snapshot sets according to classification. Each snapshot set is
+classified as
+.I hourly,
+.I daily,
+.I weekly,
+.I monthly,
+.I quaterly,
+or
+.I yearly
+according to its creation time: the first snapshot set taken at the beginning
+of each hour is classified as
+.I hourly,
+the first taken after midnight each day as
+.I daily,
+the first takekn after midnight each Monday as
+.I weekly,
+and so on. A fixed number of snapshot sets is retained for each classification
+accoring to the value of the
+.B \-\-keep-hourly,
+.B \-\-keep-daily,
+.B \-\-keep-monthly,
+.B \-\-keep-quarterly,
+and
+.B \-\-keep-yearly
+parameters.
+.PD
 .SH BOOTING AND ROLLING BACK SNAPSHOT SETS
 .
 Snapshot manager integrates with the \fBboom(8)\fP boot manager to facilitate
@@ -1293,7 +1699,9 @@ Bryn M. Reeves <bmr@redhat.com>
 .
 .SH SEE ALSO
 .
-.BR boom(8)
+.P
+.MR systemd.time 7 ,
+.MR boom 8 ,
 .br
 Snapm project page: https://github.com/snapshotmanager/snapm
 .br
