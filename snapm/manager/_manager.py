@@ -116,7 +116,7 @@ class SnapmConfig:
         if cfg.has_section(_SNAPM_CFG_GLOBAL):
             if cfg.has_option(_SNAPM_CFG_GLOBAL, _SNAPM_CFG_DISABLE_PLUGINS):
                 plugins = cfg[_SNAPM_CFG_GLOBAL][_SNAPM_CFG_DISABLE_PLUGINS]
-                disable_plugins += [plug.strip() for plug in plugins.split(",")]
+                disable_plugins = [plug.strip() for plug in plugins.split(",")]
 
         return SnapmConfig(disable_plugins=disable_plugins)
 
