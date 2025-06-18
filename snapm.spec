@@ -88,6 +88,7 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
 mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
 %{__install} -p -m 644 man/man5/snapm.conf.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
+%{__install} -p -m 644 man/man5/snapm-plugins.d.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 
 %check
 %pytest --log-level=debug -v tests/
@@ -97,7 +98,7 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %license LICENSE
 %doc README.md
 %{_bindir}/snapm
-%doc %{_mandir}/man*/snapm.*
+%doc %{_mandir}/man*/snapm*
 %attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/snapm.conf
 %attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/plugins.d/*
 

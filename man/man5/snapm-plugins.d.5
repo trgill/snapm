@@ -1,0 +1,58 @@
+.TH SNAPM 5 "Jun 16 2025" "Linux" "FILE FORMATS MANUAL"
+
+.
+.SH NAME
+.
+plugind.d \(em boom configuration files
+.
+.SH SYNOPSIS
+\fB/etc/snapm/plugins.d/*.conf\fP
+.
+.SH DESCRIPTION
+Files in /etc/snapm/plugins.d are loaded during the initialisation of
+\fBsnapm\fP and provide configuration options that affect the behaviour
+of plugins.
+
+The files are structured in \fBINI\fP format: section headers appear in
+square brackets and configuration values appear as key-value pairs with
+one pair per line.
+.
+.SH SECTIONS
+.TP
+.B Limits
+The Limits section may contain the \fBMaxSnapshotsPerOrigin\fP and
+\fBMaxSnapshotsPerOriginPool\fP keys that place limits on the maximum
+number of snapshots per origin device and thin pool respectively.
+
+Plugins may opt-in to applying these options depending on the specific
+snapshot back end. For example, \fBlvm2-cow\fP implements the
+\fBMaxSnapshotsPerOrigin\fP key since excessive per-origin snapshots
+using the device-mapper \fBdm-snapshot\fP target leads to read and
+write IO performance degradation. The \fBlvm2-thin\fP and \fBstratis\fP
+plugins on th other hand respect the \fBMaxSnapshotsPerPool\fP key
+since they share the same underlying \fBdm-thin\fP implementation.
+
+The values in both cases are a single non-negative integer specifying
+the maximum allowed number of snapshots across all snapshot sets and
+unmanaged snapshots.
+.
+.SH AUTHORS
+.
+Bryn M. Reeves <bmr@redhat.com>
+.
+.SH SEE ALSO
+.
+.
+.P
+.MR lvm 8 ,
+.MR lvcreate 8 ,
+.MR lvmthin 7 ,
+.MR stratis 8 ,
+.
+.br
+Snapm project page: https://github.com/snapshotmanager/snapm
+.br
+LVM2 resource page: https://www.sourceware.org/lvm2/
+.br
+Device-mapper resource page: http://sources.redhat.com/dm/
+.br
