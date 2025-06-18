@@ -85,7 +85,9 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
 %{__install} -p -m 644 etc/%{name}/plugins.d/stratis.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
 
 mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
+mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man8/snapm.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
+%{__install} -p -m 644 man/man5/snapm.conf.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 
 %check
 %pytest --log-level=debug -v tests/

@@ -1,0 +1,32 @@
+.TH SNAPM 5 "Jun 16 2025" "Linux" "FILE FORMATS MANUAL"
+
+.
+.SH NAME
+.
+snapm.conf \(em snapm configuration file
+.
+.SH SYNOPSIS
+\fB/etc/snapm/snapm.conf\fP
+.
+.SH DESCRIPTION
+\fBsnapm.conf\fP is loaded during the initialisation of snapm and contains
+configuration keys affecting \fBsnapm\fP's global behaviour.
+
+The file is structured in \fBINI\fP format: section headers appear in
+square brackets and configuration values appear as key-value pairs with
+one pair per line.
+.
+.SH SECTIONS
+.TP
+.B Global
+The global section contains the \fBDisablePlugins\fP key. The value is a
+list of plugin names to disable, for example a value of "lvm2-thin,stratis"
+will disable both the \fBlvm2-thin\fP and \fBstratis\fP plugins.
+.SH AUTHORS
+.
+Bryn M. Reeves <bmr@redhat.com>
+.
+.SH SEE ALSO
+.
+Snapm project page: https://github.com/snapshotmanager/snapm
+.br
