@@ -812,9 +812,14 @@ A percentage of the size of the origin volume from 0 to 100%.
 .
 .P
 .br
-The default size policy mounted volumes if none is specified is 200%USED. The
-default size policy for unmounted block devices is 25%SIZE.
+The default size policy for mounted volumes if none is specified is 200%USED.
+The default size policy for unmounted block devices is 25%SIZE.
 .
+.SH COMMANDS
+.P
+Snapshot manager commands consist of a \fBtype\fP (\fBsnapset\fP,
+\fBsnapshot\fP, \fBplugin\fP, \fBschedule\fP), followed by a type-specific
+subcommand.
 .P
 .B Snapshot Set Commands
 .P
