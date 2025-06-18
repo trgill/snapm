@@ -1,0 +1,131 @@
+.TH SNAPM 5 "Jun 15 2025" "Linux" "FILE FORMATS MANUAL"
+.\" shorthand for double quote that works everywhere.
+.ds q \N'34'
+.
+.SH NAME
+.
+schedule.d \(em snapm schedule configuration files
+.
+.SH SYNOPSIS
+\fB/etc/snapm/schedule.d/*.json\fP
+.
+.SH DESCRIPTION
+Files in /etc/snapm/schedule.d are loaded during the initialisation of
+\fBsnapm\fP and describe user-defined snapshot set creation schedules
+on the local machine.
+
+The files are structured in \fBJSON\fP format and are not generally
+intended to be manually edited: the \fBsnapm schedule create\fP command
+creates these files according to the command line arguments given by
+the user.
+.SH STRUCTURE
+A valid schedule file consists of a single JSON object describing the
+schedule:
+.PP
+.RS 4
+.nf
+.B "{"
+.B "    \*qname\*q: \*qhourly\*q,"
+.B "    \*qsources\*q: ["
+.B "        \*q/\*q,"
+.B "        \*q/var\*q"
+.B "    ],"
+.B "    \*qdefault_size_policy\*q: \*q25%SIZE\*q,"
+.B "    \*qautoindex\*q: true,"
+.B "    \*qcalendarspec\*q: \*qhourly\*q,"
+.B "    \*qboot\*q: true,"
+.B "    \*qrevert\*q: true,"
+.B "    \*qgc_policy\*q: {"
+.B "        \*qpolicy_name\*q: \*qhourly\*q,"
+.B "        \*qpolicy_type\*q: \*qCOUNT\*q,"
+.B "        \*qkeep_count\*q: 2"
+.B "    }"
+.B "}"
+.fi
+.RE
+.SH KEYS
+The following keys are defined at the top level.
+.TP
+.B "name"
+A JSON string: the name of this schedule, used for display and as the
+basename for snapshot sets.
+.TP
+.B "sources"
+A JSON array (list): a list of mount point or block device paths to
+include in the snapshot sets created by this schedule, optionally
+including a size policy suffix.
+.TP
+.B "default_size_policy"
+A JSON string: a default size policy to apply to all sources in
+\fBsources\fP for which no explicit size policy was specified.
+.TP
+.B "autoindex"
+A JSON boolean indicating whether snapshot sets created by this schedule
+should use the \fB--autoindex\fP argument.
+.TP
+.B "calendarspec"
+A JSON string containing a systemd calendar event expression indicating
+when this schedule should trigger snapshot set creation. See
+\fBsystemd.time(7)\fP.
+.TP
+.B "boot"
+A JSON boolean indicating whether snapshot sets created by this schedule
+should use the \fB--bootable\fP argument to create bootable snapshot
+sets.
+.TP
+.B "revert"
+A JSON boolean indicating whether snapshot sets created by this schedule
+should use the \fB--revert\fP argument to create a failsafe revert boot
+entry.
+.TP
+.B "gc_policy"
+A JSON object describing the garbage collection policy for this
+schedule. The object always contains the two keys \fBpolicy_name\fP and
+\fBpolicy_type\fP, both of which accept a JSON string value. The first
+is a human readable name for the policy \(em normally the same as the
+schedule name \(em and the second selects a policy type via one of the
+values \fBALL\fP, \fBCOUNT\fP, \fBAGE\fP, or \fBTIMELINE\fP. Following
+these two keys are policy-type specific parameters. Each parameter has a
+policy defined name and a JSON integer number value.
+.RS 4
+.TP
+.B "ALL"
+The \fBALL\fP policy type takes no parameters. All snapshot sets are
+retained until manually deleted.
+.TP
+.B "COUNT"
+The \fBCOUNT\fP policy type accepts a single parameter, \fBkeep_count\fP
+indicating the maximum number of snapshot sets to retain.
+.TP
+.B "AGE"
+The \fBAGE\fP policy type accepts four parameters: \fBkeep_years\fP,
+\fBkeep_months\fP, \fBkeep_weeks\fP, \fBkeep_days\fP. Snapshots that are
+more recent than the sum of these values are retained.
+.TP
+.B "TIMELINE"
+The \fBTIMELINE\fP policy implements a more complex stragegy. Snapshot
+sets are classified according to when they were taken, so for example,
+the first snapshot set in any given hour is considered an \*qhourly
+snapshot set\*q, the first snapshot set after midnight on any given day
+is considered a \*qdaily snapshot set\*q and so on. The \fBTIMELINE\fP
+policy type accepts up to six parameters: \fBkeep_hourly\fP,
+\fBkeep_daily\fP, \fBkeep_weekly\fP, \fBkeep_monthly\fP,
+\fBkeep_quaterly\fP, \fBkeep_yearly\fP which each accept a \fBcount\fP
+argument. Up to \fBcount\fP snapshot sets are retained for each
+classification.
+.RE
+.
+.SH AUTHORS
+.
+Bryn M. Reeves <bmr@redhat.com>
+.
+.SH SEE ALSO
+.
+.
+.P
+.MR snapm 8 ,
+.MR systemd.time 7 ,
+.
+.br
+Snapm project page: https://github.com/snapshotmanager/snapm
+.br
