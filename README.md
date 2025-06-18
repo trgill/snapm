@@ -6,8 +6,8 @@ systems.  The snapm tool allows snapshots of multiple volumes to be captured at
 the same time, representing the system state at the time the set was created.
 
 The tool has a modular plugin architecture allowing different snapshot backends
-to be used together. Currently snapshots using LVM2 copy-on-write and thinly
-provisioned snapshots are supported.
+to be used together. Currently snapshots using LVM2 copy-on-write as well as
+thinly provisioned snapshots using both LVM2 and Stratis are supported.
 
    * [Snapm](#snapm)
       * [Reporting bugs](#reporting-bugs)
@@ -36,6 +36,14 @@ provisioned snapshots are supported.
                 * [show](#snapshot-show)
             * [plugin](#plugin)
                 * [list](#plugin-list)
+            * [schedule](#schedule)
+                * [create](#schedule-create)
+                * [delete](#schedule-delete)
+                * [enable](#schedule-enable)
+                * [disable](#schedule-disable)
+                * [list](#schedule-list)
+                * [show](#schedule-show)
+                * [gc](#schedule-gc)
          * [Reporting commands](#reporting-commands)
          * [Getting help](#getting-help)
       * [Patches and pull requests](#patches-and-pull-requests)
@@ -873,11 +881,90 @@ lvm2-thin  0.1.0         Lvm2ThinSnapshot
 stratis    0.1.0         StratisSnapshot
 ```
 
+#### schedule
+The `schedule` command is used to create, display and manage schedules for
+automatic snapshot set creation.
+
+##### schedule create
+Create a new schedule with the provided name and list of sources (mount point
+or block device paths):
+
+```
+# snapm schedule create [-a|--autoindex] [-b|--bootable] [-r|--revert] [--size-policy policy] [-p|--policy-type policy_type] [--keep-count count] [--keep-years years] [--keep-months months] [--keep-weeks weeks] [--keep-days days] [--keep-yearly yearly] [--keep-quarterly quarterly] [--keep-monthly monthly] [--keep-weekly weekly] [--keep-daily daily] [--keep-hourly hourly] --calendarspec calendarspec <name> source...
+```
+
+```
+# snapm schedule create --policy-type count --keep-count 2 --boot --revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
+Name: hourly
+SourceSpecs: /, /var
+DefaultSizePolicy: 25%SIZE
+Autoindex: False
+Calendarspec: hourly
+Boot: yes
+Revert: yes
+GcPolicy:
+    Name: hourly
+    Type: Count
+    Params: keep_count=2
+Enabled: yes
+Running: yes
+```
+
+##### schedule delete
+Delete an existing schedule by name.
+
+```
+# snapm schedule delete <name>
+```
+
+##### schedule enable
+Enable an existing schedule by name.
+
+```
+# snapm schedule enable <name>
+```
+
+##### schedule disable
+Disable an existing schedule by name.
+
+```
+# snapm schedule disable <name>
+```
+
+##### schedule list
+List configured schedules.
+
+```
+# snapm schedule list [--nameprefixes] [--noheadings] [--options fields] [--sort fields] [--rows|--json] [--separator separator]
+```
+
+```
+# snapm schedule list
+ScheduleName ScheduleSources         SizePolicy Autoindex OnCalendar     Enabled
+custom       /, /home:100%SIZE, /var 50%SIZE    yes       *-*-1 01:00:00 yes
+monthly      /:25%SIZE, /var:25%SIZE            yes       monthly        no
+hourly       /, /var                 25%SIZE    no        hourly         yes
+```
+
+##### schedule show
+Display configured schedule.
+
+```
+# snapm schedule show <name>
+```
+
+##### schedule gc
+Run configured garbage collection policy for schedule.
+
+```
+# snapm schedule gc <name>
+```
+
 ### Reporting commands
 
-The `snapm snapset list` and `snapm snapshot list` commands generate
-a tabular report as output. To control the list of displayed fields
-use the `-o/--options FIELDS` argument:
+The `snapm snapset list`, `snapm snapshot list` `snapm plugin list`, and
+`snapm schedule list` commands generate a tabular report as output. To
+control the list of displayed fields use the `-o/--options FIELDS` argument:
 
 ```
 # snapm snapset list -oname,sources
