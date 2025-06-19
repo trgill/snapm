@@ -9,6 +9,7 @@ import unittest
 import logging
 import os
 from uuid import UUID
+from json import loads
 
 
 import snapm
@@ -185,6 +186,24 @@ class ManagerTests(unittest.TestCase):
         s = snapm.Selection(name="testset0")
         sets = self.manager.find_snapshot_sets(selection=s)
         self.assertEqual(len(sets), 1)
+
+        # Verify snapshot set JSON
+        set_dict = loads(sets[0].json())
+        self.assertTrue("SnapsetName" in set_dict)
+        self.assertEqual(set_dict["SnapsetName"], "testset0")
+
+        # Verify snapshot JSON
+        snap_dict = loads(sets[0].snapshots[0].json())
+        self.assertTrue("SnapsetName" in snap_dict)
+        self.assertEqual(snap_dict["SnapsetName"], "testset0")
+
+        # Verify that a source can be looked up by origin
+        self.assertTrue(sets[0].snapshot_by_source(sets[0].snapshots[0].origin))
+
+        # Verify that a non-existent source raises an exception
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            sets[0].snapshot_by_source("/quux")
+
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_create_snapshot_set_blockdevs(self):
@@ -349,6 +368,8 @@ class ManagerTests(unittest.TestCase):
         sset = self.manager.find_snapshot_sets(selection=select)[0]
         self.assertEqual(sset.basename, "testset0")
         self.assertEqual(sset.index, 0)
+        self.assertEqual(sset.index, sset.snapshots[0].index)
+        self.assertEqual(sset.basename, sset.snapshots[0].snapset_basename)
         self.manager.delete_snapshot_sets(selection=select)
 
     def test_create_delete_snapshot_set_no_index(self):
@@ -358,6 +379,40 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(sset.basename, "testset0")
         self.assertEqual(sset.index, snapm.SNAPSET_INDEX_NONE)
         self.manager.delete_snapshot_sets(selection=select)
+
+    def test_create_delete_snapshot_set_dot_no_index(self):
+        self.manager.create_snapshot_set("foo.bar", self.mount_points(), autoindex=False)
+        select = snapm.Selection(name="foo.bar")
+        sset = self.manager.find_snapshot_sets(selection=select)[0]
+        self.assertEqual(sset.basename, "foo.bar")
+        self.assertEqual(sset.index, snapm.SNAPSET_INDEX_NONE)
+        self.manager.delete_snapshot_sets(selection=select)
+
+    def test_snapshot_set_is_mounted(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points(), autoindex=False)
+
+        # Origin is already mounted
+        self.assertTrue(sset.origin_mounted)
+        self.assertTrue(sset.mounted)
+
+        # Snapshot is not yet mounted
+        self.assertFalse(sset.snapshot_mounted)
+
+        mnt_snap = sset.snapshots[0]
+        mnt_name = mnt_snap.name.split("/")[1]
+
+        self._lvm.make_mount_point(mnt_name)
+        self._lvm.mount(mnt_name)
+
+        # Snapshot is now mounted
+        self.assertTrue(sset.snapshot_mounted)
+        self.assertTrue(sset.mounted)
+
+        self._lvm.umount(mnt_name)
+        # Snapshot is no longer mounted
+        self.assertFalse(sset.snapshot_mounted)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
     def test_delete_snapshot_set_nosuch(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())

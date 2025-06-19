@@ -231,6 +231,9 @@ class BootTests(unittest.TestCase):
         root_snapshot = sset.snapshot_by_mount_point("/")
         self.assertIn(root_snapshot.origin, revert_entry.options)
 
+        self.assertTrue(sset.boot_entry.boot_id[0:7] in str(sset))
+        self.assertTrue(sset.revert_entry.boot_id[0:7] in str(sset))
+
         # Clean up boot entries
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 

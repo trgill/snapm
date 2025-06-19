@@ -43,6 +43,17 @@ class MockArgs(object):
     version = False
     json = False
     autoindex = False
+    schedule_name = None
+    keep_count = 0
+    keep_days = 0
+    keep_weeks = 0
+    keep_months = 0
+    keep_years = 0
+    keep_hourly = 0
+    keep_weekly = 0
+    keep_monthly = 0
+    keep_quaterly = 0
+    keep_yearly = 0
 
 
 def have_root():

@@ -714,7 +714,9 @@ class SizePolicy:
             return percent_of_sectors(self._percent, self._fs_used)
         if self.type == SizePolicyType.PERCENT_SIZE:
             return percent_of_sectors(self._percent, self._dev_size)
-        raise SnapmParseError(f"Invalid size policy type: {self.type}")
+        raise SnapmParseError(
+            f"Invalid size policy type: {self.type}"
+        )  # pragma: no cover
 
 
 class SnapStatus(Enum):
@@ -756,7 +758,7 @@ def _has_index(name):
 def _parse_basename(name):
     if "." in name:
         return _split_name(name)[0]
-    return name
+    return name  # pragma: no cover
 
 
 def _parse_index(name):
@@ -1007,7 +1009,7 @@ class SnapshotSet:
         for snapshot in self.snapshots:
             try:
                 snapshot.autoactivate = value
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 _log_error(
                     "Failed to set autoactivation for snapshot set member '%s': %s",
                     snapshot.name,
@@ -1200,7 +1202,7 @@ class SnapshotSet:
             _log_debug("Resizing snapshot set member '%s'", snapshot.name)
             try:
                 snapshot.resize(size_policy)
-            except SnapmNoSpaceError as err:
+            except SnapmNoSpaceError as err:  # pragma: no cover
                 _log_error("Cannot resize %s snapshot: %s", snapshot.name, err)
                 raise SnapmNoSpaceError(
                     f"Insufficient free space to resize snapshot set {self.name}"
@@ -1226,7 +1228,7 @@ class SnapshotSet:
             try:
                 _log_debug("Reverting snapshot set member '%s'", snapshot.name)
                 snapshot.revert()
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 _log_error(
                     "Failed to revert snapshot set member '%s': %s",
                     snapshot.name,
@@ -1258,7 +1260,7 @@ class SnapshotSet:
             try:
                 _log_debug("Activating snapshot set member '%s'", snapshot.name)
                 snapshot.activate()
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 _log_error(
                     "Failed to activate snapshot set member '%s': %s",
                     snapshot.name,
@@ -1280,7 +1282,7 @@ class SnapshotSet:
             try:
                 _log_debug("Deactivating snapshot set member '%s'", snapshot.name)
                 snapshot.deactivate()
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 _log_error(
                     "Failed to deactivate snapshot set member '%s': %s",
                     snapshot.name,
@@ -1423,14 +1425,14 @@ class Snapshot:
         """
         The origin of this snapshot.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @property
     def origin_options(self):
         """
         File system options needed to specify the origin of this snapshot.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @property
     def timestamp(self):
@@ -1480,7 +1482,7 @@ class Snapshot:
         """
         The device path for this snapshot.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @property
     def status(self):
@@ -1488,7 +1490,7 @@ class Snapshot:
         The status of this snapshot. Returns a ``SnapStatus`` enum
         value representing the current state of the snapshot.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @property
     def size(self):
@@ -1498,7 +1500,7 @@ class Snapshot:
         that dynamically allocate space to the snapshot it reflects the
         device or volume size.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @property
     def free(self):
@@ -1508,7 +1510,7 @@ class Snapshot:
         current backstore. For snapshots that dynamically allocate space
         to the snapshot it indicates the pooled space available.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @property
     def autoactivate(self):
@@ -1516,7 +1518,7 @@ class Snapshot:
         The autoactivation status of this snapshot. Returns ``True`` if the
         snapshot is automatically activated or ``False`` otherwise.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @autoactivate.setter
     def autoactivate(self, value):
@@ -1633,7 +1635,7 @@ class Snapshot:
         """
         Invalidate any cached data describing this snapshot.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def activate(self):
         """

@@ -109,6 +109,12 @@ class SnapmTests(unittest.TestCase):
         s = snapm.Selection.from_cmd_args(cmd_args)
         self.assertEqual(cmd_args.uuid, s.uuid)
 
+    def test_Selection_from_cmd_args_schedule_name(self):
+        cmd_args = MockArgs()
+        cmd_args.schedule_name = "hourly"
+        s = snapm.Selection.from_cmd_args(cmd_args)
+        self.assertEqual(cmd_args.schedule_name, s.sched_name)
+
     def test_valid_selection_snapset(self):
         s = snapm.Selection(name="testset0", timestamp=1693921253)
         s.check_valid_selection(snapshot_set=True)
@@ -190,3 +196,9 @@ class SnapmTests(unittest.TestCase):
         self.assertEqual(False, snapm.is_size_policy("100%QUUX"))
         self.assertEqual(False, snapm.is_size_policy("foo"))
         self.assertEqual(False, snapm.is_size_policy("100%"))
+
+    def test_size_fmt_zero(self):
+        self.assertEqual(snapm.size_fmt(0), "0B")
+
+    def test_size_fmt_yib(self):
+        self.assertEqual(snapm.size_fmt(1000000000000000000000000000), "827.2YiB")
