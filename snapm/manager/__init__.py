@@ -11,7 +11,7 @@ Top level interface to the snapshot manager.
 
 from ._manager import Manager  # noqa: F401, F403
 from ._calendar import CalendarSpec
-from ._schedule import Schedule, GcPolicy
+from ._schedule import Schedule, GcPolicy, GcPolicyType
 
 __all__ = [
     "Manager",

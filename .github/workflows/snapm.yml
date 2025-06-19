@@ -43,6 +43,12 @@ jobs:
       - name: Copy configuration to /etc
         run: >
           sudo cp -r etc/snapm /etc
+      - name: Copy systemd units to /usr/lib/systemd/system
+        run: >
+          sudo cp systemd/* /usr/lib/systemd/system
+      - name: Reload systemd
+        run: >
+          sudo systemctl daemon-reload
       - name: Check out boom
         run: git clone https://github.com/snapshotmanager/boom-boot
         working-directory: /var/tmp
