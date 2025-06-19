@@ -143,8 +143,10 @@ def _remove_drop_in(drop_in_dir: str, drop_in_file: str):
     :param drop_in_file: The name of the systemd drop-in configuration file.
     """
     try:
-        os.unlink(drop_in_file)
-        os.rmdir(drop_in_dir)
+        if os.path.exists(drop_in_file):
+            os.unlink(drop_in_file)
+        if os.path.exists(drop_in_dir):
+            os.rmdir(drop_in_dir)
     except OSError as err:  # pragma: no cover
         _log_error(
             "Error cleaning up unit drop-in directory '%s': %s", drop_in_dir, err
