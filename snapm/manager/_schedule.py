@@ -25,6 +25,10 @@ from snapm import (
     SnapmArgumentError,
     SnapshotSet,
 )
+from ._boot import (
+    delete_snapset_boot_entry,
+    delete_snapset_revert_entry,
+)
 from ._timers import TimerStatus, TimerType, Timer
 
 _log = logging.getLogger(__name__)
@@ -854,6 +858,8 @@ class Schedule:
         """
         to_delete = self.gc_policy.evaluate(sets)
         for snapshot_set in to_delete:
+            delete_snapset_boot_entry(snapshot_set)
+            delete_snapset_revert_entry(snapshot_set)
             snapshot_set.delete()
 
     def write_config(self, sched_dir: str):

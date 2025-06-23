@@ -26,6 +26,10 @@ unexpected_kwarg = "got an unexpected keyword argument"
 _VAR_TMP = "/var/tmp"
 
 class MockSnapshotSet:
+
+    boot_entry = None
+    revert_entry = None
+
     def __init__(self, timestamp):
         self.timestamp = timestamp
         self.deleted = False
