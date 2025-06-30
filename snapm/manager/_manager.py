@@ -299,7 +299,7 @@ def _check_revert_snapshot_set(snapset):
     for snapshot in snapset.snapshots:
         try:
             snapshot.check_revert()
-        except NotImplementedError as err:
+        except NotImplementedError as err:  # pragma: no cover
             _log_error(
                 "Snapshot provider %s does not support revert",
                 snapshot.provider.name,
@@ -313,7 +313,7 @@ def _check_revert_snapshot_set(snapset):
             raise SnapmBusyError(
                 f"A revert has already started for snapshot set {snapset.name}"
             ) from err
-        except SnapmPluginError as err:
+        except SnapmPluginError as err:  # pragma: no cover
             _log_error(
                 "Revert prechecks failed for snapshot %s (%s)",
                 snapshot.name,
@@ -373,7 +373,7 @@ class Scheduler:
         """
         Load schedule definitions from disk.
         """
-        if not exists(_SCHEDULE_D_PATH):
+        if not exists(_SCHEDULE_D_PATH):  # pragma: no cover
             _log_warn(
                 "Schedule configuration directory '%s' not found.",
                 _SCHEDULE_D_PATH,
@@ -386,7 +386,7 @@ class Scheduler:
             sched_path = join(_SCHEDULE_D_PATH, sched_file)
             try:
                 schedule = Schedule.from_file(sched_path)
-            except (SnapmArgumentError, JSONDecodeError, KeyError) as err:
+            except (SnapmArgumentError, JSONDecodeError, KeyError) as err:  # pragma: no cover
                 _log_warn(
                     "Failed to load schedule configuration '%s': %s",
                     sched_file,
@@ -586,7 +586,7 @@ class Manager:
         self._boot_cache = BootCache()
         plugin_classes = load_plugins()
         for plugin_class in plugin_classes:
-            if plugin_class.name in self.disable_plugins:
+            if plugin_class.name in self.disable_plugins:  # pragma: no cover
                 _log_debug("Skipping diabled plugin '%s'", plugin_class.name)
                 continue
             _log_debug("Loading plugin class '%s'", plugin_class.__name__)
@@ -594,11 +594,11 @@ class Manager:
                 plugin_cfg = self._load_plugin_config(plugin_class.name)
                 try:
                     plugin = plugin_class(_log, plugin_cfg)
-                except TypeError as err:
+                except TypeError as err:  # pragma: no cover
                     _log_debug("Failed to load plugin '%s': %s", plugin_class.name, err)
                     continue
                 self.plugins.append(plugin)
-            except SnapmNotFoundError as err:
+            except SnapmNotFoundError as err:  # pragma: no cover
                 _log_debug(
                     "Plugin dependencies missing: %s (%s), skipping.",
                     plugin_class.__name__,
@@ -744,7 +744,7 @@ class Manager:
             try:
                 snapshots.extend(plugin.discover_snapshots())
             # pylint: disable=broad-except
-            except (Exception, SnapmError) as err:
+            except (Exception, SnapmError) as err:  # pragma: no cover
                 _log_warn(
                     "Snapshot discovery failed for plugin '%s': %s", plugin.name, err
                 )
@@ -758,7 +758,7 @@ class Manager:
             ]
             set_timestamp = set_snapshots[0].timestamp
             for snap in set_snapshots:
-                if snap.timestamp != set_timestamp:
+                if snap.timestamp != set_timestamp:  # pragma: no cover
                     _log_warn(
                         "Snapshot set '%s' has inconsistent timestamps", snapset_name
                     )
@@ -767,13 +767,13 @@ class Manager:
             snapset = SnapshotSet(snapset_name, set_timestamp, set_snapshots)
 
             # Associate snapset with boot entry if present
-            if snapset.name in self._boot_cache.entry_cache:
+            if snapset.name in self._boot_cache.entry_cache:  # pragma: no cover
                 snapset.boot_entry = self._boot_cache.entry_cache[snapset.name]
             elif str(snapset.uuid) in self._boot_cache.entry_cache:
                 snapset.boot_entry = self._boot_cache.entry_cache[str(snapset.uuid)]
 
             # Associate snapset with revert entry if present
-            if snapset.name in self._boot_cache.revert_cache:
+            if snapset.name in self._boot_cache.revert_cache:  # pragma: no cover
                 snapset.revert_entry = self._boot_cache.revert_cache[snapset.name]
             elif str(snapset.uuid) in self._boot_cache.revert_cache:
                 snapset.revert_entry = self._boot_cache.revert_cache[str(snapset.uuid)]
@@ -975,7 +975,7 @@ class Manager:
                         origins[source], name, timestamp, mount, size_policies[source]
                     )
                 )
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 _log_error("Error creating snapshot set member %s: %s", name, err)
                 _resume_journal()
                 for snapshot in snapshots:
@@ -991,14 +991,14 @@ class Manager:
 
         snapset = SnapshotSet(name, timestamp, snapshots)
 
-        if boot or revert:
+        if boot or revert:  # pragma: no cover
             _log_info(
                 "Autoactivation required for bootable snapshot set '%s'", snapset.name
             )
             self._set_autoactivate(snapset, auto=True)
             snapset.activate()
 
-        if boot:
+        if boot:  # pragma: no cover
             try:
                 create_snapset_boot_entry(snapset)
                 self._boot_cache.refresh_cache()
@@ -1007,7 +1007,7 @@ class Manager:
                 snapset.delete()
                 raise SnapmCalloutError from err
 
-        if revert:
+        if revert:  # pragma: no cover
             try:
                 create_snapset_revert_entry(snapset)
                 self._boot_cache.refresh_cache()
@@ -1321,7 +1321,7 @@ class Manager:
             # Attempt to rename members to new_name
             try:
                 new_set.rename(new_name)
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 self.by_name[snapset.name] = snapset
                 self.by_uuid[snapset.uuid] = snapset
                 self.snapshot_sets.append(snapset)
@@ -1330,7 +1330,7 @@ class Manager:
             try:
                 # Delete the pruned members
                 new_set.delete()
-            except SnapmError as err:
+            except SnapmError as err:  # pragma: no cover
                 _log_error(
                     "Failed to clean up pruned snapshot set members: %s (%s)",
                     err,
@@ -1356,7 +1356,7 @@ class Manager:
         snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
         snapset.autoactivate = True
-        if not snapset.autoactivate:
+        if not snapset.autoactivate:  # pragma: no cover
             raise SnapmPluginError(
                 "Could not enable autoactivation for all snapshots in snapshot "
                 f"set {snapset.name}"

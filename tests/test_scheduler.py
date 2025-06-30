@@ -278,3 +278,8 @@ class SchedulerTests(unittest.TestCase):
 
         self.manager.scheduler.gc("hourly")
         self.manager.scheduler.delete("hourly")
+
+    def test_delete_schedule_nosuch_raises(self):
+        self.manager = manager.Manager()
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            self.manager.scheduler.delete("nosuch")

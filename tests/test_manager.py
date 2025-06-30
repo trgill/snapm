@@ -222,6 +222,12 @@ class ManagerTests(unittest.TestCase):
         self._stratis.mount_all()
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_create_snapshot_set_blockdev_dupe_raises(self):
+        with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
+            snapset = self.manager.create_snapshot_set(
+                "testset0", self._lvm.block_devs()[0] + self._lvm.mount_points()[0]
+            )
+
     def test_create_snapshot_set_duplicate_sources_raises(self):
         with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
             snapset = self.manager.create_snapshot_set(
@@ -643,6 +649,10 @@ class ManagerTests(unittest.TestCase):
 
         # Unmount the set, deactivate/reactivate and re-mount
         self.stop_start_storage()
+
+    def test_revert_snapshot_sets_bad_name_raises(self):
+        with self.assertRaises(snapm.SnapmNotFoundError) as cm:
+            self.manager.revert_snapshot_sets(snapm.Selection(name="nosuchset"))
 
     def test_revert_snapshot_set_bad_name_raises(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
