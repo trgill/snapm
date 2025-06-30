@@ -32,11 +32,11 @@ def _find_plugin_modules(path: Path):
 
 def _import_plugin_module(fqname: str):
     if not find_spec(fqname):
-        return None
+        return None  # pragma: no cover
     try:
         _log_debug("Importing plugin module %s", fqname)
         return importlib.import_module(fqname)
-    except (ModuleNotFoundError, ImportError, SyntaxError) as e:
+    except (ModuleNotFoundError, ImportError, SyntaxError) as e:  # pragma: no cover
         _log_error("Error importing plugin %s: %s", fqname, e)
         return None
 
