@@ -74,7 +74,7 @@ def _get_machine_id():
     """
     if path_exists(_MACHINE_ID):
         path = _MACHINE_ID
-    elif path_exists(_DBUS_MACHINE_ID):
+    elif path_exists(_DBUS_MACHINE_ID):  # pragma: no cover
         path = _DBUS_MACHINE_ID
     else:
         return None
@@ -82,7 +82,7 @@ def _get_machine_id():
     with open(path, "r", encoding="utf8") as file:
         try:
             machine_id = file.read().strip()
-        except OSError as err:
+        except OSError as err:  # pragma: no cover
             _log_error("Could not read machine-id from '%s': %s", path, err)
             machine_id = None
     return machine_id
@@ -172,7 +172,7 @@ def _create_boom_boot_entry(
     if not osp:
         try:
             osp = _create_default_os_profile()
-        except ValueError as err:
+        except ValueError as err:  # pragma: no cover
             raise SnapmCalloutError(
                 f"Error calling boom to create default OsProfile: {err}"
             ) from err
@@ -313,7 +313,7 @@ def check_boom_config():
     not_found_err = SnapmCalloutError("No usable boom configuration found")
     try:
         load_boom_config()
-    except ValueError:
+    except ValueError:  # pragma: no cover
         _log_warn(
             "No boom configuration found: attempting to generate defaults in /boot"
         )

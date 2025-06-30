@@ -79,6 +79,7 @@ class BootTests(unittest.TestCase):
         Set up a fake /etc/fstab to be used for the duration of the test run.
         """
         with open(TMP_FSTAB, "w", encoding="utf8") as file:
+            file.write("# Test fstab\n")
             for origin, mp in self.boot_volumes:
                 file.write(f"/dev/test_vg0/{origin}\t{mp}\text4\tdefaults 0 0\n")
             run(["mount", "--bind", TMP_FSTAB, ETC_FSTAB])
@@ -180,8 +181,26 @@ class BootTests(unittest.TestCase):
         # Clean up boot entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
 
+    def test_create_snapshot_boot_entry_dupe_raises(self):
+        self.manager.create_snapshot_set_boot_entry(name="bootset0")
+
+        with self.assertRaises(snapm.SnapmExistsError) as cm:
+            self.manager.create_snapshot_set_boot_entry(name="bootset0")
+
+        # Clean up boot entry
+        self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
+
     def test_create_snapshot_revert_entry(self):
         self.manager.create_snapshot_set_revert_entry(name="bootset0")
+
+        # Clean up revert entry
+        self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
+
+    def test_create_snapshot_revert_entry_dupe_raises(self):
+        self.manager.create_snapshot_set_revert_entry(name="bootset0")
+
+        with self.assertRaises(snapm.SnapmExistsError) as cm:
+            self.manager.create_snapshot_set_revert_entry(name="bootset0")
 
         # Clean up revert entry
         self.manager.delete_snapshot_sets(snapm.Selection(name="bootset0"))
