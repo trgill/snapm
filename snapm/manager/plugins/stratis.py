@@ -8,8 +8,8 @@
 """
 Stratis snapshot manager plugin
 """
+from os.path import exists as path_exists, join as path_join
 from os import stat
-from os.path import join as path_join
 from subprocess import run, CalledProcessError
 from stat import S_ISBLK
 from time import time
@@ -87,6 +87,9 @@ def is_stratis_device(devpath):
     Return ``True`` if the device at ``devpath`` is a Stratis device or
     ``False`` otherwise.
     """
+    if not path_exists(devpath):
+        return False
+
     dmsetup_cmd_args = [
         DMSETUP_CMD,
         DMSETUP_INFO,

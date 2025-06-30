@@ -8,11 +8,11 @@
 """
 LVM2 snapshot manager plugins
 """
+from os.path import exists as path_exists, join as path_join
+from os import stat, environ
 from subprocess import run, CalledProcessError
 from json import loads, JSONDecodeError
 from math import floor
-from os.path import join as path_join
-from os import stat, environ
 from stat import S_ISBLK
 from time import time
 from shutil import which
@@ -467,6 +467,9 @@ class _Lvm2(Plugin):
             dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
         else:
             dm_name = devpath
+
+        if not path_exists(path_join(DEV_MAPPER_PREFIX, dm_name)):
+            return False
 
         dmsetup_cmd_args = [
             DMSETUP_CMD,

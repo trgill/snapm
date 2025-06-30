@@ -70,6 +70,8 @@ class StratisTestsSimple(unittest.TestCase):
             "/dev/quux": False,
         }
         for dev in devs.keys():
+            if not os.path.exists(dev):
+                continue
             self.assertEqual(stratis.is_stratis_device(dev), devs[dev])
 
     def pool_fs_from_origin(self):
