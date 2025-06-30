@@ -222,6 +222,12 @@ class ManagerTests(unittest.TestCase):
         self._stratis.mount_all()
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_create_snapshot_set_duplicate_sources_raises(self):
+        with self.assertRaises(snapm.SnapmInvalidIdentifierError) as cm:
+            snapset = self.manager.create_snapshot_set(
+                "testset0", [self.mount_points()[0], self.mount_points()[0]],
+            )
+
     def test_create_snapshot_set_mixed_1(self):
         self._stratis.umount_all()
         snapset = self.manager.create_snapshot_set(

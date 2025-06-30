@@ -272,6 +272,10 @@ def _parse_source_specs(source_specs, default_size_policy):
         else:
             (source, policy) = (spec, default_size_policy)
         source = normpath(source)
+        if source in sources:
+            raise SnapmInvalidIdentifierError(
+                f"Duplicate snapshot source {source} already present"
+            )
         sources.append(source)
         size_policies[source] = policy
     return (sources, size_policies)
