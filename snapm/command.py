@@ -1173,7 +1173,7 @@ def _revert_cmd(cmd_args):
         name = selection.name
     elif selection.uuid:
         uuid = selection.uuid
-    else:
+    else:  # pragma: no cover
         raise SnapmInvalidIdentifierError("Revert requires a snapset name or UUID")
 
     snapset = revert_snapset(manager, name=name, uuid=uuid)
@@ -2312,7 +2312,7 @@ def main(args):
         try:
             status = cmd_args.func(cmd_args)
         # pylint: disable=broad-except
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             _log_error("Exiting on user cancel")
         except Exception as err:
             _log_error("Command failed: %s", err)

@@ -26,6 +26,15 @@ boom.set_boot_path(BOOT_ROOT_TEST)
 
 
 class CommandTestsBase(unittest.TestCase):
+    def get_main_args(self):
+        """
+        Return an argument array (in the form of sys.argv) reflecting the
+        ``bin/snapm`` command, with verbose logging and debug enabled.
+
+        :returns: A list of command arguments.
+        """
+        return [os.path.join(os.getcwd(), "bin/snapm")]
+
     def get_debug_main_args(self):
         """
         Return an argument array (in the form of sys.argv) reflecting the
@@ -33,7 +42,7 @@ class CommandTestsBase(unittest.TestCase):
 
         :returns: A list of command arguments.
         """
-        return [os.path.join(os.getcwd(), "bin/snapm"), "-vv", "--debug=all"]
+        return self.get_main_args() + ["-vv", "--debug=all"]
 
 
 class CommandTestsSimple(CommandTestsBase):
@@ -290,6 +299,11 @@ class CommandTests(CommandTestsBase):
         command.show_snapshots(self.manager)
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_show_snapshots_json(self):
+        self.manager.create_snapshot_set("testset0", self.mount_points())
+        command.show_snapshots(self.manager, json=True)
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
     def test_create_snapset(self):
         sset = command.create_snapset(self.manager, "testset0", self.mount_points())
         self.assertEqual(sset.index, snapm.SNAPSET_INDEX_NONE)
@@ -354,6 +368,11 @@ class CommandTests(CommandTestsBase):
         args = self.get_debug_main_args()
         args += ["snapset", "delete", "testset0.0"]
         self.assertEqual(command.main(args), 0)
+
+    def test_main_snapset_create_bad_source(self):
+        args = self.get_main_args()
+        args += ["snapset", "create", "testset0", "/quux"]
+        self.assertEqual(command.main(args), 1)
 
     def test_main_snapset_delete(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
@@ -420,6 +439,15 @@ class CommandTests(CommandTestsBase):
 
         args = self.get_debug_main_args()
         args += ["snapset", "list"]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_list_json(self):
+        self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "list", "--json"]
         self.assertEqual(command.main(args), 0)
 
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
@@ -566,6 +594,13 @@ class CommandTests(CommandTestsBase):
 
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_main_snapset_resize(self):
+        self.manager.create_snapshot_set("testset0", [self.mount_points()[0] + ":10%SIZE"])
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "resize", "--size-policy", "100%SIZE", "testset0"]
+        self.assertEqual(command.main(args), 0)
+
     def test_main_snapset_revert(self):
         # Revert is only supported on LVM2: don't include Stratis in the test.
         origin_file = "root/origin"
@@ -600,3 +635,245 @@ class CommandTests(CommandTestsBase):
         # Test that only the origin file exists
         self.assertEqual(self._lvm.test_path(origin_file), True)
         self.assertEqual(self._lvm.test_path(snapshot_file), False)
+
+    def test_main_snapset_revert_by_uuid(self):
+        # Revert is only supported on LVM2: don't include Stratis in the test.
+        origin_file = "root/origin"
+        snapshot_file = "root/snapshot"
+        testset = "testset0"
+
+        # Create files in the origin volume and post-snapshot
+        self._lvm.touch_path(origin_file)
+        sset = self.manager.create_snapshot_set(testset, self.mount_points())
+        self._lvm.touch_path(snapshot_file)
+
+        # Test that the origin and snapshot files both exist
+        self.assertEqual(self._lvm.test_path(origin_file), True)
+        self.assertEqual(self._lvm.test_path(snapshot_file), True)
+
+        # Start revert the snapshot set
+        args = self.get_debug_main_args()
+        args += ["snapset", "revert", str(sset.uuid)]
+        self.assertEqual(command.main(args), 0)
+
+        # Unmount the set, deactivate/reactivate and re-mount
+        self._lvm.umount_all()
+        self._lvm.deactivate()
+        self._lvm.activate()
+        self._lvm.mount_all()
+
+        self._stratis.umount_all()
+        self._stratis.stop_pool()
+        self._stratis.start_pool()
+        self._stratis.mount_all()
+
+        # Test that only the origin file exists
+        self.assertEqual(self._lvm.test_path(origin_file), True)
+        self.assertEqual(self._lvm.test_path(snapshot_file), False)
+
+    def test_main_snapset_revert_no_name_or_uuid(self):
+        args = self.get_main_args()
+        args += ["snapset", "revert"]
+        self.assertEqual(command.main(args), 1)
+
+    def test_main_schedule_create_show_list_gc_delete_ALL(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule",
+            "create",
+            "--policy-type",
+            "all",
+            "--calendarspec",
+            "hourly",
+            "hourly",
+            " ".join(self.mount_points())
+        ]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "--json", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "list"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "gc", "--config", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "delete", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+    def test_main_schedule_create_show_list_gc_delete_COUNT(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule",
+            "create",
+            "--policy-type",
+            "count",
+            "--keep-count",
+            "2",
+            "--calendarspec",
+            "hourly",
+            "hourly",
+            " ".join(self.mount_points())
+        ]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "--json", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "list"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "gc", "--config", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "delete", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+    def test_main_schedule_create_show_list_gc_delete_AGE(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule",
+            "create",
+            "--policy-type",
+            "age",
+            "--keep-weeks",
+            "4",
+            "--calendarspec",
+            "hourly",
+            "hourly",
+            " ".join(self.mount_points())
+        ]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "--json", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "list"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "gc", "--config", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "delete", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+    def test_main_schedule_create_show_list_gc_delete_TIMELINE(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule",
+            "create",
+            "--policy-type",
+            "timeline",
+            "--keep-monthly",
+            "6",
+            "--keep-weekly",
+            "4",
+            "--keep-daily",
+            "7",
+            "--calendarspec",
+            "hourly",
+            "hourly",
+            " ".join(self.mount_points())
+        ]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "show", "--json", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "list"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "gc", "--config", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "delete", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+    def test_main_schedule_create_disable_enable_delete(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule",
+            "create",
+            "--policy-type",
+            "count",
+            "--keep-count",
+            "2",
+            "--calendarspec",
+            "hourly",
+            "hourly",
+            " ".join(self.mount_points())
+        ]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "disable", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "enable", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "delete", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+    def test_main_schedule_create_scheduled_delete(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule",
+            "create",
+            "--policy-type",
+            "count",
+            "--keep-count",
+            "2",
+            "--calendarspec",
+            "hourly",
+            "hourly",
+        ]
+        args += self.mount_points()
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "create-scheduled", "--config", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["schedule", "delete", "hourly"]
+        self.assertEqual(command.main(args), 0)
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "delete", "hourly.0"]
+        self.assertEqual(command.main(args), 0)
