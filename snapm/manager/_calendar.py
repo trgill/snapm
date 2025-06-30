@@ -75,7 +75,7 @@ class CalendarSpec:
 
         if sd_cmd.returncode == 1:
             raise ValueError(f"Invalid CalendarSpec expression: {self._calendarspec}")
-        if sd_cmd.returncode != 0:
+        if sd_cmd.returncode != 0:  # pragma: no cover
             raise SnapmCalloutError(
                 f"Error calling systemd-analyze: {sd_cmd.stderr.decode('utf8')}"
             )

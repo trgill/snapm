@@ -93,6 +93,14 @@ class CalendarSpecTests(unittest.TestCase):
 
         return True
 
+    def test_calendar_spec__repr__(self):
+        cs = CalendarSpec("hourly")
+        self.assertEqual(repr(cs), 'CalendarSpec("hourly")')
+
+    def test_calendar_spec_invalid(self):
+        with self.assertRaises(ValueError) as cm:
+            cs = CalendarSpec("Mon Tue Two 2")
+
     def test_calendar_spec_one(self):
         data = [
             ("Sat,Thu,Mon-Wed,Sat-Sun", "Mon..Thu,Sat,Sun *-*-* 00:00:00"),
