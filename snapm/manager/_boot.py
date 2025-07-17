@@ -98,10 +98,7 @@ def _find_snapset_root(snapset):
     for snapshot in snapset.snapshots:
         if snapshot.mount_point == "/":
             return snapshot
-    # Note: add fstab lookup for non-root snapsets
-    # needs either root=UUID/LABEL support in boom or a lookup to resolve any
-    # UUID/LABEL found in the file.
-    raise SnapmNotFoundError(f"Could not find root device for snapset {snapset.name}")
+    return None
 
 
 def _create_default_os_profile():
@@ -194,6 +191,7 @@ def _create_boom_boot_entry(
         add_opts=add_opts,
         del_opts=del_opts,
         write=False,
+        allow_no_dev=True,
         images=boom.command.I_BACKUP,
         no_fstab=bool(mounts),
         mounts=mounts,
@@ -224,8 +222,11 @@ def create_snapset_boot_entry(snapset, title=None):
     version = _get_uts_release()
     title = title or f"Snapshot {snapset.name} {snapset.time} ({version})"
     root_snapshot = _find_snapset_root(snapset)
-    root_device = root_snapshot.devpath
-    if root_snapshot.provider.name in ("lvm2-cow", "lvm2-thin"):
+    if root_snapshot:
+        root_device = root_snapshot.devpath
+    else:
+        root_device = ""
+    if root_snapshot and root_snapshot.provider.name in ("lvm2-cow", "lvm2-thin"):
         lvm_root_lv = root_snapshot.name
     else:
         lvm_root_lv = None
