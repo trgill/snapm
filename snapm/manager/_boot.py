@@ -151,7 +151,7 @@ def _build_snapset_mount_list(snapset):
 
 
 def _create_boom_boot_entry(
-    version, title, tag_arg, root_device, lvm_root_lv=None, mounts=None
+    version, title, tag_arg, root_device, mounts=None
 ):
     """
     Create a boom boot entry according to the passed arguments.
@@ -195,7 +195,6 @@ def _create_boom_boot_entry(
         version,
         machine_id,
         root_device,
-        lvm_root_lv=lvm_root_lv,
         profile=osp,
         add_opts=add_opts,
         del_opts=del_opts,
@@ -229,19 +228,13 @@ def create_snapset_boot_entry(snapset, title=None):
     """
     version = _get_uts_release()
     title = title or f"Snapshot {snapset.name} {snapset.time} ({version})"
-    root_snapshot = _find_snapset_root(snapset)
-    root_device = root_snapshot.devpath
-    if root_snapshot.provider.name in ("lvm2-cow", "lvm2-thin"):
-        lvm_root_lv = root_snapshot.name
-    else:
-        lvm_root_lv = None
+    root_device = _find_snapset_root(snapset)
     mounts = _build_snapset_mount_list(snapset)
     snapset.boot_entry = _create_boom_boot_entry(
         version,
         title,
         f"{SNAPSET_ARG}={snapset.uuid}",
         root_device,
-        lvm_root_lv=lvm_root_lv,
         mounts=mounts,
     )
     _log_debug(
@@ -261,18 +254,12 @@ def create_snapset_revert_entry(snapset, title=None):
     """
     version = _get_uts_release()
     title = title or f"Revert {snapset.name} {snapset.time} ({version})"
-    root_snapshot = _find_snapset_root(snapset)
-    root_device = root_snapshot.origin
-    if root_snapshot.provider.name in ("lvm2-cow", "lvm2-thin"):
-        lvm_root_lv = root_device.removeprefix(_DEV_PREFIX)
-    else:
-        lvm_root_lv = None
+    root_device = _find_snapset_root(snapset, origin=True)
     snapset.revert_entry = _create_boom_boot_entry(
         version,
         title,
         f"{REVERT_ARG}={snapset.uuid}",
         root_device,
-        lvm_root_lv=lvm_root_lv,
     )
     _log_debug(
         "Created revert entry '%s' for snapshot set with UUID=%s", title, snapset.uuid
