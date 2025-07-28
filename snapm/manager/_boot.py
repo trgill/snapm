@@ -88,15 +88,21 @@ def _get_machine_id():
     return machine_id
 
 
-def _find_snapset_root(snapset):
+def _find_snapset_root(snapset, origin=False):
     """
     Find the device that backs the root filesystem for snapshot set ``snapset``.
 
     If the snapset does not include the root volume look the device up via the
     fstab.
+
+    :param snapset: The ``SnapshotSet`` to check.
+    :param origin: Always return the origin device, even if a snapshot exists
+                   for the root mount point.
     """
     for snapshot in snapset.snapshots:
         if snapshot.mount_point == "/":
+            if origin:
+                return snapshot.origin
             return snapshot.devpath
     # Note: add fstab lookup for non-root snapsets
     # needs either root=UUID/LABEL support in boom or a lookup to resolve any
