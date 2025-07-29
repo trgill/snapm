@@ -22,7 +22,6 @@ Issues = "https://github.com/snapshotmanager/snapm/issues"
 
 [build-system]
 requires = [
-    "wheel",
     "pytest",
     "setuptools>=53",
 ]
