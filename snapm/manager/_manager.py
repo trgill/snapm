@@ -386,7 +386,11 @@ class Scheduler:
             sched_path = join(_SCHEDULE_D_PATH, sched_file)
             try:
                 schedule = Schedule.from_file(sched_path)
-            except (SnapmArgumentError, JSONDecodeError, KeyError) as err:  # pragma: no cover
+            except (
+                SnapmArgumentError,
+                JSONDecodeError,
+                KeyError,
+            ) as err:  # pragma: no cover
                 _log_warn(
                     "Failed to load schedule configuration '%s': %s",
                     sched_file,
@@ -1352,6 +1356,10 @@ class Manager:
 
         :param name: The name of the snapshot set.
         :param uuid: The UUID of the snapshot set.
+
+        :raises: ``SnapmExistsError`` if a boot entry already exists for the
+                  snapshot set.
+        :raises: ``SnapmPluginError`` if autoactivation could not be enabled.
         """
         snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
 
