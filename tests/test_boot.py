@@ -61,11 +61,10 @@ class BootTestsSimple(unittest.TestCase):
 
 
 @unittest.skipIf(not have_root(), "requires root privileges")
-class BootTests(unittest.TestCase):
+class BootTestsBase(unittest.TestCase):
     """
-    Test boot integration with devices
+    Base class for boot tests.
     """
-
     volumes = ["root", "home", "var"]
     thin_volumes = ["opt", "srv"]
     boot_volumes = [
@@ -73,6 +72,9 @@ class BootTests(unittest.TestCase):
         ("home", "/home"),
         ("var", "/var"),
     ]
+    snapset_name = "bootset0"
+    snapset_time = 1707923080
+    with_root = True
 
     def _set_fstab(self):
         """
@@ -82,13 +84,13 @@ class BootTests(unittest.TestCase):
             file.write("# Test fstab\n")
             for origin, mp in self.boot_volumes:
                 file.write(f"/dev/test_vg0/{origin}\t{mp}\text4\tdefaults 0 0\n")
-            run(["mount", "--bind", TMP_FSTAB, ETC_FSTAB])
+        run(["mount", "--bind", TMP_FSTAB, ETC_FSTAB], check=True)
 
     def _clear_fstab(self):
         """
         Remove the fake /etc/fstab.
         """
-        run(["umount", ETC_FSTAB])
+        run(["umount", ETC_FSTAB], check=True)
         os.unlink(TMP_FSTAB)
 
     def _populate_boom_root_path(self):
@@ -106,7 +108,7 @@ class BootTests(unittest.TestCase):
         boom_conf = [
             "[global]\n",
             f"boot_root = {boot_dir}\n",
-            f"boom_root = %(boot_root)s/boom\n",
+            "boom_root = %(boot_root)s/boom\n",
             "[legacy]\n",
             "enable = False\n",
             "format = grub1\n",
@@ -144,6 +146,8 @@ class BootTests(unittest.TestCase):
         snapset_name = "bootset0"
         snapset_time = 1707923080
         for origin, mp in self.boot_volumes:
+            if origin == "root" and not self.with_root:
+                continue
             self._lvm.create_snapshot(
                 origin,
                 format_snapshot_name(
@@ -158,6 +162,24 @@ class BootTests(unittest.TestCase):
         boom.set_boot_path(BOOT_ROOT_TEST)
         self._clear_fstab()
         self._lvm.destroy()
+
+
+@unittest.skipIf(not have_root(), "requires root privileges")
+class BootTestsNonRoot(BootTestsBase):
+
+    with_root = False
+
+    def test_create_snapshot_boot_entry(self):
+        self.manager.create_snapshot_set_boot_entry(name=self.snapset_name)
+
+        # Clean up boot entry
+        self.manager.delete_snapshot_sets(snapm.Selection(name=self.snapset_name))
+
+
+@unittest.skipIf(not have_root(), "requires root privileges")
+class BootTestsWithRoot(BootTestsBase):
+
+    with_root = True
 
     def test_create_snapshot_boot_entry_no_id(self):
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
