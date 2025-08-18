@@ -161,6 +161,41 @@ jobs:
             osinfo-query os short-id=fedora41 -f short-id || { echo "fedora41 not recognized by osinfo" >&2; exit 1; }
             osinfo-query os short-id=fedora42 -f short-id || { echo "fedora42 not recognized by osinfo" >&2; exit 1; }
           fi
+      - name: Install Seabios bios.bin into /usr/share/qemu
+        if: ${{ matrix.firmware == 'bios' }}
+        run: >
+          sudo install -D -m 0644 /usr/share/seabios/bios.bin /usr/share/qemu/bios.bin
+      - name: Enable Ubuntu libvirt firmware="bios" workaround
+        if: ${{ matrix.firmware == 'bios' }}
+        run: |
+          sudo install -d -m 0755 /usr/share/qemu/firmware
+          cat > /tmp/20-seabios.json <<EOF
+          {
+              "description": "SeaBIOS",
+              "interface-types": [
+                  "bios"
+              ],
+              "mapping": {
+                  "device": "memory",
+                  "filename": "/usr/share/qemu/bios.bin",
+                  "format": "raw"
+              },
+              "targets": [
+                  {
+                      "architecture": "x86_64",
+                      "machines": [
+                          "pc-i440fx-*",
+                          "pc-q35-*"
+                      ]
+                  }
+              ],
+              "features": [],
+              "tags": []
+          }
+          EOF
+          sudo install -m 0644 /tmp/20-seabios.json /usr/share/qemu/firmware/20-seabios.json
+          # Ensure libvirtd reloads firmware mappings
+          sudo systemctl restart libvirtd || true
       - name: Run virt-tests for target
         env:
           FIRMWARE:    ${{ matrix.firmware }}
