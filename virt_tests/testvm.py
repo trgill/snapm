@@ -33,6 +33,24 @@ except (TypeError, ValueError):
     err_print(f"Using default ({VM_INSTALL_TIMEOUT}s)")
 
 
+def _need_force_bios() -> bool:
+    """
+    Does the platform require forced firmware=bios workaround?
+    """
+    try:
+        with open("/etc/os-release", "r", encoding="utf8") as osr:
+            for line in osr.read().splitlines():
+                if line.strip() == "ID=ubuntu":
+                    log_print("🔧 Enabling firmware=bios workaround.")
+                    return True
+    except OSError:
+        pass
+    return False
+
+
+_QEMU_FORCE_BIOS = _need_force_bios()
+
+
 def ensure_ssh_key(key_path: str = SSH_KEY_PATH) -> str:
     """Generate SSH key if it doesn't exist"""
     ssh_dir = os.path.dirname(key_path)
@@ -265,6 +283,10 @@ restorecon -R /root/.ssh || true
         os.makedirs(TEST_IMAGE_DIR, exist_ok=True)
         disk_path = f"{TEST_IMAGE_DIR}/{self.name}.qcow2"
 
+        boot_firmware = f"uefi={'on' if self.vm_uefi else 'off'}"
+        if _QEMU_FORCE_BIOS and not self.vm_uefi:
+            boot_firmware = "firmware=bios"
+
         ks_opts = "inst.cmdline inst.ksstrict"
         console = "console=tty0 console=ttyS0"
 
@@ -272,7 +294,7 @@ restorecon -R /root/.ssh || true
             "unbuffer",
             "virt-install",
             "--boot",
-            f"uefi={'on' if self.vm_uefi else 'off'}",
+            boot_firmware,
             "--name",
             self.name,
             "--memory",
@@ -301,6 +323,10 @@ restorecon -R /root/.ssh || true
             "-1",  # Wait for installation to complete
             "--noreboot",  # Don't reboot automatically
         ]
+
+        # Selectively override machine type
+        if _QEMU_FORCE_BIOS and not self.vm_uefi:
+            virt_install_cmd += ["--machine", "pc-q35-7.2"]
 
         log_print(f"🏁 Creating VM {self.name} with command:")
         log_print(" ".join(virt_install_cmd))
