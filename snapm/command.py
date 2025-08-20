@@ -1084,7 +1084,10 @@ def _create_cmd(cmd_args):
     _log_info(
         "created snapset %s with %d snapshots", snapset.name, snapset.nr_snapshots
     )
-    print(snapset)
+    if cmd_args.json:
+        print(snapset.json(pretty=True))
+    else:
+        print(snapset)
     return 0
 
 
@@ -1455,7 +1458,10 @@ def _schedule_create_cmd(cmd_args):
         "Created schedule %s",
         schedule.name,
     )
-    print(schedule)
+    if cmd_args.json:
+        print(schedule.json(pretty=True))
+    else:
+        print(schedule)
     return 0
 
 
@@ -1914,6 +1920,7 @@ def _add_snapset_subparser(type_subparser):
         action="store_true",
         help="Automatically create a unique index for recurring snapshot sets",
     )
+    _add_json_arg(snapset_create_parser)
 
     # snapset create-scheduled subcommand
     snapset_create_scheduled_parser = snapset_subparser.add_parser(
@@ -1922,6 +1929,7 @@ def _add_snapset_subparser(type_subparser):
     )
     _add_schedule_config_arg(snapset_create_scheduled_parser)
     snapset_create_scheduled_parser.set_defaults(func=_create_cmd)
+    _add_json_arg(snapset_create_scheduled_parser)
 
     # snapset delete subcommand
     snapset_delete_parser = snapset_subparser.add_parser(
@@ -2170,6 +2178,7 @@ def _add_schedule_subparser(type_subparser):
     )
     _add_create_args(schedule_create_parser)
     _add_policy_args(schedule_create_parser)
+    _add_json_arg(schedule_create_parser)
     schedule_create_parser.set_defaults(func=_schedule_create_cmd)
 
     # schedule delete subcommand
