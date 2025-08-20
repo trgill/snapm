@@ -23,9 +23,16 @@ fi
 if [ -d /dev/stratis/pool1 ]; then
 	STRATIS_FILESYSTEMS=$(stratis filesystem list pool1 | awk '/pool1/{print $2}')
 	for FS in $STRATIS_FILESYSTEMS; do
-	    stratis filesystem destroy pool1 $FS &> /dev/null || echo Failed to clean up pool1 $FS
+	    if ! FAIL=$(stratis filesystem destroy pool1 "$FS" 2>&1); then
+	        printf 'Failed to clean up pool1 %s: %s\n' "$FS" "$FAIL"
+	    fi
 	done
-	stratis pool destroy pool1 &> /dev/null || echo Failed to clean up pool1
+fi
+
+if stratis pool list | grep -qE '^pool1([[:space:]]|$)'; then
+	if ! FAIL=$(stratis pool destroy pool1 2>&1); then
+		printf 'Failed to clean up pool1: %s\n' "$FAIL"
+	fi
 fi
 
 LOOP_DEVICES=$(losetup --noheadings --list -Oname,back-file | awk '/_snapm_loop_back/{print $1}')
