@@ -1309,9 +1309,7 @@ parameters.
 Snapshot manager integrates with the \fBboom(8)\fP boot manager to facilitate
 booting and rolling back snapshot sets. Specifying the \fB-b|--bootable\fP or
 \fB-r|--revert\fP arguments when creating a snapshot set will cause
-\fBsnapm\fP to create a snapshot boot or revert boot entry respectively. In
-order for a snapshot set to be made with boot or revert support it must
-include a snapshot of the root filesystem.
+\fBsnapm\fP to create a snapshot boot or revert boot entry respectively.
 
 The snapshot boot entry allows the system to boot into the state of the system
 at the time the snapshot was created. This can be used to inspect the previous
