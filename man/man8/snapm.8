@@ -21,7 +21,8 @@
 ..
 .
 .de ARG_SNAPSET_COMMANDS
-.  RI [ create | delete | rename | revert | resize | split | activate | deactivate | autoactivate | list | show ]
+.  RI [ create | create-scheduled | delete | rename | revert | resize | \
+split | prune | activate | deactivate | autoactivate | list | show ]
 ..
 .
 .de ARG_SNAPSHOT_TYPE
@@ -115,6 +116,21 @@ snapm \(em Linux snapshot manager
 .  ad b
 ..
 .CMD_SNAPSET_CREATE
+.
+.HP
+.B snapm
+.de CMD_SNAPSET_CREATE_SCHEDULED
+.  ad l
+.  BR snapset
+.  BR \fBcreate-scheduled
+.  RB [ -c | --config
+.  IR schedule_name ]
+.  RB [ --json ]
+.  IR \fIname\fP
+.  IR \fIsource[size_policy]\fP ...
+.  ad b
+..
+.CMD_SNAPSET_CREATE_SCHEDULED
 .
 .HP
 .B snapm
@@ -870,6 +886,15 @@ Autoactivate:     yes
 .br
 Bootable:         no
 .br
+.
+.HP
+.B snapm
+.CMD_SNAPSET_CREATE_SCHEDULED
+.br
+Create scheduled snapshot sets according to named configuration. This command
+is normally called by the corresponding schedule timer. It may be issued
+manually for testing or debugging purposes, or to create additional snapshot
+sets not specified by the schedule parameters.
 .
 .HP
 .B snapm
