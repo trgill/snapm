@@ -559,7 +559,7 @@ instance name.
 
 This is useful when creating recurring snapshot sets of the same set of
 sources, for example to create a timeline of snapshots for recovery and
-rollback purposes.
+revert purposes.
 .
 .TP 8
 .B -b | --bootable
@@ -893,10 +893,9 @@ Revert an existing snapset, re-setting the content of the origin volumes
 to the state they were in at the time the snapset was created. The snapset
 to be reverted may be specified either by its \fBname\fP or \fBUUID\fP.
 .IP
-Rolling back a snapshot set with mounted and in-use origin volumes will
-schedule the revert to take place the next time that the volumes are
-activated, for example by booting into a configured revert boot entry for
-the snapshot set.
+Reverting a snapshot set with mounted and in-use origin volumes will schedule
+the revert to take place the next time that the volumes are activated, for
+example by booting into a configured revert boot entry for the snapshot set.
 .
 .HP
 .B snapm
@@ -1304,10 +1303,10 @@ and
 .B \-\-keep-yearly
 parameters.
 .PD
-.SH BOOTING AND ROLLING BACK SNAPSHOT SETS
+.SH BOOTING AND REVERTING SNAPSHOT SETS
 .
 Snapshot manager integrates with the \fBboom(8)\fP boot manager to facilitate
-booting and rolling back snapshot sets. Specifying the \fB-b|--bootable\fP or
+booting and reverting snapshot sets. Specifying the \fB-b|--bootable\fP or
 \fB-r|--revert\fP arguments when creating a snapshot set will cause
 \fBsnapm\fP to create a snapshot boot or revert boot entry respectively.
 
@@ -1420,7 +1419,7 @@ The list of block devices contained in this snapshot set.
 .TP 8
 .B status
 The current status of this snapshot set. Possible values are \fIActive\fP,
-\fIInactive\fP, and \fIInvalid\fP.
+\fIInactive\fP, \fIInvalid\fP, and \fIReverting\fP.
 .TP 8
 .B autoactivate
 The autoactivation setting for this snapshot set.
@@ -1461,7 +1460,7 @@ snapshot.
 .TP 8
 .B status
 The current status of this snapshot. Possible values are \fIActive\fP,
-\fIInactive\fP, and \fIInvalid\fP.
+\fIInactive\fP, \fIInvalid\fP, and \fIReverting\fP.
 .TP 8
 .B size
 The size of the snapshot as a human readable string.
