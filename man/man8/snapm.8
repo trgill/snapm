@@ -98,8 +98,8 @@ snapm \(em Linux snapshot manager
 .  ad b
 ..
 .CMD_SCHEDULE_COMMAND
-.br
 .
+.PP
 .HP
 .B snapm
 .de CMD_SNAPSET_CREATE
@@ -111,6 +111,7 @@ snapm \(em Linux snapshot manager
 .  RB [ -s | --size-policy
 .  IR policy ]
 .  RB [ -a | --autoindex ]
+.  RB [ --json ]
 .  IR \fIname\fP
 .  IR \fIsource[size_policy]\fP ...
 .  ad b
@@ -534,6 +535,7 @@ snapm \(em Linux snapshot manager
 .  BR schedule
 .  BR show
 .  IR name
+.  RB [ --json ]
 .  ad b
 ..
 .CMD_SCHEDULE_SHOW
@@ -618,11 +620,11 @@ for the set.
 .
 .TP 8
 .B --rows
-Output report columns as rows
+Output report columns as rows.
 .
 .TP 8
 .B --json
-Produce show or list output in JSON notation
+Produce output in JSON notation. See the JSON OUTPUT section.
 .
 .TP 8
 \fB--keep-count\fP \fIcount\fP
@@ -1503,10 +1505,48 @@ The amount of free space available to the snapshot in bytes.
 Whether this snapshot is configured for autoactivation.
 .P
 .
-.SS JSON output
+.SH JSON OUTPUT
 .
-Reports can optionally be output in JSON notation by using the \fB--json\fP
-argument.
+All reporting commands can optionally generate output in JSON notation by using
+the \fB--json\fP argument.
+.PP
+The \fBcreate\fP, \fBcreate-scheduled\fP, and \fBshow\fP subcommands also
+support optional JSON notation using the \fB--json\fP argument. This includes
+the \fBsnapset\fP, \fBsnapshot\fP, and \fBschedule\fP \fBshow\fP subcommands:
+.PP
+#
+.B snapm snapset show --json before-upgrade
+.EX
+[
+    {
+        "SnapsetName": "before-upgrade",
+        "Sources": [
+            "/",
+            "/var"
+        ],
+        "MountPoints": [
+            "/",
+            "/var"
+        ],
+        "Devices": [],
+        "NrSnapshots": 2,
+        "Timestamp": 1755877964,
+        "Time": "2025-08-22 16:52:44",
+        "UUID": "f8ce4a7e-eb30-5152-b623-a2e122df6ed4",
+        "Status": "Active",
+        "Autoactivate": true,
+        "Bootable": true,
+        "BootEntries": {
+            "SnapshotEntry": "0f27c4f",
+            "RevertEntry": "6f99af1"
+        }
+    }
+]
+.EE
+.PP
+When boot entries are defined for a snapshot set the resulting JSON will
+include a \fIBootEntries\fP object giving the corresponding \fBboom\fP
+\fIboot_id\fP values.
 .SH EXAMPLES
 List the available snapshot sets
 .br
@@ -1565,10 +1605,10 @@ Bootable:         no
 Create a bootable snapshot set from the mount points /, /home, and /var
 .br
 #
-.B snapm snapset create -br upgrade / /home /var
+.B snapm snapset create -br before-upgrade / /home /var
 .
 .EX
-SnapsetName:      upgrade
+SnapsetName:      before-upgrade
 Sources:          /, /home, /var
 NrSnapshots:      3
 Time:             2024-12-05 17:58:37
@@ -1600,13 +1640,13 @@ Rename the snapset 'backup' to 'oldbackup'
 #
 .B snapm snapset rename backup oldbackup
 .P
-Display the snapset named 'upgrade'
+Display the snapset named 'before-upgrade'
 .br
 #
-.B snapm snapset show upgrade
+.B snapm snapset show before-upgrade
 .
 .EX
-SnapsetName:      upgrade
+SnapsetName:      before-upgrade
 Sources:          /, /var, /home
 NrSnapshots:      3
 Time:             2024-12-05 17:58:37
@@ -1622,8 +1662,8 @@ Display the snapshot with UUID b201bdba-89b7-5014-a80d-f5d4b9a690ed
 .B snapm snapshot show -U b201bdba-89b7-5014-a80d-f5d4b9a690ed
 .
 .EX
-Name:           fedora/home-snapset_upgrade_1733421517_-home
-SnapsetName:    upgrade
+Name:           fedora/home-snapset_before-upgrade_1733421517_-home
+SnapsetName:    before-upgrade
 Origin:         /dev/fedora/home
 Time:           2024-12-05 17:58:37
 Source:         /home
@@ -1634,9 +1674,9 @@ Status:         Active
 Size:           1.0GiB
 Free:           1.9GiB
 Autoactivate:   yes
-DevicePath:     /dev/fedora/home-snapset_upgrade_1733421517_-home
+DevicePath:     /dev/fedora/home-snapset_before-upgrade_1733421517_-home
 VolumeGroup:    fedora
-LogicalVolume:  home-snapset_upgrade_1733421517_-home
+LogicalVolume:  home-snapset_before-upgrade_1733421517_-home
 .EE
 .P
 .SH AUTHORS
