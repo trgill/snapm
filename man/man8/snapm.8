@@ -36,7 +36,7 @@
 ..
 .SH NAME
 .
-Snapm \(em Linux snapshot manager
+snapm \(em Linux snapshot manager
 .
 .SH SYNOPSIS
 .
@@ -110,11 +110,11 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBdelete
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSET_DELETE
@@ -137,11 +137,11 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBrevert
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSET_REVERT
@@ -152,11 +152,11 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBresize
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ -s | --size-policy
 .  IR policy ]
 .  IR \fIsource[size_policy]\fP ...
@@ -195,11 +195,11 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBactivate
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSET_ACTIVATE
@@ -210,11 +210,11 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBdeactivate
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSET_DEACTIVATE
@@ -226,11 +226,11 @@ Snapm \(em Linux snapshot manager
 .  BR snapset
 .  BR \fBautoactivate
 .  IR [ --yes | --no ]
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSET_AUTOACTIVATE
@@ -241,11 +241,11 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBlist
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --nameprefixes ]
 .  RB [ --noheadings ]
 .  RB [ --options
@@ -265,12 +265,12 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR \fBshow
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --members ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --json ]
 .  ad b
 ..
@@ -283,15 +283,15 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR \fBactivate
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --snapshot-name
 .  IR name ]
 .  RB [ --snapshot-uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSHOT_ACTIVATE
@@ -302,15 +302,15 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR \fBdeactivate
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --snapshot-name
 .  IR name ]
 .  RB [ --snapshot-uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSHOT_DEACTIVATE
@@ -322,15 +322,15 @@ Snapm \(em Linux snapshot manager
 .  BR snapshot
 .  BR \fBautoactivate
 .  IR [ --yes | --no ]
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --snapshot-name
 .  IR name ]
 .  RB [ --snapshot-uuid
-.  IR uuid ]
+.  IR UUID ]
 .  ad b
 ..
 .CMD_SNAPSHOT_AUTOACTIVATE
@@ -341,15 +341,15 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR \fBlist
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --snapshot-name
 .  IR name ]
 .  RB [ --snapshot-uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --nameprefixes ]
 .  RB [ --noheadings ]
 .  RB [ --options
@@ -369,15 +369,15 @@ Snapm \(em Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR \fBshow
-.  IR [ name | uuid ]
+.  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
 .  RB [ --uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --snapshot-name
 .  IR name ]
 .  RB [ --snapshot-uuid
-.  IR uuid ]
+.  IR UUID ]
 .  RB [ --json ]
 .  ad b
 ..
@@ -526,7 +526,7 @@ Snapm \(em Linux snapshot manager
 .
 .SH DESCRIPTION
 .
-Snapm is a \fIsnapshot manager\fP for Linux systems. It manages snapshots taken
+snapm is a \fIsnapshot manager\fP for Linux systems. It manages snapshots taken
 at a common moment in time as a \fIsnapshot set\fP ("snapset").
 
 .SH OPTIONS
@@ -633,7 +633,7 @@ Retain \fBnumber_years\fP snapshot sets when applying the AGE garbage
 collection policy.
 .
 .HP
-.BR --keey-months
+.BR --keep-months
 .IR number_months
 .br
 Retain \fBnumber_months\fP snapshot sets when applying the AGE garbage
@@ -649,6 +649,7 @@ collection policy.
 .HP
 .BR --keep-days
 .IR number_days
+.br
 Retain \fBnumber_days\fP snapshot sets when applying the AGE garbage
 collection policy.
 .
@@ -698,7 +699,7 @@ TIMELINE garbage collection policy.
 .BR --separator
 .IR separator
 .br
-Report field separator
+Report field separator.
 .
 .HP
 .BR -s | --size-policy
@@ -708,15 +709,15 @@ Specify a default size policy when creating snapshot sets.
 .
 .HP
 .BR -u | --uuid
-.IR uuid
+.IR UUID
 .br
-Specify a snapset uuid to operate on.
+Specify a snapset UUID to operate on.
 .
 .HP
 .BR -U | --snapshot-uuid
-.IR uuid
+.IR UUID
 .br
-Specify a snapshot uuid to operate on.
+Specify a snapshot UUID to operate on.
 .
 .HP
 .BR -v | --verbose
@@ -732,10 +733,10 @@ Display the version of \fBsnapm\fP and exit.
 .
 .SH SNAPSHOT SETS AND SNAPSHOTS
 .
-Snapm manages named collections of snapshots taken at a common point in time as
-\fIsnapshot sets\fP. A snapshot set is created from a list of sources (mount
-point or block device paths) and allows the state of the system to be captured
-spanning over several volumes.
+The \fBsnapm\fP command manages named collections of snapshots taken at a
+common point in time as \fIsnapshot sets\fP. A snapshot set is created from a
+list of sources (mount point or block device paths) and allows the state of the
+system to be captured spanning over several volumes.
 
 Valid characters for snapset names are:
 .BR a \(en z
@@ -812,8 +813,9 @@ A percentage of the size of the origin volume from 0 to 100%.
 .
 .P
 .br
-The default size policy for mounted volumes if none is specified is 200%USED.
-The default size policy for unmounted block devices is 25%SIZE.
+The default size policy for mounted volumes if none is specified is
+\fB200%USED\fP.
+The default size policy for unmounted block devices is \fB25%SIZE\fP.
 .
 .SH COMMANDS
 .P
@@ -917,7 +919,7 @@ Bootable:         no
 .CMD_SNAPSET_DELETE
 .br
 Delete the specified snapset. The snapset to delete may be specified
-either by its \fBname\fP or \fBuuid\fP.
+either by its \fBname\fP or \fBUUID\fP.
 .
 .HP
 .B snapm
@@ -932,7 +934,7 @@ Rename an existing snapset. The snapset to be renamed is specified as
 .br
 Revert an existing snapset, re-setting the content of the origin volumes
 to the state they were in at the time the snapset was created. The snapset
-to be reverted may be specified either by its \fBname\fP or \fBuuid\fP.
+to be reverted may be specified either by its \fBname\fP or \fBUUID\fP.
 .IP
 Rolling back a snapshot set with mounted and in-use origin volumes will
 schedule the revert to take place the next time that the volumes are
@@ -945,7 +947,7 @@ the snapshot set.
 .br
 Resize the members of an existing snapshot set, re-applying size policies to
 one or more of the snapshots making up the set. The snapshot set to resize may
-be specified by either its \fBname\fP or \fBuuid\fP.
+be specified by either its \fBname\fP or \fBUUID\fP.
 .IP
 For snapshot providers that require a fixed space to be allocated to the
 snapshot this command will physically resize the corresponding snapshot
@@ -989,7 +991,7 @@ to prune \fIall\fP sources from a snapshot set: in this case use
 .br
 Attempt to activate snapshots making up snapsets. If no argument is given the
 command will attempt to activate all snapshots of all snapsets present on the
-system. If a \fBname\fP or \fBuuid\fP is specified then only that snapset will
+system. If a \fBname\fP or \fBUUID\fP is specified then only that snapset will
 be activated.
 .IP
 Not all snapshot providers support optional activation for snapshot volumes:
@@ -1002,7 +1004,7 @@ availability.
 .br
 Attempt to deactivate snapshots making up snapsets. If no argument is given the
 command will attempt to deactivate all snapshots of all snapsets present on the
-system. If a \fBname\fP or \fBuuid\fP is specified then only that snapset will
+system. If a \fBname\fP or \fBUUID\fP is specified then only that snapset will
 be deactivated.
 .IP
 Not all snapshot providers support optional activation for snapshot volumes:
@@ -1063,7 +1065,7 @@ output.
 Attempt to activate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to activate all snapshots of all
 snapsets present on the system. If a snapshot or snapset \fBname\fP or
-\fBuuid\fP is specified then only matching volumes will be activated.
+\fBUUID\fP is specified then only matching volumes will be activated.
 
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
@@ -1076,7 +1078,7 @@ availability.
 Attempt to deactivate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to deactivate all snapshots of all
 snapsets present on the system. If a snapshot or snapset \fBname\fP or
-\fBuuid\fP is specified then only matching volumes will be deactivated.
+\fBUUID\fP is specified then only matching volumes will be deactivated.
 
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
@@ -1229,7 +1231,6 @@ Enable existing snapshot set schedule.
 .IP
 Enable an existing snapshot set schedule by name. The specified schedule
 is enabled and will be started on subsequent reboots. To start the
-schedule immediately use the \fB--start\fP argument.
 .
 .HP
 .B snapm
@@ -1325,7 +1326,7 @@ classified as
 .I daily,
 .I weekly,
 .I monthly,
-.I quaterly,
+.I quarterly,
 or
 .I yearly
 according to its creation time: the first snapshot set taken at the beginning
@@ -1333,10 +1334,10 @@ of each hour is classified as
 .I hourly,
 the first taken after midnight each day as
 .I daily,
-the first takekn after midnight each Monday as
+the first taken after midnight each Monday as
 .I weekly,
 and so on. A fixed number of snapshot sets is retained for each classification
-accoring to the value of the
+according to the value of the
 .B \-\-keep-hourly,
 .B \-\-keep-daily,
 .B \-\-keep-monthly,
@@ -1391,7 +1392,7 @@ Snapshot set Fields
 .br
   name         - Snapshot set name [str]
 .br
-  uuid         - Snapshot set UUID [uuid]
+  UUID         - Snapshot set UUID [UUID]
 .br
   timestamp    - Snapshot set creation time as a UNIX epoch value [num]
 .br
@@ -1430,7 +1431,7 @@ the name, number of snapshots, mount points, status and UUID.
 .B name
 The name of this snapshot set.
 .TP
-.B uuid
+.B UUID
 The UUID of this snapshot set.
 .TP
 .B basename
@@ -1507,7 +1508,7 @@ The current status of this snapshot. Possible values are \fIActive\fP,
 The size of the snapshot as a human readable string.
 .TP
 .B free
-The amount of free space available to the snapshot as a human readbale string.
+The amount of free space available to the snapshot as a human readable string.
 .TP
 .B size_bytes
 The size of the snapshot in bytes.
@@ -1708,7 +1709,7 @@ Bryn M. Reeves <bmr@redhat.com>
 .MR systemd.time 7 ,
 .MR boom 8 ,
 .br
-Snapm project page: https://github.com/snapshotmanager/snapm
+snapm project page: https://github.com/snapshotmanager/snapm
 .br
 Boom project page: https://github.com/snapshotmanager/boom
 .br
