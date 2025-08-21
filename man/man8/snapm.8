@@ -1,5 +1,4 @@
-.TH SNAPM 8 "Jun 18 2025" "Linux" "MAINTENANCE COMMANDS"
-
+.TH "SNAPM" "8" "Aug 21 2025" "Linux" "MAINTENANCE COMMANDS"
 .de ARG_GLOBAL
 .  RI [ global_args ]
 ..
@@ -525,28 +524,22 @@ snapm \(em Linux snapshot manager
 .ad b
 .
 .SH DESCRIPTION
-.
 snapm is a \fIsnapshot manager\fP for Linux systems. It manages snapshots taken
 at a common moment in time as a \fIsnapshot set\fP ("snapset").
-
 .SH OPTIONS
 .
-.HP
-.BR -d | --debug
-.IR debug_flags
-.br
+.TP 8
+\fB-d | --debug\fP \fIdebug_flags\fP
 A comma-separated list of subsystem names to enable debugging output
 for, or 'all' to enable all debugging. The available debug classes
 are: manager, command, plugins, report.
 .
-.HP
-.BR -h | --help
-.br
+.TP 8
+.B -h | --help
 Display usage information and exit.
 .
-.HP
-.BR -a | --autoindex
-.br
+.TP 8
+.B -a | --autoindex
 When creating snapshot sets treat \fBname\fP as a common basename and
 generate and append a new, non-negative index value, to create a unique
 instance name.
@@ -555,180 +548,131 @@ This is useful when creating recurring snapshot sets of the same set of
 sources, for example to create a timeline of snapshots for recovery and
 rollback purposes.
 .
-.HP
-.BR -b | --bootable
-.br
+.TP 8
+.B -b | --bootable
 When creating snapshot sets automatically create a snapshot boot entry
 for the set.
 .
-.HP
-.BR -n | --name
-.IR name
-.br
+.TP 8
+\fB-n | --name\fP \fIname\fP
 Specify a snapset name to operate on.
 .
-.HP
-.BR -N | --snapshot-name
-.IR name
-.br
+.TP 8
+\fB-N | --snapshot-name\fP \fIname\fP
 Specify a snapshot name to operate on.
 .
-.HP
-.BR --members
-.br
+.TP 8
+.B --members
 Include individual snapshots in the output of \fBsnapset show\fP commands.
 .
-.HP
-.BR --name-prefixes | --nameprefixes
-.br
+.TP 8
+.B --name-prefixes | --nameprefixes
 Add a 'SNAPM_' prefix plus the field name to the output. Useful with
 \fB--noheadings\fP to produce a list of field=value pairs that can be used
 to set environment or shell variables.
 .
-.HP
-.BR --no-headings | --noheadings
-.br
+.TP 8
+.B --no-headings | --noheadings
 Suppress output of report headings.
 .
-.HP
-.BR -o | --options
-.RI fields
-.br
+.TP 8
+\fB-o | --options\fP \fIfields\fP
 Specify which fields to display.
-.br
-.HP
-.BR -O | --sort
-.IR sort_fields
-.br
+.TP 8
+\fB-O | --sort\fP \fIsort_field\fP
 Specify which fields to sort by.
 .
-.HP
-.BR -r | --revert
-.br
+.TP 8
+.B -r | --revert
 When creating snapshot sets automatically create a snapshot revert entry
 for the set.
 .
-.HP
-.BR --rows
-.br
+.TP 8
+.B --rows
 Output report columns as rows
 .
-.HP
-.BR --json
-.br
+.TP 8
+.B --json
 Produce show or list output in JSON notation
 .
-.HP
-.BR --keep-count
-.IR count
-.br
+.TP 8
+\fB--keep-count\fP \fIcount\fP
 Retain \fBcount\fP snapshot sets when applying the COUNT garbage
 collection policy.
 .
-.HP
-.BR --keep-years
-.IR number_years
-.br
+.TP 8
+\fB--keep-years\fP \fInumber_years\fP
 Retain \fBnumber_years\fP snapshot sets when applying the AGE garbage
 collection policy.
 .
-.HP
-.BR --keep-months
-.IR number_months
-.br
+.TP 8
+\fB--keep-months\fP \fInumber_months\fP
 Retain \fBnumber_months\fP snapshot sets when applying the AGE garbage
 collection policy.
 .
-.HP
-.BR --keep-weeks
-.IR number_weeks
-.br
+.TP 8
+\fB--keep-weeks\fP \fInumber_weeks\fP
 Retain \fBnumber_weeks\fP snapshot sets when applying the AGE garbage
 collection policy.
 .
-.HP
-.BR --keep-days
-.IR number_days
-.br
+.TP 8
+\fB--keep-days\fP \fInumber_days\fP
 Retain \fBnumber_days\fP snapshot sets when applying the AGE garbage
 collection policy.
 .
-.HP
-.BR --keep-yearly
-.IR number_yearly
-.br
+.TP 8
+\fB--keep-yearly\fP \fInumber_yearly\fP
 Retain \fBnumber_yearly\fP yearly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
-.HP
-.BR --keep-quarterly
-.IR number_quarterly
-.br
+.TP 8
+\fB--keep-quarterly\fP \fInumber_quarterly\fP
 Retain \fBnumber_quarterly\fP quarterly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
-.HP
-.BR --keep-monthly
-.IR number_monthly
-.br
+.TP 8
+\fB--keep-monthly\fP \fInumber_monthly\fP
 Retain \fBnumber_monthly\fP monthly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
-.HP
-.BR --keep-weekly
-.IR number_weekly
-.br
+.TP 8
+\fB--keep-weekly\fP \fInumber_weekly\fP
 Retain \fBnumber_weekly\fP weekly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
-.HP
-.BR --keep-daily
-.IR number_daily
-.br
+.TP 8
+\fB--keep-daily\fP \fInumber_daily\fP
 Retain \fBnumber_daily\fP daily snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
-.HP
-.BR --keep-hourly
-.IR number_hourly
-.br
+.TP 8
+\fB--keep-hourly\fP \fInumber_hourly\fP
 Retain \fBnumber_hourly\fP hourly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
-.HP
-.BR --separator
-.IR separator
-.br
+.TP 8
+\fB--separator\fP \fIseparator\fP
 Report field separator.
 .
-.HP
-.BR -s | --size-policy
-.IR size_policy
-.br
+.TP 8
+\fB-s | --size-policy\fP \fIsize_policy\fP
 Specify a default size policy when creating snapshot sets.
 .
-.HP
-.BR -u | --uuid
-.IR UUID
-.br
+.TP 8
+\fB-u | --uuid\fP \fIUUID\fP
 Specify a snapset UUID to operate on.
 .
-.HP
-.BR -U | --snapshot-uuid
-.IR UUID
-.br
+.TP 8
+\fB-U | --snapshot-uuid\fP \fIUUID\fP
 Specify a snapshot UUID to operate on.
 .
-.HP
-.BR -v | --verbose
-.br
+.TP 8
+.B -v | --verbose
 Increase verbosity level. Specify multiple times, or set additional
 debug classes with \fB--debug\fP to enable more verbose messages.
 .
-.HP
+.TP 8
 .BR -V | --version
-.IR version
-.br
 Display the version of \fBsnapm\fP and exit.
 .
 .SH SNAPSHOT SETS AND SNAPSHOTS
@@ -794,19 +738,19 @@ There are currently four types of size policy that can be used to specify the
 space required:
 .sp
 .PD 0
-.TP 16
+.TP 8
 .B FIXED
 A fixed size with optional unit suffix (MiB, GiB, TiB, etc.).
-.TP
+.TP 8
 .B %FREE
 A percentage of the free space available from 0 to 100%.
-.TP
+.TP 8
 .B %USED
 A percentage of the space currently consumed on the mount point, as reported
 by \fIdf\fP. Values greater than 100% can be used to allow the existing content
 to be completely overwritten without running out of space. This policy can only
 be applied to snapshot sources that correspond to mounted file systems.
-.TP
+.TP 8
 .B %SIZE
 A percentage of the size of the origin volume from 0 to 100%.
 .PD
@@ -1303,22 +1247,22 @@ by the user.
 .P
 .sp
 .PD 0
-.TP 16
+.TP 8
 .B ALL
 Retain all snapshot sets. This policy accepts no parameters and never deletes
 snapshot sets automatically.
-.TP
+.TP 8
 .B COUNT
 Retain a fixed number of snapshot sets. This policy accepts a single parameter,
 \fB--keep-count=count\fP and retains up to \fPcount\fB snapshot sets.
-.TP
+.TP 8
 .B AGE
 Retain snapshot sets younger than specified age. This policy accepts up to
 four parameters (\fB--keep-years=years\fP, \fB--keep-months=months\fP,
 \fP--keep-weeks=weeks\fP, \fP--keep-days=days\fP) and retains snapshot sets
 that were created more recently than the specified age limit. The limit
 applied is the sum of the parameters given.
-.TP
+.TP 8
 .B TIMELINE
 Retain snapshot sets according to classification. Each snapshot set is
 classified as
@@ -1427,49 +1371,49 @@ custom reports.
 .
 Snapshot set fields provide information about snapsets as a whole, including
 the name, number of snapshots, mount points, status and UUID.
-.TP
+.TP 8
 .B name
 The name of this snapshot set.
-.TP
+.TP 8
 .B UUID
 The UUID of this snapshot set.
-.TP
+.TP 8
 .B basename
 The basename of this snapshot set.
-.TP
+.TP 8
 .B index
 The index of this snapshot set, or the special value '-' if this snapshot set
 does not have recurring instances.
-.TP
+.TP 8
 .B timestamp
 The snapshot set creation time as a UNIX epoch value.
-.TP
+.TP 8
 .B time
 The snapshot set creation time as a human readable string.
-.TP
+.TP 8
 .B nr_snapshots
 The number of snapshots contained in this snapshot set.
-.TP
+.TP 8
 .B sources
 The list of sources (devices or mount points) contained in this snapshot set.
-.TP
+.TP 8
 .B mountpoints
 The list of mount points contained in this snapshot set.
-.TP
+.TP 8
 .B devices
 The list of block devices contained in this snapshot set.
-.TP
+.TP 8
 .B status
 The current status of this snapshot set. Possible values are \fIActive\fP,
 \fIInactive\fP, and \fIInvalid\fP.
-.TP
+.TP 8
 .B autoactivate
 The autoactivation setting for this snapshot set.
-.TP
+.TP 8
 .B bootentry
 The \fBboot identifier\fP of the boot loader entry configured to boot this
 snapshot set, or the empty string if no boot entry has been created.
-.TP
+.TP 8
 .B revertentry
 The \fBboot identifier\fP of the boot loader entry configured to revert
 this snapshot set following a merge operation, or the empty string if no
@@ -1480,42 +1424,42 @@ revert boot entry has been created.
 Snapshot fields provide information about the snapshots that make up snapsets,
 including the fields available in the snapset report as well as fields specific
 to individual snapshots.
-.TP
+.TP 8
 .B snapshot_name
 The provider-specific name used to refer to the snapshot.
-.TP
+.TP 8
 .B snapshot_uuid
 The snapshot UUID.
-.TP
+.TP 8
 .B origin
 The origin volume that this snapshot refers to.
-.TP
+.TP 8
 .B mountpoint
 The path to the mount point where this snapshot was taken from.
-.TP
+.TP 8
 .B devpath
 The provider-specific path to the device used to mount this snapshot.
-.TP
+.TP 8
 .B provider
 A string representing the snapshot provider plugin used to create this
 snapshot.
-.TP
+.TP 8
 .B status
 The current status of this snapshot. Possible values are \fIActive\fP,
 \fIInactive\fP, and \fIInvalid\fP.
-.TP
+.TP 8
 .B size
 The size of the snapshot as a human readable string.
-.TP
+.TP 8
 .B free
 The amount of free space available to the snapshot as a human readable string.
-.TP
+.TP 8
 .B size_bytes
 The size of the snapshot in bytes.
-.TP
+.TP 8
 .B free_bytes
 The amount of free space available to the snapshot in bytes.
-.TP
+.TP 8
 .B autoactivate
 Whether this snapshot is configured for autoactivation.
 .P
