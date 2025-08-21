@@ -938,8 +938,9 @@ Prune snapshots from an existing snapshot set.
 .IP
 Prune the listed sources from the snapshot set named \fBname\fP. The listed
 snapshot sources are pruned from the snapshot set and permanently deleted.
-Care should be taken since this operation cannot be reversed. It is an error
-to prune \fIall\fP sources from a snapshot set: in this case use
+This operation is irreversible.
+.IP
+It is an error to prune \fIall\fP sources from a snapshot set: in this case use
 \&'\fBsnapm snapset delete\fP' instead.
 .
 .HP
@@ -1323,10 +1324,13 @@ revert\fP command. After running the \fBrevert\fP command the system should
 be rebooted into the revert boot entry. This will start the revert
 operation on all affected volumes.
 
-Note that rolling back a snapshot set will also destroy the snapshot set since
-the snapshot volumes are folded back into the origin devices. Following the
-revert the snapshot set will no longer appear in the output of \fBsnapm
-snapset list\fP or \fBsnapm snapset show\fP commands.
+While the operation is in progress the snapshot set will appear with the
+status of \fIReverting\fP.
+
+Reverting a snapshot set will also destroy the snapshot set since the snapshot
+volumes are folded back into the origin devices. Following the completion of a
+revert operation the snapshot set will no longer appear in the output of
+\fBsnapm snapset list\fP or \fBsnapm snapset show\fP commands.
 .
 .SH REPORTING COMMANDS
 .
