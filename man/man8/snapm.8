@@ -1,4 +1,17 @@
 .TH "SNAPM" "8" "Aug 21 2025" "Linux" "MAINTENANCE COMMANDS"
+.\" Compatibility for older groff (1.22.x) lacking EX/EE
+.ie d EX \{\
+.\}
+.el \{\
+.de EX
+.  nf
+.  RS
+..
+.de EE
+.  RE
+.  fi
+..
+.\}
 .de ARG_GLOBAL
 .  RI [ global_args ]
 ..
@@ -1473,175 +1486,132 @@ List the available snapshot sets
 .br
 #
 .B snapm snapset list
-.br
+.
+.EX
 SnapsetName  Time                 NrSnapshots Status   Sources
-.br
 backup       2024-12-05 17:53:10            4 Active   /, /opt, /srv, /var
-.br
 userdata     2024-12-05 17:53:22            2 Inactive /data, /home
-.br
+.EE
 .P
 List the available snapshots
 .br
 #
 .B snapm snapshot list
-.br
+.
+.EX
 SnapsetName  Name                                          Origin              Source  Status   Size     Free     Autoactivate Provider
-.br
 backup       fedora/root-snapset_backup_1733421190_-       /dev/fedora/root    /       Active     8.8GiB   8.8GiB yes          lvm2-cow
-.br
 backup       fedora/var-snapset_backup_1733421190_-var     /dev/fedora/var     /var    Active     6.4GiB   6.4GiB yes          lvm2-cow
-.br
 backup       p1/fs2-snapset_backup_1733421190_-srv         /dev/stratis/p1/fs2 /srv    Active     2.0GiB   3.2GiB yes          stratis
-.br
 backup       p1/fs1-snapset_backup_1733421190_-opt         /dev/stratis/p1/fs1 /opt    Active     1.0GiB   3.2GiB yes          stratis
-.br
+.EE
 .P
 List the available snapshots, displaying the basename and index for each
 .br
 #
 .B snapm snapset list -o+basename,index
-.br
+.
+.EX
 SnapsetName  Time                 NrSnapshots Status  Sources  Basename     Index
-.br
 backup       2025-03-25 18:12:54            2 Invalid /, /var  backup           -
-.br
 hourly.0     2025-03-26 14:00:00            2 Invalid /, /var  hourly           0
-.br
 hourly.1     2025-03-26 15:00:00            2 Active  /, /var  hourly           1
-.br
 hourly.2     2025-03-26 16:00:00            2 Active  /, /var  hourly           2
-.br
 hourly.3     2025-03-26 17:00:00            2 Active  /, /var  hourly           3
-.br
+.EE
 .P
 Create a new snapshot set from the mount points /, /home, and /var
 .br
 #
 .B snapm snapset create backup / /home /var
-.br
+.
+.EX
 SnapsetName:      backup
-.br
 Sources:          /, /home, /var
-.br
 NrSnapshots:      3
-.br
 Time:             2024-12-05 17:57:05
-.br
 UUID:             b9b4cd96-75a5-5826-a26b-b617c06bd877
-.br
 Status:           Active
-.br
 Autoactivate:     no
-.br
 Bootable:         no
-.br
+.EE
 .P
 Create a bootable snapshot set from the mount points /, /home, and /var
 .br
 #
 .B snapm snapset create -br upgrade / /home /var
-.br
+.
+.EX
 SnapsetName:      upgrade
-.br
 Sources:          /, /home, /var
-.br
 NrSnapshots:      3
-.br
 Time:             2024-12-05 17:58:37
-.br
 UUID:             1a2b5bc4-e123-5553-a4a3-6ba798baa945
-.br
 Status:           Active
-.br
 Autoactivate:     yes
-.br
 Bootable:         yes
-.br
 BootEntries:
-.br
   SnapshotEntry:  f3a98eb
-.br
   RevertEntry:    79bfab1
-.br
+.EE
 .P
 Delete the snapset named 'backup'
 .br
 #
 .B snapm snapset delete backup
-.br
 .P
 Activate all snapshot sets with verbose output
 .br
 #
 .B snapm -v snapset activate
-.br
+.
+.EX
 INFO - Activated 2 snapshot sets
-.br
+.EE
 .P
 Rename the snapset 'backup' to 'oldbackup'
 .br
 #
 .B snapm snapset rename backup oldbackup
-.br
 .P
 Display the snapset named 'upgrade'
 .br
 #
 .B snapm snapset show upgrade
-.br
+.
+.EX
 SnapsetName:      upgrade
-.br
 Sources:          /, /var, /home
-.br
 NrSnapshots:      3
-.br
 Time:             2024-12-05 17:58:37
-.br
 UUID:             b5752dfa-b3a0-5a1d-ab1d-0cab2c41e0c9
-.br
 Status:           Active
-.br
 Autoactivate:     yes
-.br
 Bootable:         no
-.br
+.EE
 .P
 Display the snapshot with UUID b201bdba-89b7-5014-a80d-f5d4b9a690ed
 .br
 #
 .B snapm snapshot show -U b201bdba-89b7-5014-a80d-f5d4b9a690ed
-.br
+.
+.EX
 Name:           fedora/home-snapset_upgrade_1733421517_-home
-.br
 SnapsetName:    upgrade
-.br
 Origin:         /dev/fedora/home
-.br
 Time:           2024-12-05 17:58:37
-.br
 Source:         /home
-.br
 MountPoint:     /home
-.br
 Provider:       lvm2-thin
-.br
 UUID:           b201bdba-89b7-5014-a80d-f5d4b9a690ed
-.br
 Status:         Active
-.br
 Size:           1.0GiB
-.br
 Free:           1.9GiB
-.br
 Autoactivate:   yes
-.br
 DevicePath:     /dev/fedora/home-snapset_upgrade_1733421517_-home
-.br
 VolumeGroup:    fedora
-.br
 LogicalVolume:  home-snapset_upgrade_1733421517_-home
-.br
+.EE
 .P
 .SH AUTHORS
 .
