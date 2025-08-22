@@ -735,24 +735,28 @@ individual snapshots that are part of a snapshot set, for example the device
 path and snapshot status.
 .
 .P
-.B Snapshot set and snapshot status
+.SS Snapshot set and snapshot status
 .P
-Snapshots from different providers may exist in several possible states: some
-providers allow snapshots to be in an \fIactive\fP or \fIinactive\fP state and
-snapshots for some providers (for example LVM2 Copy-on-Write snapshots) have a
-specific size for the snapshot data store. If this space is completely consumed
-the snapshot becomes \fIinvalid\fP and can no longer be accessed.
+Snapshots from different providers may exist in several possible states:
+\fIActive\fP, \fIInactive\fP, \fIInvalid\fP, or \fIReverting\fP.
+
+Some providers allow snapshots to be in an \fIActive\fP or \fIInactive\fP state
+and snapshots for some providers (for example LVM2 Copy-on-Write snapshots)
+have a specific size for the snapshot data store. If this space is completely
+consumed the snapshot becomes \fIInvalid\fP and can no longer be accessed.
 
 When a revert is executed for a snapshot set that is currently mounted the
-status of the snapshot set is \fIreverting\fP. If the snapshot set is in use
-(either the origin or snapshot volumes are mounted) The revert will take place
-the next time the volumes making up the snapshot set are activated.
+status of the snapshot set is \fIReverting\fP. If the snapshot set is in use
+(either the origin or snapshot volumes are mounted) the revert will take place
+the next time the volumes making up the snapshot set are activated and the
+snapshot set status will remain \fIReverting\fP until the operation is
+complete.
 
 The status of a snapset is an aggregation of the status of the individual
-snapshots it contains: if any snapshots are \fIinactive\fP then the overall
-status of the snapset is also \fIinactive\fP. If any snapshots within the set
-are \fIinvalid\fP then the snapshot set status as a whole is also
-\fIinvalid\fP.
+snapshots it contains: if any snapshots are \fIInactive\fP then the overall
+status of the snapset is also \fIInactive\fP. If any snapshots within the set
+are \fIInvalid\fP then the snapshot set status as a whole is also
+\fIInvalid\fP.
 .P
 .B Snapshot size policies
 .P
@@ -1165,8 +1169,8 @@ creating snapshot sets at the first expiry of the configured calendar
 expression.
 .IP
 #
-.B snapm schedule create --policy-type count --keep-count 2 --bootable
-.B --revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
+\fBsnapm schedule create --policy-type count --keep-count 2 --bootable
+--revert --size-policy 25%SIZE --calendarspec hourly hourly / /var\fP
 .br
 Name: hourly
 .br
@@ -1445,8 +1449,8 @@ The list of mount points contained in this snapshot set.
 The list of block devices contained in this snapshot set.
 .TP 8
 .B status
-The current status of this snapshot set. Possible values are \fIActive\fP,
-\fIInactive\fP, \fIInvalid\fP, and \fIReverting\fP.
+The current status of this snapshot set. See the Snapshot set and snapshot
+status section.
 .TP 8
 .B autoactivate
 The autoactivation setting for this snapshot set.
@@ -1486,8 +1490,8 @@ A string representing the snapshot provider plugin used to create this
 snapshot.
 .TP 8
 .B status
-The current status of this snapshot. Possible values are \fIActive\fP,
-\fIInactive\fP, \fIInvalid\fP, and \fIReverting\fP.
+The current status of this snapshot. See the Snapshot set and snapshot
+status section.
 .TP 8
 .B size
 The size of the snapshot as a human readable string.
