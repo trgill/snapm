@@ -494,6 +494,7 @@ snapm \(em Linux snapshot manager
 .  BR schedule
 .  BR enable
 .  IR name
+.  RB [ --start ]
 .  ad b
 ..
 .CMD_SCHEDULE_ENABLE
@@ -1214,7 +1215,8 @@ until deleted by the user.
 Enable existing snapshot set schedule.
 .IP
 Enable an existing snapshot set schedule by name. The specified schedule
-is enabled and will be started on subsequent reboots. To start the
+is enabled and will be started on subsequent reboots. To start the schedule
+timer immediately use \fB--start\fP.
 .
 .HP
 .B snapm
