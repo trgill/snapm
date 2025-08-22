@@ -1681,6 +1681,37 @@ VolumeGroup:    fedora
 LogicalVolume:  home-snapset_before-upgrade_1733421517_-home
 .EE
 .P
+.SH EXIT STATUS
+\fBsnapm\fP exits with one of the following status codes:
+.TP 8
+0
+Command completed successfully.
+.TP 8
+.B 1
+A runtime error occurred.
+.TP 8
+.B 2
+Invalid arguments or option parsing error.
+.SH FILES
+Configuration is read from the following locations:
+.PP
+.
+.I /etc/snapm/snapm.conf
+.br
+.I /etc/snapm/plugins.d
+.br
+.I /etc/snapm/schedule.d
+.br
+.PP
+The main configuration file is \fI/etc/snapm/snapm.conf\fP.
+Plugin-specific settings are stored in \fIplugins.d\fP, and snapshot schedules
+are defined in \fIschedule.d\fP.
+.
+.SH BUGS
+Please report bugs via the GitHub issue tracker:
+.UR https://\:github.com/snapshotmanager/snapm/issues
+.UE
+.
 .SH AUTHORS
 .
 Bryn M. Reeves <bmr@redhat.com>
@@ -1688,6 +1719,9 @@ Bryn M. Reeves <bmr@redhat.com>
 .SH SEE ALSO
 .
 .P
+.MR snapm.conf 5 ,
+.MR snapm-plugins.d 5 ,
+.MR snapm-schedule.d 5 ,
 .MR systemd.time 7 ,
 .MR boom 8 ,
 .br
