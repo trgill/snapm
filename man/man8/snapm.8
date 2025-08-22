@@ -1232,14 +1232,14 @@ on subsequent reboots.
 .B snapm
 .CMD_SCHEDULE_LIST
 .br
-Output a tabular report of snapsets.
+Output a tabular report of configured schedules.
 .IP
-Displays a report with one snapset per line, containing fields describing the
-properties of the configured snapshot sets.
+Displays a report with one schedule per line, containing fields describing the
+properties of the configured schedules.
 .IP
 The list of fields to display is given with \fB-o|--options\fP as a comma
 separated list of field names. To obtain a list of available fields run
-\&'\fBsnapm snapset list -o help\fP'. If the list of fields begins with the
+\&'\fBsnapm schedule list -o help\fP'. If the list of fields begins with the
 \&'\fB+\fP' character the specified fields are appended to the default field
 list. Otherwise the given list of fields replaces the default set of report
 fields.
