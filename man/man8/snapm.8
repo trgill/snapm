@@ -105,15 +105,15 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_CREATE
 .  ad l
 .  BR snapset
-.  BR \fBcreate
+.  BR create
 .  RB [ -b | --bootable ]
 .  RB [ -r | --revert ]
 .  RB [ -s | --size-policy
 .  IR policy ]
 .  RB [ -a | --autoindex ]
 .  RB [ --json ]
-.  IR \fIname\fP
-.  IR \fIsource[size_policy]\fP ...
+.  IR name
+.  IR source[size_policy] ...
 .  ad b
 ..
 .CMD_SNAPSET_CREATE
@@ -123,12 +123,10 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_CREATE_SCHEDULED
 .  ad l
 .  BR snapset
-.  BR \fBcreate-scheduled
+.  BR create-scheduled
 .  RB [ -c | --config
 .  IR schedule_name ]
 .  RB [ --json ]
-.  IR \fIname\fP
-.  IR \fIsource[size_policy]\fP ...
 .  ad b
 ..
 .CMD_SNAPSET_CREATE_SCHEDULED
@@ -138,7 +136,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_DELETE
 .  ad l
 .  BR snapset
-.  BR \fBdelete
+.  BR delete
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -153,7 +151,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_RENAME
 .  ad l
 .  BR snapset
-.  BR \fBrename
+.  BR rename
 .  IR old_name
 .  IR new_name
 .  ad b
@@ -165,7 +163,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_REVERT
 .  ad l
 .  BR snapset
-.  BR \fBrevert
+.  BR revert
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -180,7 +178,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_RESIZE
 .  ad l
 .  BR snapset
-.  BR \fBresize
+.  BR resize
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -188,7 +186,7 @@ snapm \(em Linux snapshot manager
 .  IR UUID ]
 .  RB [ -s | --size-policy
 .  IR policy ]
-.  IR \fIsource[size_policy]\fP ...
+.  IR source[size_policy] ...
 .  ad b
 ..
 .CMD_SNAPSET_RESIZE
@@ -198,10 +196,10 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_SPLIT
 .  ad l
 .  BR snapset
-.  BR \fBsplit
+.  BR split
 .  IR name
 .  IR new_name
-.  IR \fIsource\fP ...
+.  IR source ...
 .  ad b
 ..
 .CMD_SNAPSET_SPLIT
@@ -211,9 +209,9 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_PRUNE
 .  ad l
 .  BR snapset
-.  BR \fBprune
+.  BR prune
 .  IR name
-.  IR \fIsource\fP ...
+.  IR source ...
 .  ad b
 ..
 .CMD_SNAPSET_PRUNE
@@ -223,7 +221,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_ACTIVATE
 .  ad l
 .  BR snapset
-.  BR \fBactivate
+.  BR activate
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -238,7 +236,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_DEACTIVATE
 .  ad l
 .  BR snapset
-.  BR \fBdeactivate
+.  BR deactivate
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -253,7 +251,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_AUTOACTIVATE
 .  ad l
 .  BR snapset
-.  BR \fBautoactivate
+.  BR autoactivate
 .  IR [ --yes | --no ]
 .  IR [ name | UUID ]
 .  RB [ --name
@@ -269,7 +267,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_LIST
 .  ad l
 .  BR snapset
-.  BR \fBlist
+.  BR list
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -293,7 +291,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSET_SHOW
 .  ad l
 .  BR snapset
-.  BR \fBshow
+.  BR show
 .  IR [ name | UUID ]
 .  RB [ --members ]
 .  RB [ --name
@@ -311,7 +309,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSHOT_ACTIVATE
 .  ad l
 .  BR snapshot
-.  BR \fBactivate
+.  BR activate
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -330,7 +328,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSHOT_DEACTIVATE
 .  ad l
 .  BR snapshot
-.  BR \fBdeactivate
+.  BR deactivate
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -349,7 +347,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSHOT_AUTOACTIVATE
 .  ad l
 .  BR snapshot
-.  BR \fBautoactivate
+.  BR autoactivate
 .  IR [ --yes | --no ]
 .  IR [ name | UUID ]
 .  RB [ --name
@@ -369,7 +367,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSHOT_LIST
 .  ad l
 .  BR snapshot
-.  BR \fBlist
+.  BR list
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -397,7 +395,7 @@ snapm \(em Linux snapshot manager
 .de CMD_SNAPSHOT_SHOW
 .  ad l
 .  BR snapshot
-.  BR \fBshow
+.  BR show
 .  IR [ name | UUID ]
 .  RB [ --name
 .  IR name ]
@@ -418,7 +416,7 @@ snapm \(em Linux snapshot manager
 .de CMD_PLUGIN_LIST
 .  ad l
 .  BR plugin
-.  BR \fBlist
+.  BR list
 .  RB [ --nameprefixes ]
 .  RB [ --noheadings ]
 .  RB [ --options
@@ -470,8 +468,8 @@ snapm \(em Linux snapshot manager
 .  IR daily ]
 .  RB [ --keep-hourly
 .  IR hourly ]
-.  IR \fIschedule_name\fP
-.  IR \fIsource[size_policy]\fP ...
+.  IR schedule_name
+.  IR source[size_policy] ...
 .  ad b
 ..
 .CMD_SCHEDULE_CREATE
