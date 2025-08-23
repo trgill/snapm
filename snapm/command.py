@@ -1652,6 +1652,7 @@ def _add_identifier_args(parser, snapset=False, snapshot=False):
     """
     Add snapshot set or snapshot identifier command line arguments.
     """
+    group = None
     if snapset:
         name_uuid_group = parser.add_mutually_exclusive_group()
         name_uuid_group.add_argument(
@@ -1668,8 +1669,9 @@ def _add_identifier_args(parser, snapset=False, snapshot=False):
             type=UUID,
             help="A snapset UUID",
         )
+        group = name_uuid_group
     if snapshot:
-        snapshot_name_uuid_group = parser.add_mutually_exclusive_group()
+        snapshot_name_uuid_group = group or parser.add_mutually_exclusive_group()
         snapshot_name_uuid_group.add_argument(
             "-N",
             "--snapshot-name",
@@ -1684,7 +1686,9 @@ def _add_identifier_args(parser, snapset=False, snapshot=False):
             type=UUID,
             help="A snapshot UUID",
         )
-    parser.add_argument(
+        group = snapshot_name_uuid_group
+    group = group or parser.add_mutually_exclusive_group()
+    group.add_argument(
         "identifier",
         metavar="ID",
         type=str,

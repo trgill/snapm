@@ -651,7 +651,22 @@ debug classes with \fB--debug\fP to enable more verbose messages.
 .TP 8
 .BR -V | --version
 Display the version of \fBsnapm\fP and exit.
-.
+.SS Identifier arguments
+Commands that accept an identifier may use either a positional
+.IR name
+or
+.IR UUID ,
+or the explicit options
+.BR -n | --name
+and
+.BR -u | --uuid
+(with snapshot variants
+.BR -N | --snapshot-name
+and
+.BR -U | --snapshot-uuid ).
+These forms are mutually exclusive. Mixing positional and explicit
+arguments in the same invocation is a parse error; in this case the
+command exits with status 2.
 .SH SNAPSHOT SETS AND SNAPSHOTS
 .
 The \fBsnapm\fP command manages named collections of snapshots taken at a
