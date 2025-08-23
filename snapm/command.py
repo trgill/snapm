@@ -1689,7 +1689,10 @@ def _add_identifier_args(parser, snapset=False, snapshot=False):
         metavar="ID",
         type=str,
         action="store",
-        help="An optional snapset name or UUID to operate on",
+        help=(
+            "An optional snapset identifier (name or UUID) "
+            "if neither -n/--name nor -u/--uuid is given"
+        ),
         nargs="?",
         default=None,
     )

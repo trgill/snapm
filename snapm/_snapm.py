@@ -455,16 +455,15 @@ class Selection:
         snapshot_uuid = None
         sched_name = None
 
-        if hasattr(cmd_args, "identifier") and cmd_args.identifier:
+        if getattr(cmd_args, "name", None):
+            name = cmd_args.name
+        elif getattr(cmd_args, "uuid", None):
+            uuid = cmd_args.uuid
+        elif getattr(cmd_args, "identifier", None):
             try:
                 uuid = UUID(cmd_args.identifier)
             except (TypeError, ValueError):
                 name = cmd_args.identifier
-        elif hasattr(cmd_args, "name") and hasattr(cmd_args, "uuid"):
-            if cmd_args.name:
-                name = cmd_args.name
-            elif cmd_args.uuid:
-                uuid = cmd_args.uuid
 
         if hasattr(cmd_args, "snapshot_name"):
             snapshot_name = cmd_args.snapshot_name

@@ -549,6 +549,75 @@ class CommandTests(CommandTestsBase):
 
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
+    def test_main_snapset_show_identifier_name(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", sset.name]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_show_identifier_uuid(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", str(sset.uuid)]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_show_arg_name(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", "--name", sset.name]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_show_arg_uuid(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", "--uuid", str(sset.uuid)]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_show_arg_uuid_with_identifier(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", "--uuid", str(sset.uuid), sset.name]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_show_arg_name_with_identifier(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", "--name", sset.name, str(sset.uuid)]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapset_show_arg_name_and_arg_uuid(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapset", "show", "--name", sset.name, "--uuid", str(sset.uuid)]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
     def test_main_snapshot_list(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
 
@@ -564,6 +633,75 @@ class CommandTests(CommandTestsBase):
         args = self.get_debug_main_args()
         args += ["snapshot", "show"]
         self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_identifier_name(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", sset.name]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_identifier_uuid(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", str(sset.uuid)]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_arg_name(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", "--name", sset.name]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_arg_uuid(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", "--uuid", str(sset.uuid)]
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_arg_uuid_with_identifier(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", "--uuid", str(sset.uuid), sset.name]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_arg_name_with_identifier(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", "--name", sset.name, str(sset.uuid)]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+
+    def test_main_snapshot_show_arg_name_and_arg_uuid(self):
+        sset = self.manager.create_snapshot_set("testset0", self.mount_points())
+
+        args = self.get_debug_main_args()
+        args += ["snapshot", "show", "--name", sset.name, "--uuid", str(sset.uuid)]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
 
         self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
 
