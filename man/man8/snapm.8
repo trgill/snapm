@@ -46,7 +46,21 @@ split | prune | activate | deactivate | autoactivate | list | show ]
 .  RI [ create | delete | enable | disable | list | show | gc ]
 ..
 .
+.de ARG_NAME_OR_UUID
+.  IR [ name | UUID ]
+.  RB [ -n | --name
+.  IR name ]
+.  RB [ -u | --uuid
+.  IR UUID ]
 ..
+.
+.de ARG_SNAPSHOT_NAME_OR_UUID
+.  RB [ -N | --snapshot-name
+.  IR name ]
+.  RB [ -U | --snapshot-uuid
+.  IR UUID ]
+..
+.
 .SH NAME
 .
 snapm \- Linux snapshot manager
@@ -137,11 +151,7 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR delete
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSET_DELETE
@@ -164,11 +174,7 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR revert
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSET_REVERT
@@ -179,11 +185,7 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR resize
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  RB [ -s | --size-policy
 .  IR policy ]
 .  IR source[size_policy] ...
@@ -222,11 +224,7 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR activate
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSET_ACTIVATE
@@ -237,11 +235,7 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR deactivate
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSET_DEACTIVATE
@@ -253,11 +247,7 @@ snapm \- Linux snapshot manager
 .  BR snapset
 .  BR autoactivate
 .  IR [ --yes | --no ]
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSET_AUTOACTIVATE
@@ -268,11 +258,7 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR list
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
 .  RB [ --nameprefixes ]
 .  RB [ --noheadings ]
 .  RB [ --options
@@ -292,12 +278,8 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapset
 .  BR show
-.  IR [ name | UUID ]
+.  ARG_NAME_OR_UUID
 .  RB [ --members ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
 .  RB [ --json ]
 .  ad b
 ..
@@ -310,15 +292,8 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR activate
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
-.  RB [ --snapshot-name
-.  IR name ]
-.  RB [ --snapshot-uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
+.  ARG_SNAPSHOT_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSHOT_ACTIVATE
@@ -329,15 +304,8 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR deactivate
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
-.  RB [ --snapshot-name
-.  IR name ]
-.  RB [ --snapshot-uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
+.  ARG_SNAPSHOT_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSHOT_DEACTIVATE
@@ -349,15 +317,8 @@ snapm \- Linux snapshot manager
 .  BR snapshot
 .  BR autoactivate
 .  IR [ --yes | --no ]
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
-.  RB [ --snapshot-name
-.  IR name ]
-.  RB [ --snapshot-uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
+.  ARG_SNAPSHOT_NAME_OR_UUID
 .  ad b
 ..
 .CMD_SNAPSHOT_AUTOACTIVATE
@@ -368,15 +329,8 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR list
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
-.  RB [ --snapshot-name
-.  IR name ]
-.  RB [ --snapshot-uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
+.  ARG_SNAPSHOT_NAME_OR_UUID
 .  RB [ --nameprefixes ]
 .  RB [ --noheadings ]
 .  RB [ --options
@@ -396,15 +350,8 @@ snapm \- Linux snapshot manager
 .  ad l
 .  BR snapshot
 .  BR show
-.  IR [ name | UUID ]
-.  RB [ --name
-.  IR name ]
-.  RB [ --uuid
-.  IR UUID ]
-.  RB [ --snapshot-name
-.  IR name ]
-.  RB [ --snapshot-uuid
-.  IR UUID ]
+.  ARG_NAME_OR_UUID
+.  ARG_SNAPSHOT_NAME_OR_UUID
 .  RB [ --json ]
 .  ad b
 ..
