@@ -1473,23 +1473,25 @@ the \fBsnapset\fP, \fBsnapshot\fP, and \fBschedule\fP \fBshow\fP subcommands:
         "SnapsetName": "before-upgrade",
         "Sources": [
             "/",
+            "/home",
             "/var"
         ],
         "MountPoints": [
             "/",
+            "/home",
             "/var"
         ],
         "Devices": [],
-        "NrSnapshots": 2,
-        "Timestamp": 1755877964,
-        "Time": "2025-08-22 16:52:44",
-        "UUID": "f8ce4a7e-eb30-5152-b623-a2e122df6ed4",
+        "NrSnapshots": 3,
+        "Timestamp": 1755915019,
+        "Time": "2025-08-23 03:10:19",
+        "UUID": "d9b63a58-333b-517a-b38d-7cc818040fab",
         "Status": "Active",
         "Autoactivate": true,
         "Bootable": true,
         "BootEntries": {
-            "SnapshotEntry": "0f27c4f",
-            "RevertEntry": "6f99af1"
+            "SnapshotEntry": "61cb664",
+            "RevertEntry": "74c1cf2"
         }
     }
 ]
@@ -1562,14 +1564,47 @@ Create a bootable snapshot set from the mount points /, /home, and /var
 SnapsetName:      before-upgrade
 Sources:          /, /home, /var
 NrSnapshots:      3
-Time:             2024-12-05 17:58:37
-UUID:             1a2b5bc4-e123-5553-a4a3-6ba798baa945
+Time:             2025-08-23 03:10:19
+UUID:             d9b63a58-333b-517a-b38d-7cc818040fab
 Status:           Active
 Autoactivate:     yes
 Bootable:         yes
 BootEntries:
-  SnapshotEntry:  f3a98eb
-  RevertEntry:    79bfab1
+  SnapshotEntry:  61cb664
+  RevertEntry:    74c1cf2
+.EE
+.P
+Create a bootable snapshot set from the mount points /, /home, and /var,
+with output formatted in JSON notation
+.br
+#
+.B snapm snapset create -br --json before-upgrade / /home /var
+.EX
+{
+    "SnapsetName": "before-upgrade",
+    "Sources": [
+        "/",
+        "/home",
+        "/var"
+    ],
+    "MountPoints": [
+        "/",
+        "/home",
+        "/var"
+    ],
+    "Devices": [],
+    "NrSnapshots": 3,
+    "Timestamp": 1755915019,
+    "Time": "2025-08-23 03:10:19",
+    "UUID": "d9b63a58-333b-517a-b38d-7cc818040fab",
+    "Status": "Active",
+    "Autoactivate": true,
+    "Bootable": true,
+    "BootEntries": {
+        "SnapshotEntry": "61cb664",
+        "RevertEntry": "74c1cf2"
+    }
+}
 .EE
 .P
 Delete the snapset named 'backup'
@@ -1598,13 +1633,16 @@ Display the snapset named 'before-upgrade'
 .
 .EX
 SnapsetName:      before-upgrade
-Sources:          /, /var, /home
+Sources:          /, /home, /var
 NrSnapshots:      3
-Time:             2024-12-05 17:58:37
-UUID:             b5752dfa-b3a0-5a1d-ab1d-0cab2c41e0c9
+Time:             2025-08-23 03:10:19
+UUID:             d9b63a58-333b-517a-b38d-7cc818040fab
 Status:           Active
 Autoactivate:     yes
-Bootable:         no
+Bootable:         yes
+BootEntries:
+  SnapshotEntry:  61cb664
+  RevertEntry:    74c1cf2
 .EE
 .P
 Display the snapshot with UUID b201bdba-89b7-5014-a80d-f5d4b9a690ed
@@ -1613,10 +1651,10 @@ Display the snapshot with UUID b201bdba-89b7-5014-a80d-f5d4b9a690ed
 .B snapm snapshot show -U b201bdba-89b7-5014-a80d-f5d4b9a690ed
 .
 .EX
-Name:           fedora/home-snapset_before-upgrade_1733421517_-home
+Name:           fedora/home-snapset_before-upgrade_1755915019_-home
 SnapsetName:    before-upgrade
 Origin:         /dev/fedora/home
-Time:           2024-12-05 17:58:37
+Time:           2025-08-23 03:10:19
 Source:         /home
 MountPoint:     /home
 Provider:       lvm2-thin
@@ -1625,9 +1663,9 @@ Status:         Active
 Size:           1.0GiB
 Free:           1.9GiB
 Autoactivate:   yes
-DevicePath:     /dev/fedora/home-snapset_before-upgrade_1733421517_-home
+DevicePath:     /dev/fedora/home-snapset_before-upgrade_1755915019_-home
 VolumeGroup:    fedora
-LogicalVolume:  home-snapset_before-upgrade_1733421517_-home
+LogicalVolume:  home-snapset_before-upgrade_1755915019_-home
 .EE
 .P
 .SH EXIT STATUS
