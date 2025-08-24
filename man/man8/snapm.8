@@ -423,16 +423,6 @@ at a common moment in time as a \fIsnapshot set\fP ("snapset").
 .SH OPTIONS
 .
 .TP 8
-\fB-d | --debug\fP \fIdebug_flags\fP
-A comma-separated list of subsystem names to enable debugging output
-for, or 'all' to enable all debugging. The available debug classes
-are: manager, command, plugins, report.
-.
-.TP 8
-.B -h | --help
-Display usage information and exit.
-.
-.TP 8
 .B -a | --autoindex
 When creating snapshot sets treat \fBname\fP as a common basename and
 generate and append a new, non-negative index value, to create a unique
@@ -448,42 +438,23 @@ When creating snapshot sets automatically create a snapshot boot entry
 for the set.
 .
 .TP 8
-\fB-n | --name\fP \fIname\fP
-Specify a snapset name to operate on.
+\fB-C | --calendarspec\fP \fIcalendarspec\fP
+Calendar event expression used to trigger scheduled creation of snapshot sets.
+See \fBsystemd.time(7)\fP for the expression syntax.
 .
 .TP 8
-\fB-N | --snapshot-name\fP \fIname\fP
-Specify a snapshot name to operate on.
+\fB-c | --config\fP \fIschedule_name\fP
+The name of a configured schedule.
 .
 .TP 8
-.B --members
-Include individual snapshots in the output of \fBsnapset show\fP commands.
+\fB-d | --debug\fP \fIdebug_flags\fP
+A comma-separated list of subsystem names to enable debugging output
+for, or 'all' to enable all debugging. The available debug classes
+are: manager, command, plugins, report.
 .
 .TP 8
-.B --name-prefixes | --nameprefixes
-Add a 'SNAPM_' prefix plus the field name to the output. Useful with
-\fB--noheadings\fP to produce a list of field=value pairs that can be used
-to set environment or shell variables.
-.
-.TP 8
-.B --no-headings | --noheadings
-Suppress output of report headings.
-.
-.TP 8
-\fB-o | --options\fP \fIfields\fP
-Specify which fields to display.
-.TP 8
-\fB-O | --sort\fP \fIsort_field\fP
-Specify which fields to sort by.
-.
-.TP 8
-.B -r | --revert
-When creating snapshot sets automatically create a snapshot revert entry
-for the set.
-.
-.TP 8
-.B --rows
-Output report columns as rows.
+.B -h | --help
+Display usage information and exit.
 .
 .TP 8
 .B --json
@@ -545,6 +516,41 @@ Retain \fBhourly\fP hourly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
 .TP 8
+.B --members
+Include individual snapshots in the output of \fBsnapset show\fP commands.
+.
+.TP 8
+\fB-n | --name\fP \fIname\fP
+Specify a snapset name to operate on.
+.
+.TP 8
+.B --name-prefixes | --nameprefixes
+Add a 'SNAPM_' prefix plus the field name to the output. Useful with
+\fB--noheadings\fP to produce a list of field=value pairs that can be used
+to set environment or shell variables.
+.
+.TP 8
+.B --no-headings | --noheadings
+Suppress output of report headings.
+.
+.TP 8
+\fB-o | --options\fP \fIfields\fP
+Specify which fields to display.
+.
+.TP 8
+\fB-O | --sort\fP \fIsort_field\fP
+Specify which fields to sort by.
+.
+.TP 8
+.B -r | --revert
+When creating snapshot sets automatically create a snapshot revert entry
+for the set.
+.
+.TP 8
+.B --rows
+Output report columns as rows.
+.
+.TP 8
 \fB--separator\fP \fIseparator\fP
 Report field separator.
 .
@@ -553,12 +559,16 @@ Report field separator.
 Specify a default size policy when creating snapshot sets.
 .
 .TP 8
-\fB-u | --uuid\fP \fIUUID\fP
-Specify a snapset UUID to operate on.
+\fB-N | --snapshot-name\fP \fIname\fP
+Specify a snapshot name to operate on.
 .
 .TP 8
 \fB-U | --snapshot-uuid\fP \fIUUID\fP
 Specify a snapshot UUID to operate on.
+.
+.TP 8
+\fB-u | --uuid\fP \fIUUID\fP
+Specify a snapset UUID to operate on.
 .
 .TP 8
 .B -v | --verbose
