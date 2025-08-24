@@ -437,7 +437,7 @@ Display usage information and exit.
 When creating snapshot sets treat \fBname\fP as a common basename and
 generate and append a new, non-negative index value, to create a unique
 instance name.
-.P
+.IP
 This is useful when creating recurring snapshot sets of the same set of
 sources, for example to create a timeline of snapshots for recovery and
 revert purposes.
@@ -916,7 +916,7 @@ Attempt to activate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to activate all snapshots of all
 snapsets present on the system. If a snapshot or snapset \fBname\fP or
 \fBUUID\fP is specified then only matching volumes will be activated.
-.P
+.IP
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
 availability.
@@ -949,20 +949,20 @@ individual snapshots managed by \fBsnapm\fP.
 .CMD_SNAPSHOT_LIST
 .br
 Output a tabular report of snapshots.
-.P
+.IP
 Displays a report with one snapshot per line, containing fields describing the
 properties of the configured snapshots.
-.P
+.IP
 The list of fields to display is given with \fB--options\fP as a comma separated
 list of field names. To obtain a list of available fields run '\fBsnapm snapshot
 list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
 specified fields are appended to the default field list. Otherwise the given
 list of fields replaces the default set of report fields.
-.P
+.IP
 The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
 used to generate output in a machine readable form, suitable for setting shell
 or environment variables.
-.P
+.IP
 Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
 option. The option expects a comma separated list of keys, with optional
 \fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
