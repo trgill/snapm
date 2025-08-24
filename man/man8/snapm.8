@@ -1071,9 +1071,8 @@ expression.
 --revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
 .EX
 Name: hourly
-SourceSpecs: /, /var
+Sources: /, /var
 DefaultSizePolicy: 25%SIZE
-Autoindex: False
 Calendarspec: hourly
 Boot: yes
 Revert: yes
@@ -1083,6 +1082,7 @@ GcPolicy:
     Params: keep_count=2
 Enabled: yes
 Running: yes
+NextElapse: 2025-08-23 04:00:00
 .EE
 .
 .TP
@@ -1144,11 +1144,11 @@ that field respectively.
 #
 .B snapm schedule list
 .br
-ScheduleName ScheduleSources         SizePolicy Autoindex OnCalendar     Enabled
+ScheduleName ScheduleSources         SizePolicy OnCalendar     Enabled
 .br
-custom       /, /home:100%SIZE, /var 50%SIZE    yes       *-*-1 01:00:00 yes
+custom       /, /home:100%SIZE, /var 50%SIZE    *-*-1 01:00:00 yes
 .br
-hourly       /, /var                 25%SIZE    no        hourly         yes
+hourly       /, /var                 25%SIZE    hourly         yes
 .br
 .
 .TP
