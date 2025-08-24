@@ -1051,12 +1051,16 @@ Create a persistent schedule to automatically create snapshot sets
 according to the name and arguments given to the \fBsnapm schedule
 create\fP command.
 .IP
+Scheduled snapshot sets are created with the \fIautoindex\fP argument enabled,
+to ensure uniqueness of the created snapshot set names.
+.IP
 New snapshot sets will be automatically created as configured by the
 specified calendar event expression (\fB--calendarspec\fP).
 .IP
 The \fBsnapm schedule create\fP command accepts the same set of
-arguments as the \fBsnapm snapset create\fP command and these are passed
-on to the snapshot sets created by the schedule.
+arguments as the \fBsnapm snapset create\fP command (with the exception of
+\fB--autoindex\fP, which is always enabled for scheduled snapshot set creation)
+and these are passed on to the snapshot sets created by the schedule.
 .IP
 A garbage collection policy specified by the \fB--policy-type\fP and
 configured by the corresponding \fB--keep-*\fP arguments is applied to
