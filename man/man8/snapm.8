@@ -692,23 +692,16 @@ The newly created snapset is displayed on the terminal on success:
 .IP
 #
 .B snapm snapset create backup / /home /var /opt /srv
-.br
+.EX
 SnapsetName:      backup
-.br
 Sources:          /, /home, /var, /opt, /srv
-.br
 NrSnapshots:      5
-.br
 Time:             2024-12-05 17:46:12
-.br
 UUID:             87c89914-51a5-5043-8513-667100213243
-.br
 Status:           Inactive
-.br
 Autoactivate:     no
-.br
 Bootable:         no
-.IP
+.EE
 When creating snapshot sets \fB--bootable\fP and \fB--revert\fP can optionally
 be used to automatically create snapshot boot and revert boot entries
 respectively.
@@ -751,23 +744,16 @@ of the same set of sources that are taken on a recurring schedule.
 .IP
 #
 .B snapm snapset create hourly --autoindex /:5%SIZE /var:5%SIZE
-.br
+.EX
 SnapsetName:      hourly.3
-.br
 Sources:          /, /var
-.br
 NrSnapshots:      2
-.br
 Time:             2025-03-26 14:17:18
-.br
 UUID:             ae082452-7995-5316-ac65-388eadd9879c
-.br
 Status:           Active
-.br
 Autoactivate:     yes
-.br
 Bootable:         no
-.br
+.EE
 .
 .TP
 .B snapm
