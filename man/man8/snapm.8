@@ -61,6 +61,18 @@ split | prune | activate | deactivate | autoactivate | list | show
 .  IR UUID ] " "\c
 ..
 .
+.de ARGS_REPORT_OPTS
+.  RB [ --name-prefixes | --nameprefixes ] " "\c
+.  RB [ --no-headings | --noheadings ] " "\c
+.  RB [ -o | --options\ \c
+.  IR fields ] " "\c
+.  RB [ -O | --sort\ \c
+.  IR fields ] " "\c
+.  RB [ --rows | --json ] " "\c
+.  RB [ --separator\ \c
+.  IR separator ] " "\c
+..
+.
 .SH NAME
 .
 snapm \- Linux Snapshot Manager
@@ -226,15 +238,7 @@ snapm \- Linux Snapshot Manager
 .  B snapset
 .  B list
 .  ARG_NAME_OR_UUID
-.  RB [ --nameprefixes ] " "\c
-.  RB [ --noheadings ] " "\c
-.  RB [ --options\ \c
-.  IR fields ] " "\c
-.  RB [ --sort\ \c
-.  IR fields ] " "\c
-.  RB [ --rows | --json ] " "\c
-.  RB [ --separator\ \c
-.  IR separator ] " "\c
+.  ARGS_REPORT_OPTS
 ..
 .CMD_SNAPSET_LIST
 .br
@@ -288,15 +292,7 @@ snapm \- Linux Snapshot Manager
 .  B list
 .  ARG_NAME_OR_UUID
 .  ARG_SNAPSHOT_NAME_OR_UUID
-.  RB [ --nameprefixes ] " "\c
-.  RB [ --noheadings ] " "\c
-.  RB [ --options\ \c
-.  IR fields] " "\c
-.  RB [ --sort\ \c
-.  IR fields] " "\c
-.  RB [ --rows | --json ] " "\c
-.  RB [ --separator\ \c
-.  IR separator ] " "\c
+.  ARGS_REPORT_OPTS
 ..
 .CMD_SNAPSHOT_LIST
 .br
@@ -317,16 +313,7 @@ snapm \- Linux Snapshot Manager
 .de CMD_PLUGIN_LIST
 .  B plugin
 .  B list
-.  RB [ --nameprefixes ] " "\c
-.  RB [ --noheadings ] " "\c
-.  RB [ --options\ \c
-.  IR fields ] " "\c
-.  RB [ --sort\ \c
-.  IR fields ] " "\c
-.  RB [ --rows ] " "\c
-.  RB [ --separator\ \c
-.  IR separator ] " "\c
-.  RB [ --json ] " "\c
+.  ARGS_REPORT_OPTS
 ..
 .CMD_PLUGIN_LIST
 .br
@@ -404,15 +391,7 @@ snapm \- Linux Snapshot Manager
 .de CMD_SCHEDULE_LIST
 .  B schedule
 .  B list
-.  RB [ --nameprefixes ] " "\c
-.  RB [ --noheadings ] " "\c
-.  RB [ --options\ \c
-.  IR fields ] " "\c
-.  RB [ --sort\ \c
-.  IR fields ] " "\c
-.  RB [ --rows | --json ] " "\c
-.  RB [ --separator\ \c
-.  IR separator ] " "\c
+.  ARGS_REPORT_OPTS
 ..
 .CMD_SCHEDULE_LIST
 .br
