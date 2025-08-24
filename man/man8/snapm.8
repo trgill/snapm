@@ -1126,13 +1126,10 @@ that field respectively.
 .IP
 #
 .B snapm schedule list
-.br
-ScheduleName ScheduleSources         SizePolicy OnCalendar     Enabled
-.br
-custom       /, /home:100%SIZE, /var 50%SIZE    *-*-1 01:00:00 yes
-.br
-hourly       /, /var                 25%SIZE    hourly         yes
-.br
+.EX
+ScheduleName ScheduleSources SizePolicy OnCalendar Enabled NextElapse
+daily        /, /var         10%SIZE    daily      yes     2025-08-25 00:00:00
+.EE
 .
 .TP
 .B snapm
