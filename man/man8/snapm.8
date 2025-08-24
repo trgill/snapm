@@ -13,492 +13,429 @@
 ..
 .\}
 .de ARG_GLOBAL
-.  RI [ global_args ]
+.  RI [global_args] " "\c
 ..
 .
 .de ARG_SNAPSET_TYPE
-.  RI snapset
+.  RI snapset " "\c
 ..
 .
 .de ARG_SNAPSET_COMMANDS
-.  RI [ create | create-scheduled | delete | rename | revert | resize | \
-split | prune | activate | deactivate | autoactivate | list | show ]
+.  RI create | create-scheduled | delete | rename | revert | resize | \
+split | prune | activate | deactivate | autoactivate | list | show
 ..
 .
 .de ARG_SNAPSHOT_TYPE
-.  RI snapshot
+.  RI snapshot " "
 ..
 .
 .de ARG_SNAPSHOT_COMMANDS
-.  RI [ activate | deactivate | autoactivate | list | show ]
+.  RI activate | deactivate | autoactivate | list | show
 ..
 .de ARG_PLUGIN_TYPE
-.  RI plugin
+.  RI plugin " "
 ..
 .de ARG_PLUGIN_COMMANDS
-.  RI [ list ]
+.  RI list " "\c
 ..
 .
 .de ARG_SCHEDULE_TYPE
-.  RI schedule
+.  RI schedule " "
 ..
 .de ARG_SCHEDULE_COMMANDS
-.  RI [ create | delete | enable | disable | list | show | gc ]
+.  RI create | delete | enable | disable | list | show | gc
 ..
 .
 .de ARG_NAME_OR_UUID
-.  IR [ name | UUID ]
-.  RB [ -n | --name
-.  IR name ]
-.  RB [ -u | --uuid
-.  IR UUID ]
+.  RI [ name | UUID ] " "\c
+.  RB [ -n | --name\ \c
+.  IR name ] " "\c
+.  RB [ -u | --uuid\ \c
+.  IR UUID ] " "\c
 ..
 .
 .de ARG_SNAPSHOT_NAME_OR_UUID
-.  RB [ -N | --snapshot-name
-.  IR name ]
-.  RB [ -U | --snapshot-uuid
-.  IR UUID ]
+.  RB [ -N | --snapshot-name\ \c
+.  IR name ] " "\c
+.  RB [ -U | --snapshot-uuid\ \c
+.  IR UUID ] " "\c
 ..
 .
 .SH NAME
 .
-snapm \- Linux snapshot manager
+snapm \- Linux Snapshot Manager
 .
 .SH SYNOPSIS
 .
-.PD 0
-.HP
+.SS Command Types
 .B snapm
 .de CMD_SNAPSET_COMMAND
-.  ad l
 .  ARG_GLOBAL
 .  ARG_SNAPSET_TYPE
 .  ARG_SNAPSET_COMMANDS
-.  ad b
 ..
 .CMD_SNAPSET_COMMAND
+.br
 .
-.
-.HP
 .B snapm
 .de CMD_SNAPSHOT_COMMAND
-.  ad l
 .  ARG_GLOBAL
 .  ARG_SNAPSHOT_TYPE
 .  ARG_SNAPSHOT_COMMANDS
-.  ad b
 ..
 .CMD_SNAPSHOT_COMMAND
+.br
 .
-.HP
 .B snapm
 .de CMD_PLUGIN_COMMAND
-.  ad l
 .  ARG_GLOBAL
 .  ARG_PLUGIN_TYPE
 .  ARG_PLUGIN_COMMANDS
-.  ad b
 ..
 .CMD_PLUGIN_COMMAND
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_COMMAND
-.  ad l
 .  ARG_GLOBAL
 .  ARG_SCHEDULE_TYPE
 .  ARG_SCHEDULE_COMMANDS
-.  ad b
 ..
 .CMD_SCHEDULE_COMMAND
-.
+.br
 .PP
-.HP
+.SS Subcommands
 .B snapm
 .de CMD_SNAPSET_CREATE
-.  ad l
-.  BR snapset
-.  BR create
-.  RB [ -b | --bootable ]
-.  RB [ -r | --revert ]
-.  RB [ -s | --size-policy
-.  IR policy ]
-.  RB [ -a | --autoindex ]
-.  RB [ --json ]
-.  IR name
-.  IR source[size_policy] ...
-.  ad b
+.  B snapset
+.  B create
+.  RB [-b | --bootable] " "\c
+.  RB [-r | --revert] " "\c
+.  RI [-s | --size-policy\ \c
+.  IR policy] " "\c
+.  RB [-a | --autoindex] " "\c
+.  RB [--json] " "\c
+.  IR name " "\c
+.  RI source[size_policy] ... " "\c
 ..
 .CMD_SNAPSET_CREATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_CREATE_SCHEDULED
-.  ad l
-.  BR snapset
-.  BR create-scheduled
-.  RB [ -c | --config
-.  IR schedule_name ]
-.  RB [ --json ]
-.  ad b
+.  B snapset
+.  B create-scheduled
+.  RB [-c | --config\ \c
+.  IR schedule_name] " "\c
+.  RB [--json] " "\c
 ..
 .CMD_SNAPSET_CREATE_SCHEDULED
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_DELETE
-.  ad l
-.  BR snapset
-.  BR delete
+.  B snapset
+.  B delete
 .  ARG_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSET_DELETE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_RENAME
-.  ad l
-.  BR snapset
-.  BR rename
-.  IR old_name
-.  IR new_name
-.  ad b
+.  B snapset
+.  B rename
+.  IR old_name " "\c
+.  IR new_name " "\c
 ..
 .CMD_SNAPSET_RENAME
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_REVERT
-.  ad l
-.  BR snapset
-.  BR revert
+.  B snapset
+.  B revert
 .  ARG_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSET_REVERT
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_RESIZE
-.  ad l
-.  BR snapset
-.  BR resize
+.  B snapset
+.  B resize
 .  ARG_NAME_OR_UUID
-.  RB [ -s | --size-policy
-.  IR policy ]
-.  RI [ source[size_policy] ... ]
-.  ad b
+.  RB [ -s | --size-policy\ \c
+.  IR policy] " "\c
+.  RI [ source[size_policy] ... ] " "\c
 ..
 .CMD_SNAPSET_RESIZE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_SPLIT
-.  ad l
-.  BR snapset
-.  BR split
-.  IR name
-.  IR new_name
-.  IR source ...
-.  ad b
+.  B snapset
+.  B split
+.  IR name " "\c
+.  IR new_name " "\c
+.  IR source ... " "\c
 ..
 .CMD_SNAPSET_SPLIT
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_PRUNE
-.  ad l
-.  BR snapset
-.  BR prune
-.  IR name
-.  IR source ...
-.  ad b
+.  B snapset
+.  B prune
+.  IR name " "\c
+.  IR source ... " "\c
 ..
 .CMD_SNAPSET_PRUNE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_ACTIVATE
-.  ad l
-.  BR snapset
-.  BR activate
+.  B snapset
+.  B activate
 .  ARG_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSET_ACTIVATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_DEACTIVATE
-.  ad l
-.  BR snapset
-.  BR deactivate
+.  B snapset
+.  B deactivate
 .  ARG_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSET_DEACTIVATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_AUTOACTIVATE
-.  ad l
-.  BR snapset
-.  BR autoactivate
-.  IR [ --yes | --no ]
+.  B snapset
+.  B autoactivate
+.  RB [ --yes | --no ] " "\c
 .  ARG_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSET_AUTOACTIVATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_LIST
-.  ad l
-.  BR snapset
-.  BR list
+.  B snapset
+.  B list
 .  ARG_NAME_OR_UUID
-.  RB [ --nameprefixes ]
-.  RB [ --noheadings ]
-.  RB [ --options
-.  IR fields ]
-.  RB [ --sort
-.  IR fields ]
-.  RB [ --rows | --json ]
-.  RB [ --separator
-.  IR separator ]
-.  ad b
+.  RB [ --nameprefixes ] " "\c
+.  RB [ --noheadings ] " "\c
+.  RB [ --options\ \c
+.  IR fields ] " "\c
+.  RB [ --sort\ \c
+.  IR fields ] " "\c
+.  RB [ --rows | --json ] " "\c
+.  RB [ --separator\ \c
+.  IR separator ] " "\c
 ..
 .CMD_SNAPSET_LIST
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSET_SHOW
-.  ad l
-.  BR snapset
-.  BR show
+.  B snapset
+.  B show
 .  ARG_NAME_OR_UUID
-.  RB [ --members ]
-.  RB [ --json ]
-.  ad b
+.  RB [ --members ] " "\c
+.  RB [ --json ] " "\c
 ..
 .CMD_SNAPSET_SHOW
 .br
+.PP
 .
-.HP
 .B snapm
 .de CMD_SNAPSHOT_ACTIVATE
-.  ad l
-.  BR snapshot
-.  BR activate
+.  B snapshot
+.  B activate
 .  ARG_NAME_OR_UUID
 .  ARG_SNAPSHOT_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSHOT_ACTIVATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSHOT_DEACTIVATE
-.  ad l
-.  BR snapshot
-.  BR deactivate
+.  B snapshot
+.  B deactivate
 .  ARG_NAME_OR_UUID
 .  ARG_SNAPSHOT_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSHOT_DEACTIVATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSHOT_AUTOACTIVATE
-.  ad l
-.  BR snapshot
-.  BR autoactivate
-.  IR [ --yes | --no ]
+.  B snapshot
+.  B autoactivate
+.  RB [ --yes | --no ] " "\c
 .  ARG_NAME_OR_UUID
 .  ARG_SNAPSHOT_NAME_OR_UUID
-.  ad b
 ..
 .CMD_SNAPSHOT_AUTOACTIVATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSHOT_LIST
-.  ad l
-.  BR snapshot
-.  BR list
+.  B snapshot
+.  B list
 .  ARG_NAME_OR_UUID
 .  ARG_SNAPSHOT_NAME_OR_UUID
-.  RB [ --nameprefixes ]
-.  RB [ --noheadings ]
-.  RB [ --options
-.  IR fields ]
-.  RB [ --sort
-.  IR fields ]
-.  RB [ --rows | --json ]
-.  RB [ --separator
-.  IR separator ]
-.  ad b
+.  RB [ --nameprefixes ] " "\c
+.  RB [ --noheadings ] " "\c
+.  RB [ --options\ \c
+.  IR fields] " "\c
+.  RB [ --sort\ \c
+.  IR fields] " "\c
+.  RB [ --rows | --json ] " "\c
+.  RB [ --separator\ \c
+.  IR separator ] " "\c
 ..
 .CMD_SNAPSHOT_LIST
+.br
 .
-.HP
 .B snapm
 .de CMD_SNAPSHOT_SHOW
-.  ad l
-.  BR snapshot
-.  BR show
+.  B snapshot
+.  B show
 .  ARG_NAME_OR_UUID
 .  ARG_SNAPSHOT_NAME_OR_UUID
-.  RB [ --json ]
-.  ad b
+.  RB [--json] " "\c
 ..
 .CMD_SNAPSHOT_SHOW
 .br
+.PP
 .
-.HP
 .B snapm
 .de CMD_PLUGIN_LIST
-.  ad l
-.  BR plugin
-.  BR list
-.  RB [ --nameprefixes ]
-.  RB [ --noheadings ]
-.  RB [ --options
-.  IR fields ]
-.  RB [ --sort
-.  IR fields ]
-.  RB [ --rows ]
-.  RB [ --separator
-.  IR separator ]
-.  RB [ --json ]
-.  ad b
+.  B plugin
+.  B list
+.  RB [ --nameprefixes ] " "\c
+.  RB [ --noheadings ] " "\c
+.  RB [ --options\ \c
+.  IR fields ] " "\c
+.  RB [ --sort\ \c
+.  IR fields ] " "\c
+.  RB [ --rows ] " "\c
+.  RB [ --separator\ \c
+.  IR separator ] " "\c
+.  RB [ --json ] " "\c
 ..
 .CMD_PLUGIN_LIST
 .br
+.PP
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_CREATE
-.  ad l
-.  BR schedule
-.  BR create
-.  RB [ -b | --bootable ]
-.  RB [ -C | --calendarspec
-.  IR calendarspec ]
-.  RB [ -r | --revert ]
-.  RB [ -s | --size-policy
-.  IR policy ]
-.  RB [ -p | --policy-type
-.  IR policy_type ]
-.  RB [ --keep-count
-.  IR count ]
-.  RB [ --keep-years
-.  IR years ]
-.  RB [ --keep-months
-.  IR months ]
-.  RB [ --keep-weeks
-.  IR weeks ]
-.  RB [ --keep-days
-.  IR days ]
-.  RB [ --keep-yearly
-.  IR yearly ]
-.  RB [ --keep-quarterly
-.  IR quarterly ]
-.  RB [ --keep-monthly
-.  IR monthly ]
-.  RB [ --keep-weekly
-.  IR weekly ]
-.  RB [ --keep-daily
-.  IR daily ]
-.  RB [ --keep-hourly
-.  IR hourly ]
-.  IR schedule_name
-.  IR source[size_policy] ...
-.  ad b
+.  B schedule
+.  B create
+.  RB [ -b | --bootable] " "\c
+.  RB [ -C | --calendarspec\ \c
+.  IR calendarspec] " "\c
+.  RB [ -r | --revert] " "\c
+.  RB [ -s | --size-policy\ \c
+.  IR policy] " "\c
+.  RB [ -p | --policy-type\ \c
+.  IR policy_type] " "\c
+.  RB [ --keep-count\ \c
+.  IR count ] " "\c
+.  RB [ --keep-years\ \c
+.  IR years ] " "\c
+.  RB [ --keep-months\ \c
+.  IR months ] " "\c
+.  RB [ --keep-weeks\ \c
+.  IR weeks ] " "\c
+.  RB [ --keep-days\ \c
+.  IR days ] " "\c
+.  RB [ --keep-yearly\ \c
+.  IR yearly ] " "\c
+.  RB [ --keep-quarterly\ \c
+.  IR quarterly ] " "\c
+.  RB [ --keep-monthly\ \c
+.  IR monthly ] " "\c
+.  RB [ --keep-weekly\ \c
+.  IR weekly ] " "\c
+.  RB [ --keep-daily\ \c
+.  IR daily ] " "\c
+.  RB [ --keep-hourly\ \c
+.  IR hourly ] " "\c
+.  IR schedule_name " "\c
+.  RI source[size_policy] ... " "\c
 ..
 .CMD_SCHEDULE_CREATE
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_DELETE
-.  ad l
-.  BR schedule
-.  BR delete
-.  IR name
-.  ad b
+.  B schedule
+.  B delete
+.  IR name " "\c
 ..
 .CMD_SCHEDULE_DELETE
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_ENABLE
-.  ad l
-.  BR schedule
-.  BR enable
-.  IR name
-.  RB [ --start ]
-.  ad b
+.  B schedule
+.  B enable
+.  IR name " "\c
+.  RB [--start] " "\c
 ..
 .CMD_SCHEDULE_ENABLE
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_DISABLE
-.  ad l
-.  BR schedule
-.  BR disable
-.  IR name
-.  ad b
+.  B schedule
+.  B disable
+.  IR name " "\c
 ..
 .CMD_SCHEDULE_DISABLE
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_LIST
-.  ad l
-.  BR schedule
-.  BR list
-.  RB [ --nameprefixes ]
-.  RB [ --noheadings ]
-.  RB [ --options
-.  IR fields ]
-.  RB [ --sort
-.  IR fields ]
-.  RB [ --rows | --json ]
-.  RB [ --separator
-.  IR separator ]
-.  ad b
+.  B schedule
+.  B list
+.  RB [ --nameprefixes ] " "\c
+.  RB [ --noheadings ] " "\c
+.  RB [ --options\ \c
+.  IR fields ] " "\c
+.  RB [ --sort\ \c
+.  IR fields ] " "\c
+.  RB [ --rows | --json ] " "\c
+.  RB [ --separator\ \c
+.  IR separator ] " "\c
 ..
 .CMD_SCHEDULE_LIST
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_SHOW
-.  ad l
-.  BR schedule
-.  BR show
-.  IR name
-.  RB [ --json ]
-.  ad b
+.  B schedule
+.  B show
+.  IR name " "\c
+.  RB [--json] " "\c
 ..
 .CMD_SCHEDULE_SHOW
+.br
 .
-.HP
 .B snapm
 .de CMD_SCHEDULE_GC
-.  ad l
-.  BR schedule
-.  BR gc
-.  IR name
-.  ad b
+.  B schedule
+.  B gc
+.  I name
 ..
 .CMD_SCHEDULE_GC
-.
-.PD
-.ad b
+.br
+.PP
 .
 .SH DESCRIPTION
 snapm is a \fIsnapshot manager\fP for Linux systems. It manages snapshots taken
@@ -520,7 +457,7 @@ Display usage information and exit.
 When creating snapshot sets treat \fBname\fP as a common basename and
 generate and append a new, non-negative index value, to create a unique
 instance name.
-
+.P
 This is useful when creating recurring snapshot sets of the same set of
 sources, for example to create a timeline of snapshots for recovery and
 revert purposes.
@@ -649,21 +586,21 @@ Increase verbosity level. Specify multiple times, or set additional
 debug classes with \fB--debug\fP to enable more verbose messages.
 .
 .TP 8
-.BR -V | --version
+.B -V | --version
 Display the version of \fBsnapm\fP and exit.
 .SS Identifier arguments
 Commands that accept an identifier may use either a positional
-.IR name
+.I name
 or
-.IR UUID ,
+.I UUID ,
 or the explicit options
-.BR -n | --name
+.B -n | --name
 and
-.BR -u | --uuid
+.B -u | --uuid
 (with snapshot variants
-.BR -N | --snapshot-name
+.B -N | --snapshot-name
 and
-.BR -U | --snapshot-uuid ).
+.B -U | --snapshot-uuid ).
 These forms are mutually exclusive. Mixing positional and explicit
 arguments in the same invocation is a parse error; in this case the
 command exits with status 2.
@@ -673,7 +610,7 @@ The \fBsnapm\fP command manages named collections of snapshots taken at a
 common point in time as \fIsnapshot sets\fP. A snapshot set is created from a
 list of sources (mount point or block device paths) and allows the state of the
 system to be captured spanning over several volumes.
-
+.P
 Valid characters for snapset names are:
 .BR a \(en z
 .BR A \(en Z
@@ -683,15 +620,15 @@ Valid characters for snapset names are:
 Snapshot sets and snapshots are also identified by a unique UUID value. The
 terms \fIsnapshot set\fP and \fIsnapset\fP are used interchangeably in this
 manual page.
-
+.P
 A plugin model is used to map mount points or devices onto possible snapshot
 \fIproviders\fP. A provider plugin must exist for each source path specified
 when creating a snapshot set. The current plugins support LVM2 copy-on-write,
 LVM2 thin provisioned and Stratis snapshots.
-
+.P
 The \fIsnapset\fP subcommand allows snapsets to be created, deleted,
 enumerated, renamed, reverted, and activated or deactivated.
-
+.P
 The \fIsnapshot\fP subcommand provides access to information describing
 individual snapshots that are part of a snapshot set, for example the device
 path and snapshot status.
@@ -701,19 +638,19 @@ path and snapshot status.
 .P
 Snapshots from different providers may exist in several possible states:
 \fIActive\fP, \fIInactive\fP, \fIInvalid\fP, or \fIReverting\fP.
-
+.P
 Some providers allow snapshots to be in an \fIActive\fP or \fIInactive\fP state
 and snapshots for some providers (for example LVM2 Copy-on-Write snapshots)
 have a specific size for the snapshot data store. If this space is completely
 consumed the snapshot becomes \fIInvalid\fP and can no longer be accessed.
-
+.P
 When a revert is executed for a snapshot set that is currently mounted the
 status of the snapshot set is \fIReverting\fP. If the snapshot set is in use
 (either the origin or snapshot volumes are mounted) the revert will take place
 the next time the volumes making up the snapshot set are activated and the
 snapshot set status will remain \fIReverting\fP until the operation is
 complete.
-
+.P
 The status of a snapset is an aggregation of the status of the individual
 snapshots it contains: if any snapshots are \fIInactive\fP then the overall
 status of the snapset is also \fIInactive\fP. If any snapshots within the set
@@ -733,7 +670,6 @@ store.
 There are currently four types of size policy that can be used to specify the
 space required:
 .sp
-.PD 0
 .TP 8
 .B FIXED
 A fixed size with optional unit suffix (MiB, GiB, TiB, etc.).
@@ -749,7 +685,6 @@ be applied to snapshot sources that correspond to mounted file systems.
 .TP 8
 .B %SIZE
 A percentage of the size of the origin volume from 0 to 100%.
-.PD
 .
 .P
 .br
@@ -766,7 +701,7 @@ subcommand.
 .B Snapshot Set Commands
 .P
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_CREATE
 .br
@@ -827,7 +762,7 @@ Snapshot providers that do not allocate a fixed size for snapshot data will
 check for available space according to the policy at creation time but do not
 enforce a fixed size for individual snapshots: space is allocated from the
 available pool on an as-needed basis.
-
+.P
 If the \fB--autoindex\fP argument is given the \fBname\fP given on the
 command line is treated as a basename and a new, non-negative integer
 index will be generated and appended to the \fBname\fP to construct a new,
@@ -854,7 +789,7 @@ Autoactivate:     yes
 Bootable:         no
 .br
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_CREATE_SCHEDULED
 .br
@@ -863,21 +798,21 @@ is normally called by the corresponding schedule timer. It may be issued
 manually for testing or debugging purposes, or to create additional snapshot
 sets not specified by the schedule parameters.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_DELETE
 .br
 Delete the specified snapset. The snapset to delete may be specified
 either by its \fBname\fP or \fBUUID\fP.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_RENAME
 .br
 Rename an existing snapset. The snapset to be renamed is specified as
 \fBold_name\fP and the new name is given as \fBnew_name\fP.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_REVERT
 .br
@@ -889,7 +824,7 @@ Reverting a snapshot set with mounted and in-use origin volumes will schedule
 the revert to take place the next time that the volumes are activated, for
 example by booting into a configured revert boot entry for the snapshot set.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_RESIZE
 .br
@@ -909,7 +844,7 @@ the \fBsnapset create\fP command. A default size policy can be set using the
 \fB--size-policy\fP argument. If no source paths are specified the command
 applies the default size policy to each member of the snapshot set.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_SPLIT
 .br
@@ -921,7 +856,7 @@ snapshot set. Sources that are not listed on the command line remain part of
 the original snapshot set. It is an error to split \fIall\fP sources from a
 snapshot set: in this case use '\fBsnapm snapset rename\fP' instead.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_PRUNE
 .br
@@ -934,7 +869,7 @@ This operation is irreversible.
 It is an error to prune \fIall\fP sources from a snapshot set: in this case use
 \&'\fBsnapm snapset delete\fP' instead.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_ACTIVATE
 .br
@@ -947,7 +882,7 @@ Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
 availability.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_DEACTIVATE
 .br
@@ -960,7 +895,7 @@ Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
 availability.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_AUTOACTIVATE
 .br
@@ -970,7 +905,7 @@ activation when activating resources for e.g. at boot time. The \fBsnapset
 autoactivate\fP subcommand allows control of this behaviour for snapshot sets
 managed by \fBsnapm\fP.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_LIST
 .br
@@ -995,7 +930,7 @@ option. The option expects a comma separated list of keys, with optional
 \fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
 that field respectively.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSET_SHOW
 .br
@@ -1007,7 +942,7 @@ output.
 .B Snapshot Commands
 .P
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSHOT_ACTIVATE
 .br
@@ -1015,12 +950,12 @@ Attempt to activate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to activate all snapshots of all
 snapsets present on the system. If a snapshot or snapset \fBname\fP or
 \fBUUID\fP is specified then only matching volumes will be activated.
-
+.P
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
 availability.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSHOT_DEACTIVATE
 .br
@@ -1028,12 +963,12 @@ Attempt to deactivate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to deactivate all snapshots of all
 snapsets present on the system. If a snapshot or snapset \fBname\fP or
 \fBUUID\fP is specified then only matching volumes will be deactivated.
-
+.P
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
 availability.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSHOT_AUTOACTIVATE
 .br
@@ -1043,31 +978,31 @@ snapshot volume activation when activating resources for e.g. at boot time. The
 \fBsnapshot autoactivate\fP subcommand allows control of this behaviour for
 individual snapshots managed by \fBsnapm\fP.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSHOT_LIST
 .br
 Output a tabular report of snapshots.
-
+.P
 Displays a report with one snapshot per line, containing fields describing the
 properties of the configured snapshots.
-
+.P
 The list of fields to display is given with \fB--options\fP as a comma separated
 list of field names. To obtain a list of available fields run '\fBsnapm snapshot
 list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
 specified fields are appended to the default field list. Otherwise the given
 list of fields replaces the default set of report fields.
-
+.P
 The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
 used to generate output in a machine readable form, suitable for setting shell
 or environment variables.
-
+.P
 Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
 option. The option expects a comma separated list of keys, with optional
 \fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
 that field respectively.
 .
-.HP
+.TP
 .B snapm
 .CMD_SNAPSHOT_SHOW
 .br
@@ -1077,25 +1012,25 @@ Display snapshots matching selection criteria on standard out.
 .B Plugin Commands
 .P
 .
-.HP
+.TP
 .B snapm
 .CMD_PLUGIN_LIST
 .br
 Output a tabular report of plugins.
-
+.P
 Displays a report with one plugin per line, containing fields describing the
 properties of the available plugins.
-
+.P
 The list of fields to display is given with \fB--options\fP as a comma separated
 list of field names. To obtain a list of available fields run '\fBsnapm plugin
 list -o help\fP'. If the list of fields begins with the '\fB+\fP' character the
 specified fields are appended to the default field list. Otherwise the given
 list of fields replaces the default set of report fields.
-
+.P
 The \fB--rows\fP, \fB--noheadings\fP, and \fB--nameprefixes\fP options can be
 used to generate output in a machine readable form, suitable for setting shell
 or environment variables.
-
+.P
 Report output may be sorted by multiple user-defined keys using the \fB--sort\fP
 option. The option expects a comma separated list of keys, with optional
 \fB+\fP and \fB-\fP prefixes indicating ascending and descending sort for
@@ -1105,7 +1040,7 @@ that field respectively.
 .B Schedule Commands
 .P
 .
-.HP
+.TP
 .B snapm
 .CMD_SCHEDULE_CREATE
 .br
@@ -1131,37 +1066,25 @@ creating snapshot sets at the first expiry of the configured calendar
 expression.
 .IP
 #
-\fBsnapm schedule create --policy-type count --keep-count 2 --bootable
---revert --size-policy 25%SIZE --calendarspec hourly hourly / /var\fP
-.br
+.B snapm schedule create --policy-type count --keep-count 2 --bootable \
+--revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
+.EX
 Name: hourly
-.br
 SourceSpecs: /, /var
-.br
 DefaultSizePolicy: 25%SIZE
-.br
-.br
 Autoindex: False
-.br
 Calendarspec: hourly
-.br
 Boot: yes
-.br
 Revert: yes
-.br
 GcPolicy:
-.br
     Name: hourly
-.br
     Type: Count
-.br
     Params: keep_count=2
-.br
 Enabled: yes
-.br
 Running: yes
+.EE
 .
-.HP
+.TP
 .B snapm
 .CMD_SCHEDULE_DELETE
 .br
@@ -1172,7 +1095,7 @@ is disabled and removed from the system. Existing snapshot sets created
 by the schedule before its deletion remain and continue to be available
 until deleted by the user.
 .
-.HP
+.TP
 .B snapm
 .CMD_SCHEDULE_ENABLE
 .br
@@ -1182,7 +1105,7 @@ Enable an existing snapshot set schedule by name. The specified schedule
 is enabled and will be started on subsequent reboots. To start the schedule
 timer immediately use \fB--start\fP.
 .
-.HP
+.TP
 .B snapm
 .CMD_SCHEDULE_DISABLE
 .br
@@ -1192,7 +1115,7 @@ Disable an existing snapshot set schedule by name. The specified
 schedule is stopped and disabled, and will no longer automatically start
 on subsequent reboots.
 .
-.HP
+.TP
 .B snapm
 .CMD_SCHEDULE_LIST
 .br
@@ -1227,16 +1150,16 @@ custom       /, /home:100%SIZE, /var 50%SIZE    yes       *-*-1 01:00:00 yes
 hourly       /, /var                 25%SIZE    no        hourly         yes
 .br
 .
-.HP
+.TP
 .B snapm
 .CMD_SCHEDULE_GC
 .br
 Run garbage collection for snapshot set schedule.
 .IP
-Run the configured garbage collection policy for the schedule named
-\fBname\fP.
+Run the configured garbage collection policy for the schedule specified with
+\fB-c | --config\fP \fIschedule_name\fP.
 .br
-Cleans up snapshot sets created by \fBname\fP, applying the configured
+Cleans up snapshot sets created by \fIschedule_name\fP, applying the configured
 cleanup policy and parameters given to \fBsnapm schedule create\fP.
 .SH SCHEDULING AND GARBAGE COLLECTION
 Snapshot manager supports automatically creating snapshot sets according to a
@@ -1252,7 +1175,6 @@ by the user.
 .B Garbage collection policies
 .P
 .sp
-.PD 0
 .TP 8
 .B ALL
 Retain all snapshot sets. This policy accepts no parameters and never deletes
@@ -1295,28 +1217,27 @@ according to the value of the
 and
 .B \-\-keep-yearly
 parameters.
-.PD
 .SH BOOTING AND REVERTING SNAPSHOT SETS
 .
 Snapshot manager integrates with the \fBboom(8)\fP boot manager to facilitate
 booting and reverting snapshot sets. Specifying the \fB-b|--bootable\fP or
 \fB-r|--revert\fP arguments when creating a snapshot set will cause
 \fBsnapm\fP to create a snapshot boot or revert boot entry respectively.
-
+.P
 The snapshot boot entry allows the system to boot into the state of the system
 at the time the snapshot was created. This can be used to inspect the previous
 state of the system or to quickly recover from a failed update or
 reconfiguration.
-
+.P
 In order to reset the system back to the state at the time the snapshot set was
 created the revert boot entry is used \fIafter\fP issuing a \fBsnapm snapset
 revert\fP command. After running the \fBrevert\fP command the system should
 be rebooted into the revert boot entry. This will start the revert
 operation on all affected volumes.
-
+.P
 While the operation is in progress the snapshot set will appear with the
 status of \fIReverting\fP.
-
+.P
 Reverting a snapshot set will also destroy the snapshot set since the snapshot
 volumes are folded back into the origin devices. Following the completion of a
 revert operation the snapshot set will no longer appear in the output of
@@ -1336,37 +1257,23 @@ name \fIhelp\fP:
 .br
 #
 .B snapm snapset list -o help
-.br
+.EX
 Snapshot set Fields
-.br
 -------------------
-.br
   name         - Snapshot set name [str]
-.br
   UUID         - Snapshot set UUID [UUID]
-.br
   timestamp    - Snapshot set creation time as a UNIX epoch value [num]
-.br
   time         - Snapshot set creation time [time]
-.br
   nr_snapshots - Number of snapshots [num]
-.br
   sources      - Snapshot set sources [strlist]
-.br
   mountpoints  - Snapshot set mount points [strlist]
-.br
   devices      - Snapshot set devices [strlist]
-.br
   status       - Snapshot set status [str]
-.br
   autoactivate - Autoactivation status [str]
-.br
   bootable     - Configured for snapshot boot [str]
-.br
   bootentry    - Snapshot set boot entry [sha]
-.br
   revertentry  - Snapshot set revert boot entry [sha]
-.br
+.EE
 .
 .SH REPORT FIELDS
 .
@@ -1490,7 +1397,7 @@ the \fBsnapset\fP, \fBsnapshot\fP, and \fBschedule\fP \fBshow\fP subcommands:
             "/",
             "/home",
             "/var"
-        ],
+       ],
         "MountPoints": [
             "/",
             "/home",
@@ -1711,6 +1618,7 @@ are defined in \fIschedule.d\fP.
 .
 .SH BUGS
 Please report bugs via the GitHub issue tracker:
+.P
 .UR https://\:github.com/snapshotmanager/snapm/issues
 .UE
 .
