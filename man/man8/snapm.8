@@ -12,6 +12,20 @@
 .  fi
 ..
 .\}
+.
+.\\" URL macro fallbacks for man2html compatibility (and groff without man-ext)
+.\" Define UR and UE independently so we don't assume both exist.
+.if !d UR \{\
+.de UR
+\\$2 \(la\\$1\(ra
+..
+.\}
+.if !d UE \{\
+.de UE
+.  br
+..
+.\}
+.
 .de ARG_GLOBAL
 .  RI [global_args] " "\c
 ..
