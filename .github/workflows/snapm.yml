@@ -11,6 +11,7 @@ on:
       - main
 jobs:
   python-basic-tests:
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - name: checkout
