@@ -1,4 +1,5 @@
-![Snapm CI](https://github.com/snapshotmanager/snapm/actions/workflows/snapm.yml/badge.svg)
+![Snapm CI](https://github.com/snapshotmanager/snapm/actions/workflows/snapm.yml/badge.svg) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/snapshotmanager/snapm)
+
 # Snapm
 
 Snapshot manager (snapm) is a tool for managing sets of snapshots on Linux
