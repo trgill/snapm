@@ -27,6 +27,7 @@ import os
 from snapm import (
     SNAPM_SUBSYSTEM_MANAGER,
     SNAPM_VALID_NAME_CHARS,
+    SNAPM_RUNTIME_DIR,
     SnapmError,
     SnapmSystemError,
     SnapmCalloutError,
@@ -93,6 +94,9 @@ _PLUGINS_D_PATH = join(_SNAPM_CFG_DIR, "plugins.d")
 
 #: Path to directory for Schedule configuration files
 _SCHEDULE_D_PATH = join(_SNAPM_CFG_DIR, "schedule.d")
+
+#: Path to snapm snapshot set mount directory
+_SNAPM_MOUNTS_DIR = join(SNAPM_RUNTIME_DIR, "mounts")
 
 #: Directory for snapshot set lock files
 _SNAPSET_LOCK_DIR = "/run/lock/snapm"

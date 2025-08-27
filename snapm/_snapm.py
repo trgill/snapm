@@ -45,6 +45,9 @@ _DEBUG_MASK_TO_SUBSYSTEM = {
 
 _debug_subsystems = set()
 
+#: Top-level state directory: managed by systemd/tmpfiles.d/snapm.conf
+SNAPM_RUNTIME_DIR = "/run/snapm"
+
 NAMESPACE_SNAPSHOT_SET = UUID("{952f0e38-24a1-406d-adf6-0e9fb3c707d8}")
 NAMESPACE_SNAPSHOT = UUID("{c17d07c7-1482-43b7-9b3c-12d490622d93}")
 
@@ -1715,6 +1718,8 @@ __all__ = [
     "SNAPM_DEBUG_COMMAND",
     "SNAPM_DEBUG_REPORT",
     "SNAPM_DEBUG_ALL",
+    # Path to runtime directory
+    "SNAPM_RUNTIME_DIR",
     # Debug logging - subsystem name interface
     "SubsystemFilter",
     "SNAPM_SUBSYSTEM_MANAGER",
