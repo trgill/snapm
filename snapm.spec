@@ -92,6 +92,12 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man5/snapm-plugins.d.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man5/snapm-schedule.d.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 
+mkdir -p ${RPM_BUILD_ROOT}/%{_unitdir}
+%{__install} -p -m 644 systemd/snapm-create@.service ${RPM_BUILD_ROOT}/%{_unitdir}
+%{__install} -p -m 644 systemd/snapm-create@.timer ${RPM_BUILD_ROOT}/%{_unitdir}
+%{__install} -p -m 644 systemd/snapm-gc@.service ${RPM_BUILD_ROOT}/%{_unitdir}
+%{__install} -p -m 644 systemd/snapm-gc@.timer ${RPM_BUILD_ROOT}/%{_unitdir}
+
 %check
 %pytest --log-level=debug -v tests/
 
@@ -104,6 +110,10 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/snapm.conf
 %attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/plugins.d/*
 %dir %attr(755, -, -) %{_sysconfdir}/%{name}/schedule.d
+%attr(644, -, -) %{_unitdir}/snapm-create@.service
+%attr(644, -, -) %{_unitdir}/snapm-create@.timer
+%attr(644, -, -) %{_unitdir}/snapm-gc@.service
+%attr(644, -, -) %{_unitdir}/snapm-gc@.timer
 
 %files -n python3-snapm
 # license for snapm (Apache-2.0)
