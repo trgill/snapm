@@ -1221,8 +1221,8 @@ def _prune_cmd(cmd_args):
     snapset = prune_snapset(manager, cmd_args.name, cmd_args.sources)
     _log_info(
         "Pruned sources (%s) from snapset '%s'",
-        snapset.name,
         ", ".join(cmd_args.sources),
+        snapset.name,
     )
     print(snapset)
     return 0
