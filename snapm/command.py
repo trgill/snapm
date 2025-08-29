@@ -289,8 +289,8 @@ _snapshot_fields = [
     FieldType(
         PR_SNAPSHOT,
         "origin",
-        "Origin",
         SNAPSHOT_ORIGIN,
+        "Snapshot origin",
         16,
         REP_STR,
         lambda f, d: f.report_str(d.origin),
