@@ -75,10 +75,10 @@ jobs:
           pycodestyle snapm
       - name: Check Flake8
         run: >
-          flake8 snapm
+          flake8 --jobs auto snapm
       - name: Check pylint
         run: >
-          pylint snapm
+          pylint --jobs 0 snapm
       - name: Run bandit
         run: >
           bandit --skip B101,B303,B404,B603 -r snapm
