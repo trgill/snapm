@@ -72,7 +72,7 @@ jobs:
           sudo boom profile create --from-host --uname-pattern azure --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
       - name: Check PyCodestyle
         run: >
-          pycodestyle snapm --ignore E501,E203,W503
+          pycodestyle snapm
       - name: Check Flake8
         run: >
           flake8 snapm
