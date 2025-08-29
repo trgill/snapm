@@ -70,6 +70,18 @@ jobs:
           # Create profiles for kernel variants seen in CI
           sudo boom profile create --from-host --uname-pattern generic --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
           sudo boom profile create --from-host --uname-pattern azure --initramfs-pattern "/initrd.img-%{version}" --kernel-pattern "/vmlinuz-%{version}"
+      - name: Check PyCodestyle
+        run: >
+          pycodestyle snapm --ignore E501,E203,W503
+      - name: Check Flake8
+        run: >
+          flake8 snapm
+      - name: Check pylint
+        run: >
+          pylint snapm
+      - name: Run bandit
+        run: >
+          bandit --skip B101,B303,B404,B603 -r snapm
       - name: Install Ubuntu stratisd deps
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -107,18 +119,6 @@ jobs:
       - name: Install stratis-cli
         run: sudo pip install -v .
         working-directory: /var/tmp/stratis-cli
-      - name: Check PyCodestyle
-        run: >
-          pycodestyle snapm --ignore E501,E203,W503
-      - name: Check Flake8
-        run: >
-          flake8 snapm
-      - name: Check pylint
-        run: >
-          pylint snapm
-      - name: Run bandit
-        run: >
-          bandit --skip B101,B303,B404,B603 -r snapm
       - name: Run test suite with coverage
         run: >
           sudo python3-coverage run /usr/bin/pytest-3 --log-level=debug -v tests/
