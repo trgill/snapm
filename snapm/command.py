@@ -1274,7 +1274,7 @@ def _autoactivate_cmd(cmd_args):
     """
     manager = Manager()
     select = Selection.from_cmd_args(cmd_args)
-    auto = bool(cmd_args.yes)
+    auto = cmd_args.autoactivate
     count = manager.set_autoactivate(select, auto=auto)
     _log_info("Set autoactivate=%s for %d snapshot sets", bool_to_yes_no(auto), count)
     return 0
@@ -1379,11 +1379,11 @@ def _snapshot_autoactivate_cmd(cmd_args):
         _log_error("Could not find snapshots matching %s", select)
         return 1
     count = 0
-    auto = bool(cmd_args.yes)
+    auto = cmd_args.autoactivate
     for snapshot in snapshots:
         snapshot.autoactivate = auto
         count += 1
-    _log_info("Set autoactivation status for %d snapshots", count)
+    _log_info("Set autoactivate=%s for %d snapshots", bool_to_yes_no(auto), count)
     return 0
 
 
@@ -1745,15 +1745,18 @@ def _add_report_args(parser):
 
 
 def _add_autoactivate_args(parser):
-    parser.add_argument(
+    yes_no_mutex_group = parser.add_mutually_exclusive_group(required=True)
+    yes_no_mutex_group.add_argument(
         "--yes",
+        dest="autoactivate",
         action="store_true",
-        help="Enable snapshot autoactivation",
+        help="Enable autoactivation",
     )
-    parser.add_argument(
+    yes_no_mutex_group.add_argument(
         "--no",
-        action="store_true",
-        help="Disable snapshot autoactivation",
+        action="store_false",
+        dest="autoactivate",
+        help="Disable autoactivation",
     )
 
 
