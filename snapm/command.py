@@ -1773,7 +1773,9 @@ def _add_policy_args(parser):
     parser.add_argument(
         "-p",
         "--policy-type",
-        type=str,
+        type=lambda s: s.lower(),
+        required=True,
+        choices=["all", "count", "age", "timeline"],
         help="Garbage collection policy type",
     )
 

@@ -234,6 +234,18 @@ class CommandTestsSimple(CommandTestsBase):
         with self.assertRaises(SystemExit) as cm:
             command.main(args)
 
+    def test_main_schedule_create_requires_policy_type(self):
+        args = self.get_debug_main_args()
+        args += [
+            "schedule", "create",
+            "--keep-days", "7",
+            "--calendarspec", "hourly",
+            "hourly", "/", "/var",
+        ]
+        with self.assertRaises(SystemExit) as cm:
+            command.main(args)
+        self.assertEqual(cm.exception.code, 2)
+
 
 @unittest.skipIf(not have_root(), "requires root privileges")
 class CommandTests(CommandTestsBase):
@@ -814,6 +826,25 @@ class CommandTests(CommandTestsBase):
         args += ["snapset", "revert"]
         self.assertEqual(command.main(args), 1)
 
+    def test_main_schedule_create_delete_uppercase_variants(self):
+        for p in ["ALL", "COUNT", "AGE", "TIMELINE"]:
+            name = f"hourly-{p.lower()}"
+            with self.subTest(policy=p):
+                args = self.get_debug_main_args()
+                args += ["schedule", "create", "--policy-type", p, "--calendarspec", "hourly", name]
+                if p == "COUNT":
+                    args.extend(["--keep-count", "1"])
+                elif p == "AGE":
+                    args.extend(["--keep-days", "1"])
+                elif p == "TIMELINE":
+                    args.extend(["--keep-daily", "1"])
+                args.extend(self.mount_points())
+                self.assertEqual(command.main(args), 0)
+
+                args = self.get_debug_main_args()
+                args += ["schedule", "delete", name]
+                self.assertEqual(command.main(args), 0)
+
     def test_main_schedule_create_show_list_gc_delete_ALL(self):
         args = self.get_debug_main_args()
         args += [
@@ -824,8 +855,8 @@ class CommandTests(CommandTestsBase):
             "--calendarspec",
             "hourly",
             "hourly",
-            " ".join(self.mount_points())
         ]
+        args.extend(self.mount_points())
         self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
@@ -860,8 +891,8 @@ class CommandTests(CommandTestsBase):
             "--calendarspec",
             "hourly",
             "hourly",
-            " ".join(self.mount_points())
         ]
+        args.extend(self.mount_points())
         self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
@@ -896,8 +927,8 @@ class CommandTests(CommandTestsBase):
             "--calendarspec",
             "hourly",
             "hourly",
-            " ".join(self.mount_points())
         ]
+        args.extend(self.mount_points())
         self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
@@ -936,8 +967,8 @@ class CommandTests(CommandTestsBase):
             "--calendarspec",
             "hourly",
             "hourly",
-            " ".join(self.mount_points())
         ]
+        args.extend(self.mount_points())
         self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
@@ -972,8 +1003,8 @@ class CommandTests(CommandTestsBase):
             "--calendarspec",
             "hourly",
             "hourly",
-            " ".join(self.mount_points())
         ]
+        args.extend(self.mount_points())
         self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
@@ -1001,7 +1032,7 @@ class CommandTests(CommandTestsBase):
             "hourly",
             "hourly",
         ]
-        args += self.mount_points()
+        args.extend(self.mount_points())
         self.assertEqual(command.main(args), 0)
 
         args = self.get_debug_main_args()
