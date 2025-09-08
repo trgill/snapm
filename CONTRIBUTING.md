@@ -54,6 +54,33 @@ correctly.
 # dnf install lvm2 stratisd
 ```
 
+Install ``boom-boot`` first, either from distribution packages or using
+the manual installation instructions from the project README.md.
+
+Create a venv to isolate the installation (use ``--system-site-packages``
+to use the installed packages, rather than building from source):
+
+```bash
+# python3 -m venv --system-site-packages .venv && source .venv/bin/activate
+```
+
+Install in editable mode:
+
+```bash
+# git clone https://github.com/snapshotmanager/snapm.git
+# cd snapm
+# python3 -m pip install -e .
+```
+
+Or run from a git clone:
+
+```bash
+# git clone https://github.com/snapshotmanager/snapm.git
+# cd snapm
+# export PATH="$PWD/bin:$PATH" PYTHONPATH="$PWD"
+# boom <type> <command> ...
+```
+
 -----
 
 ## Coding Style
@@ -85,7 +112,7 @@ of the source directory.
 
 ### Requirements
 
-  * The test suite requires `pytest` (and  optionally `coverage`). You can
+  * The test suite requires `pytest` (and optionally `coverage`). You can
     install them with `pip` or `dnf` (On RHEL/Fedora/CentOS systems these
     packages are named `python3-pytest` and `python3-coverage`).
   * You'll need about **\~250MiB of free space in `/var/tmp`** for the
@@ -107,7 +134,7 @@ To run the entire test suite with coverage checking, use the following
 commands:
 
 ```bash
-# coverage run /usr/bin/pytest -v --log-level=debug tests
+# coverage run -m pytest -v --log-level=debug tests
 # coverage report --include "./snapm/*"
 ```
 
@@ -145,4 +172,14 @@ To skip the confirmation prompt, use `--force`:
 
 ```bash
 # tests/bin/cleanup.sh --force
+```
+
+## Building the Documentation
+
+We use Sphinx. To build the HTML docs locally:
+
+```bash
+# python3 -m pip install -r requirements.txt
+# make -C doc html
+# xdg-open doc/_build/html/index.html
 ```

@@ -81,7 +81,7 @@ split | prune | activate | deactivate | autoactivate | list | show
 .  RB [ -o | --options\ \c
 .  IR fields ] " "\c
 .  RB [ -O | --sort\ \c
-.  IR fields ] " "\c
+.  IR sort_fields ] " "\c
 .  RB [ --rows | --json ] " "\c
 .  RB [ --separator\ \c
 .  IR separator ] " "\c
@@ -552,7 +552,7 @@ Suppress output of report headings.
 Specify which fields to display.
 .
 .TP 8
-\fB-O | --sort\fP \fIsort_field\fP
+\fB-O | --sort\fP \fIsort_fields\fP
 Specify which fields to sort by.
 .
 .TP
@@ -632,6 +632,8 @@ Valid characters for snapset names are:
 .BR 0 \(en 9
 .B + . -
 .P
+The underscore character ('_') is not permitted.
+.P
 Snapshot sets and snapshots are also identified by a unique UUID value. The
 terms \fIsnapshot set\fP and \fIsnapset\fP are used interchangeably in this
 manual page.
@@ -666,11 +668,12 @@ the next time the volumes making up the snapshot set are activated and the
 snapshot set status will remain \fIReverting\fP until the operation is
 complete.
 .P
-The status of a snapset is an aggregation of the status of the individual
-snapshots it contains: if any snapshots are \fIInactive\fP then the overall
-status of the snapset is also \fIInactive\fP. If any snapshots within the set
-are \fIInvalid\fP then the snapshot set status as a whole is also
-\fIInvalid\fP.
+The status of a snapshot set is an aggregation of the status of the individual
+snapshots it contains: if any snapshots are \fIInvalid\fP then the overall
+status of the snapshot set is also \fIInvalid\fP. If any snapshots within the
+set are \fIReverting\fP then the snapshot set status as a whole is also
+\fIReverting\fP. Finally, if any snapshots are \fIInactive\fP then the
+status of the snapshot set is \fIInactive\fP.
 .P
 .B Snapshot size policies
 .P
@@ -1259,6 +1262,8 @@ Snapshot set Fields
 -------------------
   name         - Snapshot set name [str]
   UUID         - Snapshot set UUID [UUID]
+  basename     - Snapshot set basename [str]
+  index        - Snapshot set index [idx]
   timestamp    - Snapshot set creation time as a UNIX epoch value [num]
   time         - Snapshot set creation time [time]
   nr_snapshots - Number of snapshots [num]

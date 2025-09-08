@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Boom documentation build configuration file, created by
+# Snapm documentation build configuration file, created by
 # sphinx-quickstart on Wed Jun 14 19:07:51 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -20,7 +20,6 @@ import sys
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 sys.path.insert(0, os.path.abspath('..'))
-import snapm
 
 # -- General configuration ------------------------------------------------
 
@@ -36,6 +35,14 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.coverage',
+]
+
+# List of modules to be mocked up.
+autodoc_mock_imports = [
+    'boom',
+    'dbus',
+    'dbus_client_gen',
+    'dbus_python_client_gen'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -56,7 +63,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Snapm'
-copyright = u'2024, Red Hat, Inc.'
+copyright = u'2025, Red Hat, Inc.'
 author = u'Bryn M. Reeves'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -140,7 +147,7 @@ html_theme = 'default'
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = u'Boom v0.1.0'
+# html_title = u'Snapm v0.4.0'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
