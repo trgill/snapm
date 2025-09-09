@@ -1,4 +1,4 @@
-.TH "SNAPM" "8" "Aug 23 2025" "Linux" "MAINTENANCE COMMANDS"
+.TH "SNAPM" "8" "Sep 09 2025" "Linux" "MAINTENANCE COMMANDS"
 .\" Compatibility for older groff (1.22.x) lacking EX/EE
 .ie d EX \{\
 .\}
@@ -13,7 +13,7 @@
 ..
 .\}
 .
-.\\" URL macro fallbacks for man2html compatibility (and groff without man-ext)
+.\" URL macro fallbacks for man2html compatibility (and groff without man-ext)
 .\" Define UR and UE independently so we don't assume both exist.
 .if !d UR \{\
 .de UR
@@ -50,7 +50,7 @@ split | prune | activate | deactivate | autoactivate | list | show
 .  RI plugin " "\c
 ..
 .de ARG_PLUGIN_COMMANDS
-.  RI list
+.  RI list " "\c
 ..
 .
 .de ARG_SCHEDULE_TYPE
@@ -535,7 +535,7 @@ Include individual snapshots in the output of \fBsnapset show\fP commands.
 .
 .TP 8
 \fB-n | --name\fP \fIname\fP
-Specify a snapset name to operate on.
+Specify a snapshot set name to operate on.
 .
 .TP 8
 .B --name-prefixes | --nameprefixes
@@ -593,7 +593,7 @@ Start the specified schedule immediately when enabling it with
 .
 .TP 8
 \fB-u | --uuid\fP \fIUUID\fP
-Specify a snapset UUID to operate on.
+Specify a snapshot set UUID to operate on.
 .
 .TP 8
 .B -v | --verbose
@@ -626,7 +626,7 @@ common point in time as \fIsnapshot sets\fP. A snapshot set is created from a
 list of sources (mount point or block device paths) and allows the state of the
 system to be captured spanning over several volumes.
 .P
-Valid characters for snapset names are:
+Valid characters for snapshot set names are:
 .BR a \(en z
 .BR A \(en Z
 .BR 0 \(en 9
@@ -634,16 +634,14 @@ Valid characters for snapset names are:
 .P
 The underscore character ('_') is not permitted.
 .P
-Snapshot sets and snapshots are also identified by a unique UUID value. The
-terms \fIsnapshot set\fP and \fIsnapset\fP are used interchangeably in this
-manual page.
+Snapshot sets and snapshots are also identified by a unique UUID value.
 .P
 A plugin model is used to map mount points or devices onto possible snapshot
 \fIproviders\fP. A provider plugin must exist for each source path specified
 when creating a snapshot set. The current plugins support LVM2 copy-on-write,
 LVM2 thin provisioned and Stratis snapshots.
 .P
-The \fIsnapset\fP subcommand allows snapsets to be created, deleted,
+The \fIsnapset\fP subcommand allows snapshot sets to be created, deleted,
 enumerated, renamed, reverted, and activated or deactivated.
 .P
 The \fIsnapshot\fP subcommand provides access to information describing
@@ -726,7 +724,7 @@ subcommand.
 Create a new snapshot set using the specified list of mount points and block
 devices.
 .IP
-The newly created snapset is displayed on the terminal on success:
+The newly created snapshot set is displayed on the terminal on success:
 .IP
 .EX
 # snapm snapset create backup / /home /var /opt /srv
@@ -804,23 +802,24 @@ sets not specified by the schedule parameters.
 .B snapm
 .CMD_SNAPSET_DELETE
 .br
-Delete the specified snapset. The snapset to delete may be specified
+Delete the specified snapshot set. The snapshot set to delete may be specified
 either by its \fBname\fP or \fBUUID\fP.
 .
 .TP
 .B snapm
 .CMD_SNAPSET_RENAME
 .br
-Rename an existing snapset. The snapset to be renamed is specified as
+Rename an existing snapshot set. The snapshot set to be renamed is specified as
 \fBold_name\fP and the new name is given as \fBnew_name\fP.
 .
 .TP
 .B snapm
 .CMD_SNAPSET_REVERT
 .br
-Revert an existing snapset, re-setting the content of the origin volumes
-to the state they were in at the time the snapset was created. The snapset
-to be reverted may be specified either by its \fBname\fP or \fBUUID\fP.
+Revert an existing snapshot set, re-setting the content of the origin volumes
+to the state they were in at the time the snapshot set was created. The
+snapshot set to be reverted may be specified either by its \fBname\fP or
+\fBUUID\fP.
 .IP
 Reverting a snapshot set with mounted and in-use origin volumes will schedule
 the revert to take place the next time that the volumes are activated, for
@@ -875,10 +874,10 @@ It is an error to prune \fIall\fP sources from a snapshot set: in this case use
 .B snapm
 .CMD_SNAPSET_ACTIVATE
 .br
-Attempt to activate snapshots making up snapsets. If no argument is given the
-command will attempt to activate all snapshots of all snapsets present on the
-system. If a \fBname\fP or \fBUUID\fP is specified then only that snapset will
-be activated.
+Attempt to activate snapshots making up snapshot sets. If no argument is given
+the command will attempt to activate all snapshots of all snapshot sets present
+on the system. If a \fBname\fP or \fBUUID\fP is specified then only that
+snapshot set will be activated.
 .IP
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
@@ -888,10 +887,10 @@ availability.
 .B snapm
 .CMD_SNAPSET_DEACTIVATE
 .br
-Attempt to deactivate snapshots making up snapsets. If no argument is given the
-command will attempt to deactivate all snapshots of all snapsets present on the
-system. If a \fBname\fP or \fBUUID\fP is specified then only that snapset will
-be deactivated.
+Attempt to deactivate snapshots making up snapshot sets. If no argument is
+given the command will attempt to deactivate all snapshots of all snapshot
+sets present on the system. If a \fBname\fP or \fBUUID\fP is specified then
+only that snapshot set will be deactivated.
 .IP
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
@@ -901,7 +900,7 @@ availability.
 .B snapm
 .CMD_SNAPSET_AUTOACTIVATE
 .br
-Enable or disable snapshot autoactivation for snapsets matching selection
+Enable or disable snapshot autoactivation for snapshot sets matching selection
 criteria. Some snapshot providers (lvm2-thin) support optional snapshot volume
 activation when activating resources for e.g. at boot time. The \fBsnapset
 autoactivate\fP subcommand allows control of this behaviour for snapshot sets
@@ -911,10 +910,10 @@ managed by \fBsnapm\fP.
 .B snapm
 .CMD_SNAPSET_LIST
 .br
-Output a tabular report of snapsets.
+Output a tabular report of snapshot sets.
 .IP
-Displays a report with one snapset per line, containing fields describing the
-properties of the configured snapshot sets.
+Displays a report with one snapshot set per line, containing fields describing
+the properties of the configured snapshot sets.
 .IP
 The list of fields to display is given with \fB-o|--options\fP as a comma
 separated list of field names. To obtain a list of available fields run
@@ -936,7 +935,7 @@ that field respectively.
 .B snapm
 .CMD_SNAPSET_SHOW
 .br
-Display snapsets matching selection criteria on standard out. If the
+Display snapshot sets matching selection criteria on standard out. If the
 \fB--members\fP option is given individual snapshots are included in the
 output.
 .
@@ -950,8 +949,8 @@ output.
 .br
 Attempt to activate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to activate all snapshots of all
-snapsets present on the system. If a snapshot or snapset \fBname\fP or
-\fBUUID\fP is specified then only matching volumes will be activated.
+snapshot sets present on the system. If a snapshot or snapshot set \fBname\fP
+or \fBUUID\fP is specified then only matching volumes will be activated.
 .IP
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
@@ -963,8 +962,8 @@ availability.
 .br
 Attempt to deactivate individual snapshots matching selection criteria. If no
 argument is given the command will attempt to deactivate all snapshots of all
-snapsets present on the system. If a snapshot or snapset \fBname\fP or
-\fBUUID\fP is specified then only matching volumes will be deactivated.
+snapshot sets present on the system. If a snapshot or snapshot set \fBname\fP
+or \fBUUID\fP is specified then only matching volumes will be deactivated.
 .P
 Not all snapshot providers support optional activation for snapshot volumes:
 for these providers activate and deactivate have no effect on volume
@@ -1280,13 +1279,13 @@ Snapshot set Fields
 .SH REPORT FIELDS
 .
 The \fBsnapm\fP reports provide several types of field that may be added to the
-default field set for either snapset or snapshot reports, or used to create
-custom reports.
+default field set for either snapshot set or snapshot reports, or used to
+create custom reports.
 .
 .SS Snapshot sets
 .
-Snapshot set fields provide information about snapsets as a whole, including
-the name, number of snapshots, mount points, status and UUID.
+Snapshot set fields provide information about snapshot sets as a whole,
+including the name, number of snapshots, mount points, status and UUID.
 .TP 8
 .B name
 The name of this snapshot set.
@@ -1337,9 +1336,9 @@ revert boot entry has been created.
 .
 .SS Snapshots
 .
-Snapshot fields provide information about the snapshots that make up snapsets,
-including the fields available in the snapset report as well as fields specific
-to individual snapshots.
+Snapshot fields provide information about the snapshots that make up snapshot
+sets, including the fields available in the snapshot set report as well as
+fields specific to individual snapshots.
 .TP 8
 .B snapshot_name
 The provider-specific name used to refer to the snapshot.
@@ -1609,7 +1608,7 @@ with output formatted in JSON notation
 }
 .EE
 .P
-Delete the snapset named 'backup'
+Delete the snapshot set named 'backup'
 .br
 .EX
 # snapm snapset delete backup
@@ -1622,13 +1621,13 @@ Activate all snapshot sets with verbose output
 INFO - Activated 2 snapshot sets
 .EE
 .P
-Rename the snapset 'backup' to 'oldbackup'
+Rename the snapshot set 'backup' to 'oldbackup'
 .br
 .EX
 # snapm snapset rename backup oldbackup
 .EE
 .P
-Display the snapset named 'before-upgrade'
+Display the snapshot set named 'before-upgrade'
 .br
 .
 .EX
