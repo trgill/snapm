@@ -777,6 +777,39 @@ tools using the ``--json`` argument:
         ]
     }
 
+The ``create`` and ``show`` commands also support optional JSON output
+using the ``--json`` argument. In this case the JSON schema maps the
+normal ``show`` output property names to JSON keys:
+
+.. code-block:: bash
+
+    # snapm snapset show --json before-upgrade
+    [
+        {
+            "SnapsetName": "before-upgrade",
+            "Sources": [
+                "/",
+                "/var"
+            ],
+            "MountPoints": [
+                "/",
+                "/var"
+            ],
+            "Devices": [],
+            "NrSnapshots": 2,
+            "Timestamp": 1757353437,
+            "Time": "2025-09-08 18:43:57",
+            "UUID": "6330328b-a9d0-5b41-ac96-53b371449965",
+            "Status": "Active",
+            "Autoactivate": true,
+            "Bootable": true,
+            "BootEntries": {
+                "SnapshotEntry": "66dc7ad",
+                "RevertEntry": "6832c11"
+            }
+        }
+    ]
+
 Common Use Cases
 ================
 

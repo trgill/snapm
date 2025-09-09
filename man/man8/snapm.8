@@ -1431,7 +1431,40 @@ Schedule running.
 .SH JSON OUTPUT
 .
 All reporting commands can optionally generate output in JSON notation by using
-the \fB--json\fP argument.
+the \fB--json\fP argument. Reporting commands use JSON key names derived from
+the report field names. Selection and sorting is controlled with
+\fB--options\fP and \fB--sort\fP as usual:
+.PP
+.EX
+# snapm snapset list --json -o+snapset_uuid --sort snapset_time
+{
+    "Snapsets": [
+        {
+            "snapset_name": "before-upgrade",
+            "snapset_time": "2025-09-08 18:43:57",
+            "snapset_nr_snapshots": 2,
+            "snapset_status": "Active",
+            "snapset_sources": [
+                "/",
+                "/var"
+            ],
+            "snapset_uuid": "6330328b-a9d0-5b41-ac96-53b371449965"
+        },
+        {
+            "snapset_name": "backup",
+            "snapset_time": "2025-09-09 17:12:21",
+            "snapset_nr_snapshots": 3,
+            "snapset_status": "Inactive",
+            "snapset_sources": [
+                "/",
+                "/home",
+                "/var"
+            ],
+            "snapset_uuid": "efa8a09d-cf9c-500b-ad68-32c4a0e159b4"
+        }
+    ]
+}
+.EE
 .PP
 The \fBcreate\fP, \fBcreate-scheduled\fP, and \fBshow\fP subcommands also
 support optional JSON notation using the \fB--json\fP argument. This includes
@@ -1467,6 +1500,11 @@ the \fBsnapset\fP, \fBsnapshot\fP, and \fBschedule\fP \fBshow\fP subcommands:
     }
 ]
 .EE
+.PP
+The JSON format produced by the \fBshow\fP commands uses JSON key names
+that reflect the property names used in the normal \fBshow\fP command
+output. The output is a JSON array containing objects of the specified
+type.
 .PP
 When boot entries are defined for a snapshot set the resulting JSON will
 include a \fIBootEntries\fP object giving the corresponding \fBboom\fP
