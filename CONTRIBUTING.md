@@ -44,14 +44,14 @@ dependencies.
 Install the build dependencies with this command:
 
 ```bash
-# dnf builddep boom-boot snapm
+dnf builddep boom-boot snapm
 ```
 
 You'll also need `lvm2` and `stratisd` for the test suite to run
 correctly.
 
 ```bash
-# dnf install lvm2 stratisd
+dnf install lvm2 stratisd
 ```
 
 Install ``boom-boot`` first, either from distribution packages or using
@@ -61,24 +61,24 @@ Create a venv to isolate the installation (use ``--system-site-packages``
 to use the installed packages, rather than building from source):
 
 ```bash
-# python3 -m venv --system-site-packages .venv && source .venv/bin/activate
+python3 -m venv --system-site-packages .venv && source .venv/bin/activate
 ```
 
 Install in editable mode:
 
 ```bash
-# git clone https://github.com/snapshotmanager/snapm.git
-# cd snapm
-# python3 -m pip install -e .
+git clone https://github.com/snapshotmanager/snapm.git
+cd snapm
+python3 -m pip install -e .
 ```
 
 Or run from a git clone:
 
 ```bash
-# git clone https://github.com/snapshotmanager/snapm.git
-# cd snapm
-# export PATH="$PWD/bin:$PATH" PYTHONPATH="$PWD"
-# boom <type> <command> ...
+git clone https://github.com/snapshotmanager/snapm.git
+cd snapm
+export PATH="$PWD/bin:$PATH" PYTHONPATH="$PWD"
+snapm <type> <command> ...
 ```
 
 -----
@@ -123,9 +123,9 @@ of the source directory.
     units into the system and notify systemd. From the project root
     directory, run:
     ```bash
-    # cp -r etc/snapm /etc
-    # cp systemd/* /usr/lib/systemd/system
-    # systemctl daemon-reload
+    cp -r etc/snapm /etc
+    cp systemd/* /usr/lib/systemd/system
+    systemctl daemon-reload
     ```
 
 ### Suggested Commands
@@ -134,14 +134,14 @@ To run the entire test suite with coverage checking, use the following
 commands:
 
 ```bash
-# coverage run -m pytest -v --log-level=debug tests
-# coverage report --include "./snapm/*"
+coverage run -m pytest -v --log-level=debug tests
+coverage report --include "./snapm/*"
 ```
 
 To run a specific test, you can use the `-k` flag with `pytest`:
 
 ```bash
-# pytest -v --log-level=debug tests -k <test_name_pattern>
+pytest -v --log-level=debug tests -k <test_name_pattern>
 ```
 
 ### Container Tests
@@ -164,14 +164,14 @@ artifacts behind. To clean them up run the `tests/bin/cleanup.sh`
 script:
 
 ```bash
-# tests/bin/cleanup.sh
+tests/bin/cleanup.sh
 Clean up test suite mounts and devices? (y/n): y
 ```
 
 To skip the confirmation prompt, use `--force`:
 
 ```bash
-# tests/bin/cleanup.sh --force
+tests/bin/cleanup.sh --force
 ```
 
 ## Building the Documentation
@@ -179,7 +179,7 @@ To skip the confirmation prompt, use `--force`:
 We use Sphinx. To build the HTML docs locally:
 
 ```bash
-# python3 -m pip install -r requirements.txt
-# make -C doc html
-# xdg-open doc/_build/html/index.html
+python3 -m pip install -r requirements.txt
+make -C doc html
+xdg-open doc/_build/html/index.html
 ```

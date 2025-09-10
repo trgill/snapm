@@ -25,15 +25,12 @@ managed as a single unit.
 
 ### Installation
 
-Note: Commands show a root prompt (`#`). When copying, omit the leading
-`#`.
-
 #### From RPM (Fedora/CentOS/RHEL)
 
 Install from distribution repositories (when available):
 
 ```bash
-# dnf install snapm boom-boot
+dnf install snapm boom-boot
 ```
 
 #### Manual Installation
@@ -41,24 +38,24 @@ Install from distribution repositories (when available):
 1. Create and activate a virtual environment:
 
 ```bash
-# python3 -m venv --system-site-packages .venv && source .venv/bin/activate
+python3 -m venv --system-site-packages .venv && source .venv/bin/activate
 ```
 
 2. If ``boom-boot`` is not installed from your distribution's packages, clone
    and install it with ``pip``:
 
 ```bash
-# git clone https://github.com/snapshotmanager/boom-boot.git
-# cd boom-boot
-# python3 -m pip install .
+git clone https://github.com/snapshotmanager/boom-boot.git
+cd boom-boot
+python3 -m pip install .
 ```
 
 3. Repeat the process with the ``snapm`` repository:
 
 ```bash
-# git clone https://github.com/snapshotmanager/snapm.git
-# cd snapm
-# python3 -m pip install .
+git clone https://github.com/snapshotmanager/snapm.git
+cd snapm
+python3 -m pip install .
 ```
 
 ### Basic Usage
@@ -69,19 +66,19 @@ Create a snapshot set named "before-upgrade" of root and home,
 with snapshot boot and revert boot entries:
 
 ```bash
-# snapm snapset create --bootable --revert before-upgrade / /home
+snapm snapset create --bootable --revert before-upgrade / /home
 ```
 
 #### List snapshot sets
 
 ```bash
-# snapm snapset list
+snapm snapset list
 ```
 
 Show detailed information:
 
 ```bash
-# snapm snapset show before-upgrade
+snapm snapset show before-upgrade
 ```
 
 #### Boot into a snapshot
@@ -93,7 +90,7 @@ Show detailed information:
   entry, e.g.:
 ```bash
 
-# grub2-reboot "Snapshot before-upgrade YYYY-MM-DD HH:MM:SS (version)"
+grub2-reboot "Snapshot before-upgrade YYYY-MM-DD HH:MM:SS (version)"
 ```
 
 - Use ``grub-reboot`` instead of ``grub2-reboot`` on Debian and Ubuntu
@@ -102,7 +99,7 @@ Show detailed information:
 #### Revert to snapshot state
 
 ```bash
-# snapm snapset revert before-upgrade
+snapm snapset revert before-upgrade
 ```
 
 Then reboot into the Revert boot entry.
@@ -115,7 +112,7 @@ origin volumes).
 Delete snapshot set when no longer needed:
 
 ```bash
-# snapm snapset delete before-upgrade
+snapm snapset delete before-upgrade
 ```
 
 ### Common Workflows
@@ -125,19 +122,19 @@ Delete snapshot set when no longer needed:
 Before major system updates:
 
 ```bash
-# snapm snapset create --bootable --revert pre-update / /var
+snapm snapset create --bootable --revert pre-update / /var
 ```
 
 If update goes wrong, revert:
 
 ```bash
-# snapm snapset revert pre-update
+snapm snapset revert pre-update
 ```
 
 When satisfied with update, clean up:
 
 ```bash
-# snapm snapset delete pre-update
+snapm snapset delete pre-update
 ```
 
 #### Development Snapshots
@@ -145,7 +142,7 @@ When satisfied with update, clean up:
 Quick development checkpoint:
 
 ```bash
-# snapm snapset create dev-checkpoint /home /var
+snapm snapset create dev-checkpoint /home /var
 ```
 
 Continue working...
@@ -154,7 +151,7 @@ If needed, revert specific volumes by splitting them into a dedicated snapshot
 set first:
 
 ```bash
-# snapm snapset split dev-checkpoint dev-checkpoint-home /home
+snapm snapset split dev-checkpoint dev-checkpoint-home /home
 ```
 
 Example output:
@@ -171,13 +168,13 @@ Bootable:         no
 ```
 
 ```bash
-# snapm snapset revert dev-checkpoint-home
+snapm snapset revert dev-checkpoint-home
 ```
 
 Alternatively revert the entire snapshot set:
 
 ```bash
-# snapm snapset revert dev-checkpoint
+snapm snapset revert dev-checkpoint
 ```
 
 ## Documentation

@@ -75,11 +75,11 @@ an individual snapshot, or a schedule.
 
 .. code-block:: bash
 
-   # snapm snapset <command> <options>  # snapset command
+   snapm snapset <command> <options>  # snapset command
 
 .. code-block:: bash
 
-   # snapm snapshot <command> <options> # snapshot command
+   snapm snapshot <command> <options> # snapshot command
 
 Snapset Commands
 ================
@@ -95,26 +95,26 @@ Create a new snapshot set with the provided name and list of sources
 
 .. code-block:: bash
 
-   # snapm snapset create [-b|--bootable] [-r|--revert] [--size-policy policy] <name> source...
+   snapm snapset create [-b|--bootable] [-r|--revert] [--size-policy policy] <name> source...
 
 Per-source path size policies are specified by adding a ':' and the
 required policy to the corresponding mount point path, for example:
 
 .. code-block:: bash
 
-   # snapm snapset create backup /:2G /var:1G /home
+   snapm snapset create backup /:2G /var:1G /home
 
 .. code-block:: bash
 
-   # snapm snapset create backup /:25%FREE /var:25%FREE /home
+   snapm snapset create backup /:25%FREE /var:25%FREE /home
 
 .. code-block:: bash
 
-   # snapm snapset create backup /:100%USED /var:100%USED /home
+   snapm snapset create backup /:100%USED /var:100%USED /home
 
 .. code-block:: bash
 
-   # snapm snapset create backup /:100%SIZE /var:100%SIZE /home
+   snapm snapset create backup /:100%SIZE /var:100%SIZE /home
 
 If no size policy is specified the default is ``200%USED`` for mounted
 file systems and 25%SIZE for unmounted block devices. To ensure a volume
@@ -127,14 +127,14 @@ explicit per-path policy can be set with the ``--size-policy`` argument:
 
 .. code-block:: bash
 
-   # snapm snapset create backup --size-policy 100%SIZE / /home /var
+   snapm snapset create backup --size-policy 100%SIZE / /home /var
 
 On success the ``snapm snapset create`` command displays the newly
 created snapshot set on stdout:
 
 .. code-block:: bash
 
-   # snapm snapset create -br --size-policy 100%USED backup / /home /var
+   snapm snapset create -br --size-policy 100%USED backup / /home /var
    SnapsetName:      backup
    Sources:          /, /home, /var
    NrSnapshots:      3
@@ -156,7 +156,7 @@ can be used to take regular snapshots with a common name:
 
 .. code-block:: bash
 
-   # snapm snapset create hourly --autoindex /:25%SIZE /var:25%SIZE
+   snapm snapset create hourly --autoindex /:25%SIZE /var:25%SIZE
    SnapsetName:      hourly.3
    Sources:          /, /var
    NrSnapshots:      2
@@ -171,7 +171,7 @@ report:
 
 .. code-block:: bash
 
-   # snapm snapset list -o+basename,index
+   snapm snapset list -o+basename,index
    SnapsetName  Time                 NrSnapshots Status  Sources  Basename     Index
    backup       2025-03-25 18:12:54            2 Invalid /, /var  backup           -
    hourly.0     2025-03-25 19:40:39            2 Invalid /, /var  hourly           0
@@ -186,7 +186,7 @@ Delete an existing snapset by name or uuid.
 
 .. code-block:: bash
 
-   # snapm snapset delete <name|uuid>
+   snapm snapset delete <name|uuid>
 
 snapset rename
 --------------
@@ -195,7 +195,7 @@ Rename an existing snapset.
 
 .. code-block:: bash
 
-   # snapm snapset rename <old_name> <new_name>
+   snapm snapset rename <old_name> <new_name>
 
 snapset revert
 --------------
@@ -206,7 +206,7 @@ snapset to be reverted may be specified either by its name or uuid.
 
 .. code-block:: bash
 
-   # snapm snapset revert <name|uuid>
+   snapm snapset revert <name|uuid>
 
 If the origins of the snapshot set are in use at the time of the revert
 the operation is deferred until the next time the snapshot set is
@@ -216,7 +216,7 @@ into it to continue:
 
 .. code-block:: bash
 
-   # snapm snapset revert upgrade
+   snapm snapset revert upgrade
    WARNING - Snapshot set upgrade origin is in use: reboot required to complete revert
    Boot into 'Revert upgrade 2024-06-10 15:25:15 (6.8.9-300.fc40.x86_64)' to continue
 
@@ -232,14 +232,14 @@ Resize the ``/var`` member of the snapshot set named upgrade to
 
 .. code-block:: bash
 
-   # snapm snapset resize upgrade /var:100%SIZE
+   snapm snapset resize upgrade /var:100%SIZE
 
 Resize each member of the snapshot set named backup to the 200%USED size
 policy:
 
 .. code-block:: bash
 
-   # snapm snapset resize backup --size-policy 200%USED
+   snapm snapset resize backup --size-policy 200%USED
 
 snapset split
 -------------
@@ -257,7 +257,7 @@ into a new snapshot set named "noupgrade":
 
 .. code-block:: bash
 
-   # snapm snapset split upgrade noupgrade /home
+   snapm snapset split upgrade noupgrade /home
    SnapsetName:      noupgrade
    Sources:          /home
    NrSnapshots:      1
@@ -275,7 +275,7 @@ or uuid argument is given.
 
 .. code-block:: bash
 
-   # snapm snapset activate [<name|uuid>]
+   snapm snapset activate [<name|uuid>]
 
 snapset deactivate
 ------------------
@@ -285,7 +285,7 @@ name or uuid argument is given.
 
 .. code-block:: bash
 
-   # snapm snapset deactivate [<name|uuid>]
+   snapm snapset deactivate [<name|uuid>]
 
 snapset autoactivate
 --------------------
@@ -294,7 +294,7 @@ Enable or disable autoactivation for the snapshots in a snapshot set.
 
 .. code-block:: bash
 
-   # snapm snapset autoactivate [--yes|--no] [<name|uuid>]
+   snapm snapset autoactivate [--yes|--no] [<name|uuid>]
 
 snapset list
 ------------
@@ -303,7 +303,7 @@ List available snapsets matching selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapset list [<name|uuid>]
+   snapm snapset list [<name|uuid>]
 
 By default the information is presented as a tabular report with column
 headings indicating the meaning of each value. The default column
@@ -312,7 +312,7 @@ Sources fields:
 
 .. code-block:: bash
 
-   # snapm snapset list
+   snapm snapset list
    SnapsetName  Time                 NrSnapshots Status  Sources
    backup       2024-12-05 19:14:03            3 Active  /, /home, /var
    upgrade      2024-12-05 19:14:09            2 Active  /, /var
@@ -323,7 +323,7 @@ argument. To obtain a list of available fields run ``snapm snapset list
 
 .. code-block:: bash
 
-   # snapm snapset list -ohelp
+   snapm snapset list -ohelp
    Snapshot set Fields
    -------------------
      name         - Snapshot set name [str]
@@ -344,7 +344,7 @@ To specify custom fields pass a comma separated list to ``-o``:
 
 .. code-block:: bash
 
-   # snapm snapset list -oname,time
+   snapm snapset list -oname,time
    SnapsetName  Time
    backup       2024-12-05 19:14:03
    upgrade      2024-12-05 19:14:09
@@ -354,7 +354,7 @@ the ``+`` character:
 
 .. code-block:: bash
 
-   # snapm snapset list -o+bootentry,revertentry
+   snapm snapset list -o+bootentry,revertentry
    SnapsetName  Time                 NrSnapshots Status  Sources        SnapshotEntry RevertEntry
    backup       2024-12-05 19:14:03            3 Active  /, /home, /var 41573a414f9d5 1cc5bc59c9b90
    upgrade      2024-12-05 19:14:09            2 Active  /, /var        a60dab4d3fb36 4ce6b27f16f30
@@ -364,7 +364,7 @@ by other tools using the ``--json`` argument:
 
 .. code-block:: bash
 
-   # snapm snapset list --json
+   snapm snapset list --json
    {
        "Snapsets": [
            {
@@ -405,14 +405,14 @@ Display available snapsets matching selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapset show [<name|uuid>]
+   snapm snapset show [<name|uuid>]
 
 By default the output is formatted in the same way as the output of the
 ``snapm snapset create`` command:
 
 .. code-block:: bash
 
-   # snapm snapset show upgrade
+   snapm snapset show upgrade
    SnapsetName:      upgrade
    Sources:          /, /var
    NrSnapshots:      2
@@ -430,7 +430,7 @@ The individual snapshots making up each set are also displayed if
 
 .. code-block:: bash
 
-   # snapm snapset show --members
+   snapm snapset show --members
    SnapsetName:      upgrade
    Sources:          /, /var
    NrSnapshots:      2
@@ -480,7 +480,7 @@ argument:
 
 .. code-block:: bash
 
-  # snapm snapset show --json before-upgrade
+  snapm snapset show --json before-upgrade
   [
       {
           "SnapsetName": "before-upgrade",
@@ -524,7 +524,7 @@ Activate individual snapshots matching selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapshot activate [-N name] [-U uuid] [<name|uuid>]
+   snapm snapshot activate [-N name] [-U uuid] [<name|uuid>]
 
 snapshot deactivate
 -------------------
@@ -533,7 +533,7 @@ Deactivate individual snapshots matching selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapshot deactivate [-N name] [-U uuid] [<name|uuid>]
+   snapm snapshot deactivate [-N name] [-U uuid] [<name|uuid>]
 
 snapshot autoactivate
 ---------------------
@@ -543,7 +543,7 @@ selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapshot autoactivate [--yes|--no] [-N name] [-U uuid] [<name|uuid>]
+   snapm snapshot autoactivate [--yes|--no] [-N name] [-U uuid] [<name|uuid>]
 
 snapshot list
 -------------
@@ -552,7 +552,7 @@ List available snapshots matching selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapshot list [<name|uuid>]
+   snapm snapshot list [<name|uuid>]
 
 By default the information is presented as a tabular report with column
 headings indicating the meaning of each value. The default column
@@ -561,7 +561,7 @@ Size, Free, Autoactivate, and Provider fields:
 
 .. code-block:: bash
 
-   # snapm snapshot list
+   snapm snapshot list
    SnapsetName  Name                                         Origin           Source  Status  Size   Free   Autoactivate Provider
    upgrade      fedora/root-snapset_upgrade_1733426499_-     /dev/fedora/root /       Active  8.8GiB 8.8GiB yes          lvm2-cow
    upgrade      fedora/var-snapset_upgrade_1733426499_-var   /dev/fedora/var  /var    Active  6.4GiB 6.4GiB yes          lvm2-cow
@@ -578,7 +578,7 @@ Display available snapshots matching selection criteria.
 
 .. code-block:: bash
 
-   # snapm snapshot show [<name|uuid>]
+   snapm snapshot show [<name|uuid>]
 
 Plugin Commands
 ===============
@@ -593,7 +593,7 @@ The ``plugin list`` command lists the available plugins:
 
 .. code-block:: bash
 
-   # snapm plugin list
+   snapm plugin list
    PluginName PluginVersion PluginType
    lvm2-cow   0.1.0         Lvm2CowSnapshot
    lvm2-thin  0.1.0         Lvm2ThinSnapshot
@@ -613,11 +613,11 @@ point or block device paths):
 
 .. code-block:: bash
 
-   # snapm schedule create [-a|--autoindex] [-b|--bootable] [-r|--revert] [--size-policy policy] [-p|--policy-type policy_type] [--keep-count count] [--keep-years years] [--keep-months months] [--keep-weeks weeks] [--keep-days days] [--keep-yearly yearly] [--keep-quarterly quarterly] [--keep-monthly monthly] [--keep-weekly weekly] [--keep-daily daily] [--keep-hourly hourly] --calendarspec calendarspec <name> source...
+   snapm schedule create [-a|--autoindex] [-b|--bootable] [-r|--revert] [--size-policy policy] [-p|--policy-type policy_type] [--keep-count count] [--keep-years years] [--keep-months months] [--keep-weeks weeks] [--keep-days days] [--keep-yearly yearly] [--keep-quarterly quarterly] [--keep-monthly monthly] [--keep-weekly weekly] [--keep-daily daily] [--keep-hourly hourly] --calendarspec calendarspec <name> source...
 
 .. code-block:: bash
 
-   # snapm schedule create --policy-type count --keep-count 2 --bootable --revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
+   snapm schedule create --policy-type count --keep-count 2 --bootable --revert --size-policy 25%SIZE --calendarspec hourly hourly / /var
    Name: hourly
    SourceSpecs: /, /var
    DefaultSizePolicy: 25%SIZE
@@ -638,7 +638,7 @@ Delete an existing schedule by name:
 
 .. code-block:: bash
 
-   # snapm schedule delete <name>
+   snapm schedule delete <name>
 
 schedule enable
 ---------------
@@ -647,7 +647,7 @@ Enable an existing schedule by name:
 
 .. code-block:: bash
 
-   # snapm schedule enable <name>
+   snapm schedule enable <name>
 
 schedule disable
 ----------------
@@ -656,7 +656,7 @@ Disable an existing schedule by name:
 
 .. code-block:: bash
 
-   # snapm schedule disable <name>
+   snapm schedule disable <name>
 
 schedule list
 -------------
@@ -665,11 +665,11 @@ List configured schedules:
 
 .. code-block:: bash
 
-   # snapm schedule list [--nameprefixes] [--noheadings] [--options fields] [--sort fields] [--rows|--json] [--separator separator]
+   snapm schedule list [--nameprefixes] [--noheadings] [--options fields] [--sort fields] [--rows|--json] [--separator separator]
 
 .. code-block:: bash
 
-   # snapm schedule list
+   snapm schedule list
    ScheduleName ScheduleSources         SizePolicy OnCalendar     Enabled
    custom       /, /home:100%SIZE, /var 50%SIZE    *-*-1 01:00:00 yes
    monthly      /:25%SIZE, /var:25%SIZE            monthly        no
@@ -682,7 +682,7 @@ Display configured schedule:
 
 .. code-block:: bash
 
-   # snapm schedule show <name>
+   snapm schedule show <name>
 
 schedule gc
 -----------
@@ -691,7 +691,7 @@ Run configured garbage collection policy for schedule:
 
 .. code-block:: bash
 
-   # snapm schedule gc <name>
+   snapm schedule gc <name>
 
 Reporting Commands
 ==================
@@ -703,7 +703,7 @@ as output. To control the list of displayed fields use the
 
 .. code-block:: bash
 
-   # snapm snapset list -oname,sources
+   snapm snapset list -oname,sources
    SnapsetName  Sources
    backup       /, /home, /var
    userdata     /data, /home
@@ -713,7 +713,7 @@ the ``+`` character:
 
 .. code-block:: bash
 
-   # snapm snapset list -o+uuid
+   snapm snapset list -o+uuid
    SnapsetName  Time                 NrSnapshots Status   Sources        UUID
    backup       2024-12-05 19:26:28            3 Active   /, /home, /var 53514020-e88d-5f53-bf09-42c6ab6e325d
    userdata     2024-12-05 19:26:45            2 Inactive /data, /home   e8d58051-7a94-5802-8328-54661ab1a70f
@@ -723,7 +723,7 @@ To display the available fields for either report use the field name
 
 .. code-block:: bash
 
-  # snapm snapset list -ohelp
+  snapm snapset list -ohelp
   Snapshot set Fields
   -------------------
     name         - Snapshot set name [str]
@@ -750,7 +750,7 @@ tools using the ``--json`` argument:
 
 .. code-block:: bash
 
-    # snapm snapset list --json
+    snapm snapset list --json
     {
         "Snapsets": [
             {
@@ -783,7 +783,7 @@ normal ``show`` output property names to JSON keys:
 
 .. code-block:: bash
 
-    # snapm snapset show --json before-upgrade
+    snapm snapset show --json before-upgrade
     [
         {
             "SnapsetName": "before-upgrade",
@@ -822,32 +822,32 @@ Create snapshot set before update:
 
 .. code-block:: bash
 
-   # snapm snapset create --bootable --revert pre-update / /var
+   snapm snapset create --bootable --revert pre-update / /var
 
 Perform system update:
 
 .. code-block:: bash
 
-   # dnf update
+   dnf update
 
 If update causes issues, revert:
 
 .. code-block:: bash
 
-   # snapm snapset revert pre-update
+   snapm snapset revert pre-update
 
 Or boot into snapshot from boot menu (select: "Snapshot pre-update
 YYYY-MM-DD HH:MM:SS (version)"):
 
 .. code-block:: bash
 
-   # reboot
+   reboot
 
 Clean up when satisfied with update:
 
 .. code-block:: bash
 
-   # snapm snapset delete pre-update
+   snapm snapset delete pre-update
 
 Development and Testing
 -----------------------
@@ -858,7 +858,7 @@ Create development checkpoints for experimental work:
 
 .. code-block:: bash
 
-   # snapm snapset create dev-checkpoint /home /var/lib/myapp
+   snapm snapset create dev-checkpoint /home /var/lib/myapp
 
 * Make experimental changes
 
@@ -866,7 +866,7 @@ Create development checkpoints for experimental work:
 
 .. code-block:: bash
 
-   # snapm snapset revert dev-checkpoint
+   snapm snapset revert dev-checkpoint
 
 Data Protection
 ---------------
@@ -879,13 +879,13 @@ Daily backup of user data:
 
 .. code-block:: bash
 
-   # snapm snapset create daily-backup /home /var/lib/database
+   snapm snapset create daily-backup /home /var/lib/database
 
 Weekly system snapshots:
 
 .. code-block:: bash
 
-   # snapm snapset create weekly-system / /var --size-policy 50%SIZE
+   snapm snapset create weekly-system / /var --size-policy 50%SIZE
 
 Automated Scheduling
 --------------------
@@ -896,7 +896,7 @@ Hourly snapshots, keep 24:
 
 .. code-block:: bash
 
-   # snapm schedule create --autoindex \
+   snapm schedule create --autoindex \
        --policy-type count \
        --keep-count 24 \
        --calendarspec hourly \
@@ -906,7 +906,7 @@ Daily snapshots, keep 7 days:
 
 .. code-block:: bash
 
-   # snapm schedule create --autoindex \
+   snapm schedule create --autoindex \
        --policy-type age \
        --keep-days 7 \
        --calendarspec daily \
@@ -916,7 +916,7 @@ Monthly bootable snapshots, keep 12:
 
 .. code-block:: bash
 
-   # snapm schedule create --autoindex \
+   snapm schedule create --autoindex \
        --bootable --revert \
        --policy-type timeline \
        --keep-monthly 12 \
@@ -932,13 +932,13 @@ Before modifying system configuration:
 
 .. code-block:: bash
 
-   # snapm snapset create config-backup /etc /var/lib/config
+   snapm snapset create config-backup /etc /var/lib/config
 
 Make configuration changes:
 
 .. code-block:: bash
 
-   # vim /etc/myapp/config.conf
+   vim /etc/myapp/config.conf
 
 Test changes...
 
@@ -946,7 +946,7 @@ If configuration breaks system, revert:
 
 .. code-block:: bash
 
-   # snapm snapset revert config-backup
+   snapm snapset revert config-backup
 
 Best Practices
 ==============
@@ -997,19 +997,19 @@ Check snapshot space usage:
 
 .. code-block:: bash
 
-   # snapm snapshot list -o name,size,free
+   snapm snapshot list -o name,size,free
 
 Clean up old snapshots:
 
 .. code-block:: bash
 
-   # snapm snapset delete old-snapshot-name
+   snapm snapset delete old-snapshot-name
 
 Review scheduled snapshots:
 
 .. code-block:: bash
 
-   # snapm schedule list
+   snapm schedule list
 
 Access Control
 --------------
@@ -1051,17 +1051,17 @@ Stop service before snapshot:
 
 .. code-block:: bash
 
-   # systemctl stop myapp
-   # snapm snapset create myapp-maintenance /var/lib/myapp
-   # systemctl start myapp
+   systemctl stop myapp
+   snapm snapset create myapp-maintenance /var/lib/myapp
+   systemctl start myapp
 
 Alternatively isolate to rescue mode for system-wide consistency:
 
 .. code-block:: bash
 
-   # systemctl isolate rescue.target
-   # snapm snapset create system-maintenance / /var
-   # systemctl isolate multi-user.target
+   systemctl isolate rescue.target
+   snapm snapset create system-maintenance / /var
+   systemctl isolate multi-user.target
 
 With Backup Systems
 -------------------
@@ -1072,27 +1072,27 @@ Create consistent snapshot for backup:
 
 .. code-block:: bash
 
-   # snapm snapset create backup-source /home /var/lib/data
+   snapm snapset create backup-source /home /var/lib/data
 
 Mount individual snapshots for backup tools:
 
 .. code-block:: bash
 
-   # mkdir /mnt/snapshot-backup
-   # mount /dev/fedora/home-snapset_backup-source_* /mnt/snapshot-backup
+   mkdir /mnt/snapshot-backup
+   mount /dev/fedora/home-snapset_backup-source_* /mnt/snapshot-backup
 
 Run backup tools against mounted snapshot:
 
 .. code-block:: bash
 
-   # rsync -av /mnt/snapshot-backup/ backup-server:/backups/
+   rsync -av /mnt/snapshot-backup/ backup-server:/backups/
 
 Clean up:
 
 .. code-block:: bash
 
-   # umount /mnt/snapshot-backup
-   # snapm snapset delete backup-source
+   umount /mnt/snapshot-backup
+   snapm snapset delete backup-source
 
 With Configuration Management
 -----------------------------
@@ -1103,19 +1103,19 @@ Pre-deployment snapshot:
 
 .. code-block:: bash
 
-   # snapm snapset create pre-deploy-$(date +%Y%m%d) /etc /var/www
+   snapm snapset create pre-deploy-$(date +%Y%m%d) /etc /var/www
 
 Run deployment:
 
 .. code-block:: bash
 
-   # ansible-playbook deploy.yml
+   ansible-playbook deploy.yml
 
 Verify deployment:
 
 .. code-block:: bash
 
-   # curl -f http://localhost/health || {
+   curl -f http://localhost/health || {
        echo "Deployment failed, reverting..."
        snapm snapset revert pre-deploy-$(date +%Y%m%d)
    }
@@ -1134,14 +1134,14 @@ Check current usage:
 
 .. code-block:: bash
 
-   # vgs
-   # stratis pool list
+   vgs
+   stratis pool list
 
 Use smaller size policy:
 
 .. code-block:: bash
 
-   # snapm snapset create backup --size-policy 50%USED /
+   snapm snapset create backup --size-policy 50%USED /
 
 **Boot entries not appearing**
 
@@ -1151,14 +1151,14 @@ Check boom installation:
 
 .. code-block:: bash
 
-   # rpm -q boom-boot
-   # boom list
+   rpm -q boom-boot
+   boom list
 
 Verify boom configuration:
 
 .. code-block:: bash
 
-   # boom profile list
+   boom profile list
 
 **Snapshot activation fails**
 
@@ -1168,22 +1168,22 @@ Check snapshot status:
 
 .. code-block:: bash
 
-   # snapm snapshot list
+   snapm snapshot list
 
 Check LVM and Stratis status:
 
 .. code-block:: bash
 
-   # lvs
-   # vgs
-   # stratis pool list
+   lvs
+   vgs
+   stratis pool list
 
 Check for storage errors:
 
 .. code-block:: bash
 
-   # journalctl --priority err
-   # dmesg | grep -i err
+   journalctl --priority err
+   dmesg | grep -i err
 
 **Snapshot space exhaustion**
 
@@ -1193,13 +1193,13 @@ Check snapshot usage:
 
 .. code-block:: bash
 
-   # snapm snapshot list -o name,size,free
+   snapm snapshot list -o name,size,free
 
 Resize snapshot if possible:
 
 .. code-block:: bash
 
-   # snapm snapset resize my-snapset /var:500%USED
+   snapm snapset resize my-snapset /var:500%USED
 
 If necessary resize the LVM2 volume group, thin pool, or Stratis pool to
 create more space for snapshot storage.
@@ -1210,7 +1210,7 @@ Ensure snapm is run as the root user:
 
 .. code-block:: bash
 
-   # snapm snapset create before-upgrade / /var
+   snapm snapset create before-upgrade / /var
    $ sudo snapm snapset create before-upgrade / /var
 
 **LVM thin pool issues**
@@ -1221,19 +1221,19 @@ Check thin pool status:
 
 .. code-block:: bash
 
-   # sudo lvs -a -o +data_percent,metadata_percent
+   sudo lvs -a -o +data_percent,metadata_percent
 
 Extend thin pool if needed:
 
 .. code-block:: bash
 
-   # sudo lvextend -L+1G /dev/vg/thin_pool
+   sudo lvextend -L+1G /dev/vg/thin_pool
 
 Check thin pool metadata:
 
 .. code-block:: bash
 
-   # sudo thin_check /dev/vg/thin_pool_tmeta
+   sudo thin_check /dev/vg/thin_pool_tmeta
 
 **Stratis backend issues**
 
@@ -1243,20 +1243,20 @@ Check Stratis daemon status:
 
 .. code-block:: bash
 
-   # systemctl status stratisd
+   systemctl status stratisd
 
 List Stratis pools and filesystems:
 
 .. code-block:: bash
 
-   # stratis pool list
-   # stratis filesystem list
+   stratis pool list
+   stratis filesystem list
 
 Check Stratis logs:
 
 .. code-block:: bash
 
-   # journalctl -u stratisd
+   journalctl -u stratisd
 
 Performance Considerations
 --------------------------
@@ -1285,19 +1285,19 @@ Enable debug mode with very verbose output:
 
 .. code-block:: bash
 
-   # snapm -d all -vv snapset create debug-test /home
+   snapm -d all -vv snapset create debug-test /home
 
 Enable specific debug categories with very verbose output:
 
 .. code-block:: bash
 
-   # snapm -vv -d command,plugin snapset list
+   snapm -vv -d command,plugin snapset list
 
 Basic verbose output:
 
 .. code-block:: bash
 
-   # snapm -v snapset show my-snapset
+   snapm -v snapset show my-snapset
 
 Log Analysis
 ------------
@@ -1308,21 +1308,21 @@ Check snapm logs:
 
 .. code-block:: bash
 
-   # journalctl --boot 0 | grep -- snapm-
+   journalctl --boot 0 | grep -- snapm-
 
 Check for storage-related messages:
 
 .. code-block:: bash
 
-   # journalctl --boot 0 | grep -i lvm
-   # dmesg | grep 'Buffer I\/O error'
+   journalctl --boot 0 | grep -i lvm
+   dmesg | grep 'Buffer I\/O error'
 
 Check for filesystem errors:
 
 .. code-block:: bash
 
-   # journalctl --boot 0 | grep -i ext4
-   # journalctl --boot 0 | grep -i xfs
+   journalctl --boot 0 | grep -i ext4
+   journalctl --boot 0 | grep -i xfs
 
 Storage Backend Debugging
 -------------------------
@@ -1335,23 +1335,23 @@ Check available plugins:
 
 .. code-block:: bash
 
-   # snapm plugin list
+   snapm plugin list
 
 For LVM2 issues, check LVM status:
 
 .. code-block:: bash
 
-   # lvs -a
-   # vgs
-   # pvs
+   lvs -a
+   vgs
+   pvs
 
 For Stratis issues, check daemon and pools:
 
 .. code-block:: bash
 
-   # systemctl status stratisd
-   # stratis pool list
-   # stratis filesystem list
+   systemctl status stratisd
+   stratis pool list
+   stratis filesystem list
 
 Configuration Validation
 ------------------------
@@ -1360,14 +1360,14 @@ Verify snapm configuration:
 
 .. code-block:: bash
 
-   # snapm -vv --debug=all plugin list
+   snapm -vv --debug=all plugin list
 
 Validate boom integration:
 
 .. code-block:: bash
 
-   # boom list
-   # boom profile list
+   boom list
+   boom profile list
 
 Getting Help
 ============
@@ -1381,23 +1381,23 @@ General help:
 
 .. code-block:: bash
 
-   # snapm --help
+   snapm --help
 
 Command type help:
 
 .. code-block:: bash
 
-   # snapm snapset --help
-   # snapm snapshot --help
-   # snapm schedule --help
-   # snapm plugin --help
+   snapm snapset --help
+   snapm snapshot --help
+   snapm schedule --help
+   snapm plugin --help
 
 Specific command help:
 
 .. code-block:: bash
 
-   # snapm snapset create --help
-   # snapm snapset list --help
+   snapm snapset create --help
+   snapm snapset list --help
 
 Manual Pages
 ------------
@@ -1407,10 +1407,10 @@ available in the manual pages:
 
 .. code-block:: bash
 
-   # man 8 snapm
-   # man 5 snapm.conf
-   # man 5 snapm-plugins.d
-   # man 5 snapm-schedule.d
+   man 8 snapm
+   man 5 snapm.conf
+   man 5 snapm-plugins.d
+   man 5 snapm-schedule.d
 
 Field Reference
 ---------------
@@ -1421,25 +1421,25 @@ Snapset fields:
 
 .. code-block:: bash
 
-   # snapm snapset list -ohelp
+   snapm snapset list -ohelp
 
 Snapshot fields:
 
 .. code-block:: bash
 
-   # snapm snapshot list -ohelp
+   snapm snapshot list -ohelp
 
 Schedule fields:
 
 .. code-block:: bash
 
-   # snapm schedule list -ohelp
+   snapm schedule list -ohelp
 
 Plugin fields:
 
 .. code-block:: bash
 
-   # snapm plugin list -ohelp
+   snapm plugin list -ohelp
 
 Version Information
 -------------------
@@ -1450,13 +1450,13 @@ Show version:
 
 .. code-block:: bash
 
-   # snapm --version
+   snapm --version
 
 Show plugin versions:
 
 .. code-block:: bash
 
-   # snapm plugin list
+   snapm plugin list
 
 Online Resources
 ----------------
@@ -1501,7 +1501,7 @@ When reporting issues, include:
    2. Error appears immediately
 
    **Debug output**:
-   # snapm -d all snapset create test /home
+   snapm -vv -d all snapset create test /home
    [debug output here]
 
    **Additional context**:
