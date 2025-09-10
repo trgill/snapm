@@ -1,6 +1,6 @@
 # Copyright Red Hat
 #
-# snapm/manager/_systemd.py - Snapshot Manager systemd inteface
+# snapm/manager/_systemd.py - Snapshot Manager systemd interface
 #
 # This file is part of the snapm project.
 #
@@ -204,8 +204,6 @@ def _start_timer(unit_fmt: str, instance: str):
 
     :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
-    :param calendarspec: A ``CalendarSpec`` object initialised with the
-           desired OnCalendar expression.
     """
     unit_name = unit_fmt % instance
 
