@@ -223,7 +223,7 @@ class SnapmExistsError(SnapmError):
 
 class SnapmBusyError(SnapmError):
     """
-    A resouce needed by the current command is already in use: for e.g.
+    A resource needed by the current command is already in use: for e.g.
     a snapshot merge is in progress for a previous snapshot set.
     """
 
@@ -547,7 +547,7 @@ class Selection:
 
     def is_single(self):
         """
-        Test this Selection object for single item selction criteria.
+        Test this Selection object for single item selection criteria.
 
         Returns ``True`` if this ``Selection`` object matches a single
         object or ``False`` otherwise.
@@ -585,8 +585,8 @@ def parse_size_with_units(value):
 
     :param size: The size string to parse.
     :returns: an integer size in bytes.
-    :raises: ``ValueError`` if the string could not  be parsed as a valid size
-             vale.
+    :raises: ``ValueError`` if the string could not be parsed as a valid size
+             value.
     """
     match = _SIZE_RE.search(value)
     if match is None:
@@ -603,7 +603,7 @@ def bool_to_yes_no(value):
     Return the string "yes" if ``value`` evaluates to ``True``, or "no"
     otherwise.
 
-    :param value: A boolean value to interpet.
+    :param value: A boolean value to interpret.
     :returns: A string value that is "yes" if ``value`` is ``True``, or "no"
               otherwise.
     """
@@ -957,7 +957,7 @@ class SnapshotSet:
     @property
     def sources(self):
         """
-        The list of souce mount points and block devices in this snapshot set.
+        The list of source mount points and block devices in this snapshot set.
         """
         return [s.source for s in self.snapshots]
 
@@ -1021,7 +1021,7 @@ class SnapshotSet:
         Test whether the origin volumes for this ``SnapshotSet`` are currently
         mounted and in use.
 
-        :returns: ``True`` if any of the snaphots belonging to this
+        :returns: ``True`` if any of the snapshots belonging to this
                   ``SnapshotSet`` are currently mounted, or ``False``
                   otherwise.
         """
@@ -1033,7 +1033,7 @@ class SnapshotSet:
         Test whether the snapshot volumes for this ``SnapshotSet`` are currently
         mounted and in use.
 
-        :returns: ``True`` if any of the snaphots belonging to this
+        :returns: ``True`` if any of the snapshots belonging to this
                   ``SnapshotSet`` are currently mounted, or ``False``
                   otherwise.
         """
@@ -1045,7 +1045,7 @@ class SnapshotSet:
         Test whether the either the origin or snapshot volumes for this
         ``SnapshotSet`` are currently mounted and in use.
 
-        :returns: ``True`` if any of the snaphots belonging to this
+        :returns: ``True`` if any of the snapshots belonging to this
                   ``SnapshotSet`` are currently mounted, or ``False``
                   otherwise.
         """
@@ -1238,7 +1238,7 @@ class SnapshotSet:
                 ) from err
         if mounted:
             _log_warn(
-                "Snaphot set %s is in use: reboot required to complete revert",
+                "Snapshot set %s is in use: reboot required to complete revert",
                 name,
             )
             if revert_entry:
@@ -1535,7 +1535,7 @@ class Snapshot:
         Test whether the origin volume for this ``Snapshot`` is currently
         mounted and in use.
 
-        :returns: ``True`` if this snaphot's prigin is currently mounted
+        :returns: ``True`` if this snapshot's origin is currently mounted
                   or ``False`` otherwise.
         """
         with open("/proc/mounts", "r", encoding="utf8") as mounts:
@@ -1551,7 +1551,7 @@ class Snapshot:
         Test whether the snapshot volume for this ``Snapshot`` is currently
         mounted and in use.
 
-        :returns: ``True`` if this snaphot is currently mounted or ``False``
+        :returns: ``True`` if this snapshot is currently mounted or ``False``
                   otherwise.
         """
         if self.status != SnapStatus.ACTIVE:
