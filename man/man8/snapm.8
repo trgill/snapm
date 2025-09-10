@@ -1429,11 +1429,20 @@ Schedule running.
 .
 .SH JSON OUTPUT
 .
-All reporting commands can optionally generate output in JSON notation by using
-the \fB--json\fP argument. Reporting commands use JSON key names derived from
-the report field names. Selection and sorting is controlled with
-\fB--options\fP and \fB--sort\fP as usual:
-.PP
+All reporting commands can optionally generate output in JSON notation by
+using the \fB--json\fP argument. The output is a JSON object containing a
+key for the object type (\fISnapsets\fP, \fISnapshots\fP, \fIPlugins\fP, or
+\fISchedules\fP) that contains a JSON array of objects of the specified type.
+.P
+Reporting commands use JSON key names derived from the report field names. For
+\fIlist\fP reports the JSON keys are always prefixed with the object type to
+avoid collisions (e.g., \fIsnapset_name\fP). The \fB-o\fP/\fB--options\fP and
+\fB-O\fP/\fB--sort\fP arguments accept those report field names (prefixes are
+optional unless required to disambiguate).
+.P
+Selection and sorting is controlled with \fB--options\fP and \fB--sort\fP as
+usual:
+.P
 .EX
 # snapm snapset list --json -o+snapset_uuid --sort snapset_time
 {
@@ -1499,15 +1508,19 @@ the \fBsnapset\fP, \fBsnapshot\fP, and \fBschedule\fP \fBshow\fP subcommands:
     }
 ]
 .EE
-.PP
-The JSON format produced by the \fBshow\fP commands uses JSON key names
-that reflect the property names used in the normal \fBshow\fP command
-output. The output is a JSON array containing objects of the specified
+.P
+The JSON format produced by the \fBcreate\fP and \fBshow\fP commands uses JSON
+key names that reflect the property names used in the normal \fBshow\fP
+command output. The output is a JSON array containing objects of the specified
 type.
-.PP
+.P
 When boot entries are defined for a snapshot set the resulting JSON will
 include a \fIBootEntries\fP object giving the corresponding \fBboom\fP
 \fIboot_id\fP values.
+.P
+The \fBcreate\fP commands output a single JSON object of the corresponding
+type. The \fBshow\fP commands produce a JSON array containing the selected
+objects.
 .SH EXAMPLES
 List the available snapshot sets
 .br
