@@ -95,7 +95,7 @@ Create a new snapshot set with the provided name and list of sources
 
 .. code-block:: bash
 
-   snapm snapset create [-b|--bootable] [-r|--revert] [--size-policy policy] <name> source...
+   snapm snapset create [-b|--bootable] [-r|--revert] [--size-policy policy] <name> <source> [<source> ...]
 
 Per-source path size policies are specified by adding a ':' and the
 required policy to the corresponding mount point path, for example:
@@ -1072,27 +1072,29 @@ Create consistent snapshot for backup:
 
 .. code-block:: bash
 
-   snapm snapset create backup-source /home /var/lib/data
+   snapm snapset create backup /home /var/lib/data
 
 Mount individual snapshots for backup tools:
 
 .. code-block:: bash
 
-   mkdir /mnt/snapshot-backup
-   mount /dev/fedora/home-snapset_backup-source_* /mnt/snapshot-backup
+   mkdir -p /mnt/snapshot-backup/home
+   mount /dev/fedora/home-snapset_backup_1757533502_-home /mnt/snapshot-backup/home
+   ...
 
 Run backup tools against mounted snapshot:
 
 .. code-block:: bash
 
-   rsync -av /mnt/snapshot-backup/ backup-server:/backups/
+   rsync -av /mnt/snapshot-backup/home backup-server:/backups/
+   ...
 
 Clean up:
 
 .. code-block:: bash
 
-   umount /mnt/snapshot-backup
-   snapm snapset delete backup-source
+   umount /mnt/snapshot-backup/home
+   snapm snapset delete backup
 
 With Configuration Management
 -----------------------------
