@@ -103,14 +103,14 @@ The \fBAGE\fP policy type accepts four parameters: \fBkeep_years\fP,
 more recent than the sum of these values are retained.
 .TP
 .B "TIMELINE"
-The \fBTIMELINE\fP policy implements a more complex stragegy. Snapshot
+The \fBTIMELINE\fP policy implements a more complex strategy. Snapshot
 sets are classified according to when they were taken, so for example,
 the first snapshot set in any given hour is considered an \*qhourly
 snapshot set\*q, the first snapshot set after midnight on any given day
 is considered a \*qdaily snapshot set\*q and so on. The \fBTIMELINE\fP
 policy type accepts up to six parameters: \fBkeep_hourly\fP,
 \fBkeep_daily\fP, \fBkeep_weekly\fP, \fBkeep_monthly\fP,
-\fBkeep_quaterly\fP, \fBkeep_yearly\fP which each accept a \fBcount\fP
+\fBkeep_quarterly\fP, \fBkeep_yearly\fP which each accept a \fBcount\fP
 argument. Up to \fBcount\fP snapshot sets are retained for each
 classification.
 .RE
