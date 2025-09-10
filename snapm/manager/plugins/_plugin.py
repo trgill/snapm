@@ -190,7 +190,7 @@ class Plugin:
 
     def check_resize_snapshot(self, name, origin, mount_point, size_policy):
         """
-        Chcek whether this snapshot can be resized to the requested
+        Check whether this snapshot can be resized to the requested
         ``size_policy``. This method returns if the resize can be satisfied and
         raises an exception if not.
 
