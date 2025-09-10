@@ -454,7 +454,7 @@ class Scheduler:
 
         :param name: The name of the ``Schedule``.
         :type name: ``str``
-        :param sources: The souce specs to include in this ``Schedule``.
+        :param sources: The source specs to include in this ``Schedule``.
         :type sources: ``list[str]``
         :param default_size_policy: The default size policy for this
                                     ``Schedule``.
@@ -591,7 +591,7 @@ class Manager:
         plugin_classes = load_plugins()
         for plugin_class in plugin_classes:
             if plugin_class.name in self.disable_plugins:  # pragma: no cover
-                _log_debug("Skipping diabled plugin '%s'", plugin_class.name)
+                _log_debug("Skipping disabled plugin '%s'", plugin_class.name)
                 continue
             _log_debug("Loading plugin class '%s'", plugin_class.__name__)
             try:
@@ -677,7 +677,7 @@ class Manager:
     def _snapset_from_name_or_uuid(self, name=None, uuid=None):
         """
         Look a snapshot set up by ``name`` or ``uuid``. Returns a
-        ``SnapshotSet`` correponding to either ``name`` or ``uuid`,
+        ``SnapshotSet`` corresponding to either ``name`` or ``uuid`,
         or raises ``SnapmError`` on error.
 
         :param name: The name of the snapshot set to look up.
