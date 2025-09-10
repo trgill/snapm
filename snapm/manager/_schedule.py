@@ -41,7 +41,7 @@ _log_error = _log.error
 #: Garbage collect timer default calendarspec
 _GC_CALENDAR_SPEC = "*-*-* *:10:00"
 
-#: File mode for schdule configuration files
+#: File mode for schedule configuration files
 _SCHEDULE_CONF_FILE_MODE = 0o644
 
 
@@ -233,9 +233,9 @@ class GcPolicyParamsTimeline(GcPolicyParams):
     Policy parameters for the TIMELINE policy type.
 
     ``keep_hourly`` (int): The maximum number of hourly snapshot sets to keep.
-    ``keep_daily`` (int): The maximum nuber of daily snapshot sets to keep.
+    ``keep_daily`` (int): The maximum number of daily snapshot sets to keep.
     ``keep_weekly`` (int): The maximum number of weekly snapshot sets to keep.
-    ``keep_monthly`` (int): The maximum nuber of monthly snapshot sets to keep.
+    ``keep_monthly`` (int): The maximum number of monthly snapshot sets to keep.
     ``keep_quarterly`` (int): The maximum number of quarterly snapshot sets keep.
     ``keep_yearly`` (int): The maximum number of yearly snapshot sets to keep.
     """
@@ -244,7 +244,7 @@ class GcPolicyParamsTimeline(GcPolicyParams):
 
     #: The maximum number of yearly snapshot sets to keep.
     keep_yearly: int = 0
-    #: The maximum number of quaterly snapshot sets to keep.
+    #: The maximum number of quarterly snapshot sets to keep.
     keep_quarterly: int = 0
     #: The maximum number of monthly snapshot sets to keep.
     keep_monthly: int = 0
@@ -260,7 +260,7 @@ class GcPolicyParamsTimeline(GcPolicyParams):
         Evaluate the list of ``SnapshotSet`` objects in ``sets``
         against this ``GcPolicyParamsTimeline`` instance and return a list of
         ``SnapshotSet`` objects that should be garbage collected according
-        to the configured ``keep_yearly``, ``keey_quarterly``, ``keep_monthly``,
+        to the configured ``keep_yearly``, ``keep_quarterly``, ``keep_monthly``,
         ``keep_weekly``, ``keep_daily``, and ``keep_hourly``.
 
         :param sets: The list of ``SnapshotSet`` objects to evaluate,
@@ -635,11 +635,11 @@ class Schedule:
         revert=False,
     ):
         """
-        Initialse a new ``Schedule`` instance.
+        Initialise a new ``Schedule`` instance.
 
         :param name: The name of the ``Schedule``.
         :type name: ``str``
-        :param sources: The souce specs to include in this ``Schedule``.
+        :param sources: The source specs to include in this ``Schedule``.
         :type sources: ``list[str]``
         :param default_size_policy: The default size policy for this
                                     ``Schedule``.
@@ -809,7 +809,7 @@ class Schedule:
     @property
     def boot(self):
         """
-        Retrun ``True`` if this ``Schedule`` is configuree to enable snapshot
+        Return ``True`` if this ``Schedule`` is configured to enable snapshot
         set boot entries when creating snapshot sets.
         """
         return self._boot
@@ -817,7 +817,7 @@ class Schedule:
     @property
     def revert(self):
         """
-        Retrun ``True`` if this ``Schedule`` is configuree to enable snapshot
+        Return ``True`` if this ``Schedule`` is configured to enable snapshot
         set revert entries when creating snapshot sets.
         """
         return self._revert
@@ -901,7 +901,7 @@ class Schedule:
 
     def delete_config(self):
         """
-        Delete this ``Schedule``'s on-disk configration.
+        Delete this ``Schedule``'s on-disk configuration.
         """
         if not self._sched_path:
             return
