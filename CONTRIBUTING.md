@@ -77,7 +77,7 @@ Or run from a git clone:
 ```bash
 git clone https://github.com/snapshotmanager/snapm.git
 cd snapm
-export PATH="$PWD/bin:$PATH" PYTHONPATH="$PWD"
+export PATH="$PWD/bin:$PATH" PYTHONPATH="$PWD:$PYTHONPATH"
 snapm <type> <command> ...
 ```
 
