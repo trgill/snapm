@@ -8,7 +8,7 @@
 """
 LVM2 snapshot manager plugins
 """
-from os.path import exists as path_exists, join as path_join
+from os.path import exists as path_exists, join as path_join, isabs as path_isabs
 from os import stat, major as dev_major, environ
 from subprocess import run, CalledProcessError
 from json import loads, JSONDecodeError
@@ -508,17 +508,20 @@ class _Lvm2(Plugin):
         Return ``True`` if the device at ``devpath`` is an LVM device or
         ``False`` otherwise.
         """
+        if path_isabs(devpath):
+            if not path_exists(devpath):
+                return False
+
+            st = stat(devpath, follow_symlinks=True)
+            if not S_ISBLK(st.st_mode):
+                return False
+            if dev_major(st.st_rdev) != _get_dm_major():
+                return False
+
         if devpath.startswith(DEV_MAPPER_PREFIX):
             dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
         else:
             dm_name = devpath
-
-        devpath = path_join(DEV_MAPPER_PREFIX, dm_name)
-        if not path_exists(devpath):
-            return False
-
-        if not dev_major(stat(devpath, follow_symlinks=True).st_rdev) == _get_dm_major():
-            return False
 
         dmsetup_cmd_args = [
             DMSETUP_CMD,
