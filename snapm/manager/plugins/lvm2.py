@@ -9,7 +9,7 @@
 LVM2 snapshot manager plugins
 """
 from os.path import exists as path_exists, join as path_join
-from os import stat, environ
+from os import stat, major as dev_major, environ
 from subprocess import run, CalledProcessError
 from json import loads, JSONDecodeError
 from math import floor
@@ -195,6 +195,49 @@ _LVM_ENV_FILTER = [
     "DM_DEBUG_WITH_LINE_NUMBERS",
 ]
 
+_dm_major: int = 0
+
+
+def _get_dm_major() -> int:
+    """
+    Return the device-mapper major device number for the running
+    system.
+
+    :returns: The device-mapper major number as an int, or zero if
+              device-mapper could not be found in ``/proc/devices``.
+    """
+    global _dm_major  # pylint: disable=global-statement
+
+    if _dm_major:
+        return _dm_major
+
+    major: int = 0
+    try:
+        with open("/proc/devices", "r", encoding="utf8") as fp:
+            in_block = False
+            for raw in fp:
+                line = raw.strip()
+                if line.startswith("Block devices:"):
+                    in_block = True
+                    continue
+                if not in_block or not line:
+                    continue
+                parts = line.split(maxsplit=1)
+                if len(parts) != 2:
+                    continue
+                major_str, name = parts
+                if name.strip() == "device-mapper":
+                    try:
+                        major = int(major_str)
+                    except ValueError:
+                        return 0
+                    if major:
+                        _dm_major = major
+                        return _dm_major
+    except OSError:
+        return 0
+    return 0
+
 
 def _decode_stderr(err):
     """
@@ -210,13 +253,16 @@ def _decode_stderr(err):
 
 def _check_lvm_present():
     """
-    Check for the presence of the required LVM2 commands.
+    Check for the presence of the required LVM2 commands and device-mapper
+    support.
 
-    :returns: ``True`` if all commands are present and executable or
-              ``False`` otherwise.
+    :raises: ``SnapmNotFoundError`` if required dependencies are not found.
     """
     if not all(which(cmd) for cmd in _LVM_CMDS):
         raise SnapmNotFoundError("LVM2 commands not found")
+
+    if not _get_dm_major():
+        raise SnapmNotFoundError("device-mapper not found")
 
 
 def vg_lv_from_origin(origin):
@@ -462,13 +508,16 @@ class _Lvm2(Plugin):
         Return ``True`` if the device at ``devpath`` is an LVM device or
         ``False`` otherwise.
         """
-
         if devpath.startswith(DEV_MAPPER_PREFIX):
             dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
         else:
             dm_name = devpath
 
-        if not path_exists(path_join(DEV_MAPPER_PREFIX, dm_name)):
+        devpath = path_join(DEV_MAPPER_PREFIX, dm_name)
+        if not path_exists(devpath):
+            return False
+
+        if not dev_major(stat(devpath, follow_symlinks=True).st_rdev) == _get_dm_major():
             return False
 
         dmsetup_cmd_args = [
@@ -679,7 +728,7 @@ class _Lvm2(Plugin):
         # Export LC_ALL=C
         self._env["LC_ALL"] = "C"
 
-        # Check for presence of required LVM2 binaries.
+        # Check for presence of required LVM2 binaries and device-mapper.
         _check_lvm_present()
 
         # Check LVM2 minimum version requirements.
