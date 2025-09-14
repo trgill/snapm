@@ -479,7 +479,7 @@ class ManagerTests(unittest.TestCase):
             self.manager.create_snapshot_set("testset0", [non_mount])
 
     def test_create_snapshot_set_no_provider(self):
-        with self.assertRaises(snapm.SnapmError) as cm:
+        with self.assertRaises(snapm.SnapmNoProviderError):
             self.manager.create_snapshot_set("testset0", ["/boot"])
 
     def test_rename_snapshot_set(self):
