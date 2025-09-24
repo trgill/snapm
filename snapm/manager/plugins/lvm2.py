@@ -1301,18 +1301,21 @@ class Lvm2Cow(_Lvm2):
         vg_name, lv_name = vg_lv_from_origin(origin)
         size_change = self.size_map[vg_name][lv_name]
 
-        lvresize_cmd = [
-            LVRESIZE_CMD,
-            LVCREATE_SIZE,
-            f"{snapshot_size}b",
-            name,
-        ]
-        try:
-            self._run(lvresize_cmd, capture_output=True, check=True)
-        except CalledProcessError as err:
-            raise SnapmCalloutError(
-                f"{LVRESIZE_CMD} failed with: {_decode_stderr(err)}"
-            ) from err
+        if size_change:
+            lvresize_cmd = [
+                LVRESIZE_CMD,
+                LVCREATE_SIZE,
+                f"+{size_change}b",
+                name,
+            ]
+            try:
+                self._run(lvresize_cmd, capture_output=True, check=True)
+            except CalledProcessError as err:
+                raise SnapmCalloutError(
+                    f"{LVRESIZE_CMD} failed with: {_decode_stderr(err)}"
+                ) from err
+        else:
+            self._log_debug("Skipping no-op resize for %s", name)
 
     def _build_snapshot(
         self,
