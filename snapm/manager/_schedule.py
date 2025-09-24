@@ -895,7 +895,7 @@ class Schedule:
                 ) from err
         except OSError as err:  # pragma: no cover
             raise SnapmSystemError(
-                f"Filesystem error writing schedule temporary file '{tmp_path}': {err}"
+                f"Filesystem error writing schedule temporary file for '{sched_path}': {err}"
             ) from err
         self._sched_path = sched_path
 
