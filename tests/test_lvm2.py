@@ -37,6 +37,50 @@ class Lvm2Tests(unittest.TestCase):
         self._old_path = cur_path
         os.environ["PATH"] = bin_path + os.pathsep + cur_path
 
+    def test__round_up_extents(self):
+        # ((size_bytes, extent_size, expected), ...)
+        test_values = (
+            # Zero always rounds to zero.
+            (0, 524288, 0),
+            (0, 1048576, 0),
+            (0, 4194304, 0),
+            (0, 8388608, 0),
+            (0, 16777216, 0),
+            # An extent size of 1 always rounds to the identity.
+            (12345, 1, 12345),
+            (67890, 1, 67890),
+            (314159265359, 1, 314159265359),
+            # Random sizes and extent sizes with expected rounded value.
+            (403471635, 524288, 403701760),
+            (163534215, 1048576, 163577856),
+            (255837780, 16777216, 268435456),
+            (114549255, 131072, 114556928),
+            (306983115, 131072, 307101696),
+            (66724725, 524288, 67108864),
+            (14159715, 16777216, 16777216),
+            (401138430, 8388608, 402653184),
+            (248862855, 131072, 248905728),
+            (153398970, 131072, 153485312),
+            (147485715, 524288, 147849216),
+            (248899890, 1048576, 249561088),
+            (41343405, 131072, 41418752),
+        )
+        for size, extent_size, expected in test_values:
+            with self.subTest(size=size, extent_size=extent_size, expected=expected):
+                log.debug("Testing _round_up_extents(%d,  %d) -> %d", size, extent_size, expected)
+                self.assertEqual(expected, lvm2._round_up_extents(size, extent_size))
+
+    def test__round_up_extents_zero_extent_size_raises(self):
+        with self.assertRaises(ValueError):
+            lvm2._round_up_extents(1048576, 0)
+
+    def test__round_up_extents_negative_extent_size_raises(self):
+        with self.assertRaises(ValueError):
+            lvm2._round_up_extents(1048576, -1024)
+
+    def test__round_up_extents_negative_size_raises(self):
+        with self.assertRaises(ValueError):
+            lvm2._round_up_extents(-4096, 1048576)
 
     def test_lvm2cow_is_lvm_device(self):
         lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())

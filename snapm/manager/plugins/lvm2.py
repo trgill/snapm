@@ -239,6 +239,23 @@ def _get_dm_major() -> int:
     return 0
 
 
+def _round_up_extents(size_bytes: int, extent_size: int) -> int:
+    """
+    Round up ``size_bytes`` to the next ``extent_size`` boundary.
+
+    :param size_bytes: An arbitrary size in bytes.
+    :param extent_size: An extent size.
+    :returns: The given size rounded up to the next extent size boundary.
+    """
+    if not extent_size or extent_size < 0 or not isinstance(extent_size, int):
+        raise ValueError("extent_size must be a positive integer")
+
+    if size_bytes < 0 or not isinstance(size_bytes, int):
+        raise ValueError("size_bytes must be a non-negative integer")
+
+    return ((size_bytes + extent_size - 1) // extent_size) * extent_size
+
+
 def _decode_stderr(err):
     """
     Decode and strip the stderr member of a ``CalledProcessError`` and
