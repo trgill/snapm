@@ -4,7 +4,7 @@ import argparse
 import sys
 
 VGS_FIELD_OPTIONS = (
-    "vg_name,vg_free"
+    "vg_name,vg_free,vg_extent_size"
 )
 
 LVM_JSON = "json"
@@ -15,7 +15,7 @@ fedora = """  {
       "report": [
           {
               "vg": [
-                  {"vg_name":"fedora", "vg_free":"9097445376B"}
+                  {"vg_name":"fedora", "vg_free":"9097445376B", "vg_extent_size": "4194304B"}
               ]
           }
       ]
@@ -25,7 +25,7 @@ vg_hex = """  {
       "report": [
           {
               "vg": [
-                  {"vg_name":"vg_hex", "vg_free":"16903045120B"}
+                  {"vg_name":"vg_hex", "vg_free":"16903045120B", "vg_extent_size": "4194304B"}
               ]
           }
       ]
@@ -35,7 +35,7 @@ appdata = """  {
       "report": [
           {
               "vg": [
-                  {"vg_name":"appdata", "vg_free":"0B"}
+                  {"vg_name":"appdata", "vg_free":"0B", "vg_extent_size": "4194304B"}
               ]
           }
       ]

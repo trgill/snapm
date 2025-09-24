@@ -174,13 +174,13 @@ class Lvm2Tests(unittest.TestCase):
     def test_vg_free_space(self):
         lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
         groups = {
-            "fedora": 9097445376,
-            "vg_hex": 16903045120,
-            "appdata": 0,
-            "nosuch": -1,
+            "fedora": (9097445376, 4096 * 1024),
+            "vg_hex": (16903045120, 4096 * 1024),
+            "appdata": (0, 4096 * 1024),
+            "nosuch": (-1, 0),
         }
         for vg in groups.keys():
-            if groups[vg] != -1:
+            if groups[vg][0] != -1:
                 self.assertEqual(lvm2cow.vg_free_space(vg), groups[vg])
             else:
                 with self.assertRaises(SnapmCalloutError) as cm:

@@ -19,6 +19,7 @@ from shutil import which
 
 from snapm import (
     SnapmInvalidIdentifierError,
+    SnapmSizePolicyError,
     SnapmCalloutError,
     SnapmBusyError,
     SnapmNoSpaceError,
@@ -28,6 +29,7 @@ from snapm import (
     SizePolicy,
     SnapStatus,
     Snapshot,
+    size_fmt,
 )
 from snapm.manager.plugins import (
     DEV_PREFIX,
@@ -1131,28 +1133,65 @@ class Lvm2Cow(_Lvm2):
 
         return True
 
-    def _check_free_space(self, origin, mount_point, size_policy):
+    # pylint: disable=too-many-locals
+    def _check_free_space(self, origin, mount_point, size_policy, snapshot_name=None):
         """
         Check for available space in volume group ``vg_name`` for the specified
         mount point.
 
-        :param vg_name: The name of the volume group to check.
+        :param origin: The name of the origin logical volume to check.
         :param mount_point: The mount point path to check.
+        :param size_policy: A ``SizePolicy`` to apply to this source.
+        :param snapshot_name: An optional LV name: if set treat this as a resize operation
+                     for the snapshot logical volume named ``name``.
         :returns: The space used on the mount point.
         :raises: ``SnapmNoSpaceError`` if the minimum snapshot size exceeds the
                  available space.
         """
+        # Id, space & size info
         vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
         vg_free, vg_extent_size = self.vg_free_space(vg_name)
         lv_size = self.lv_dev_size(vg_name, lv_name)
+
+        # Determine current size if resizing
+        current_size = 0
+        if snapshot_name:
+            _, _, snap_lv = snapshot_name.partition("/")
+            if not snap_lv:
+                raise SnapmPluginError(f"Malformed snapshot name: {snapshot_name}")
+            current_size = self.lv_dev_size(vg_name, snap_lv)
+
+        # Calculate policy defined size (bytes)
         policy = SizePolicy(origin, mount_point, vg_free, fs_used, lv_size, size_policy)
-        snapshot_min_size = _snapshot_min_size(policy.size)
-        if vg_free < (sum(self.size_map[vg_name].values()) + snapshot_min_size):
+
+        self._log_debug(
+            "Applying SizePolicy(%s): origin=%s mp=%s vg_free=%d fs_used=%d lv_size=%d "
+            "current_size=%d snapshot_min_size=%d (policy.size=%d, rounded=%d)",
+            size_policy,
+            origin,
+            mount_point,
+            vg_free,
+            fs_used,
+            lv_size,
+            current_size,
+            _snapshot_min_size(policy.size),
+            policy.size,
+            _round_up_extents(policy.size, vg_extent_size),
+        )
+
+        # Determine space needed for this operation
+        rounded_size = _round_up_extents(
+            _snapshot_min_size(policy.size), vg_extent_size
+        )
+        needed = rounded_size - current_size
+        used = sum(self.size_map[vg_name].values())
+        if vg_free < (used + needed):
             raise SnapmNoSpaceError(
-                f"Volume group {vg_name} has insufficient free space to snapshot {mount_point}"
+                f"Volume group {vg_name} has insufficient free space to snapshot {mount_point} "
+                f"({size_fmt(vg_free)} < {size_fmt(used + needed)}) "
             )
-        return snapshot_min_size
+        return needed
 
     def _check_limits(self, origin: str):
         """
@@ -1185,7 +1224,9 @@ class Lvm2Cow(_Lvm2):
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
         self.size_map[vg_name][lv_name] = self._check_free_space(
-            origin, mount_point, size_policy
+            origin,
+            mount_point,
+            size_policy,
         )
         if self._check_limits(origin):
             raise SnapmLimitError(
@@ -1246,7 +1287,10 @@ class Lvm2Cow(_Lvm2):
         if vg_name not in self.size_map:
             self.size_map[vg_name] = {}
         self.size_map[vg_name][lv_name] = self._check_free_space(
-            origin, mount_point, size_policy
+            origin,
+            mount_point,
+            size_policy,
+            snapshot_name=name,
         )
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):
