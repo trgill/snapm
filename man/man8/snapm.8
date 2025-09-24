@@ -835,15 +835,18 @@ be specified by either its \fBname\fP or \fBUUID\fP.
 .IP
 For snapshot providers that require a fixed space to be allocated to the
 snapshot this command will physically resize the corresponding snapshot
-according to the given size policy (lvm2cow). For snapshot providers that
-dynamically allocate space the command will check that the requested space is
-available at the time of the resize command. An error is returned if the
-specified size policies cannot be satisfied.
+according to the given size policy (\fBlvm2-cow\fP). For snapshot providers
+that dynamically allocate space the command will check that the requested
+space is available at the time of the resize command. An error is returned if
+the specified size policies cannot be satisfied.
 .IP
 Size policies may be specified on a per-source basis using the same syntax as
 the \fBsnapset create\fP command. A default size policy can be set using the
 \fB--size-policy\fP argument. If no source paths are specified the command
 applies the default size policy to each member of the snapshot set.
+.IP
+The \fBlvm2-cow\fP plugin does not support shrinking snapshots, as this is
+not supported by the LVM2 tools.
 .
 .TP
 .B snapm
