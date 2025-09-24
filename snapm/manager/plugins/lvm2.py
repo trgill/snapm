@@ -115,7 +115,7 @@ LVM_THIN_SNAPSHOT_ROLE = "thinsnapshot"
 VGS_CMD = "vgs"
 VGS_REPORT = "report"
 VGS_VG = "vg"
-VGS_FIELD_OPTIONS = "vg_name,vg_free"
+VGS_FIELD_OPTIONS = "vg_name,vg_free,vg_extent_size"
 
 # lvcreate command options
 LVCREATE_CMD = "lvcreate"
@@ -613,13 +613,18 @@ class _Lvm2(Plugin):
 
     def vg_free_space(self, vg_name):
         """
-        Return the free space available as bytes for the volume group named
-        ``vg_name``.
+        Return a tuple of the free space available as bytes and the volume
+        group extent size for the volume group named ``vg_name``.
+
+        :param vg_name: The name of the volume group to check.
+        :returns: A 2-tuple ``(vg_free: int, vg_extent_size: int)``.
         """
         vgs_dict = self.get_vgs_json_report(vg_name=vg_name)
         for vg_dict in vgs_dict[VGS_REPORT][0][VGS_VG]:
             if vg_dict["vg_name"] == vg_name:
-                return int(vg_dict["vg_free"].rstrip("B"))
+                vg_free = int(vg_dict["vg_free"].rstrip("B"))
+                vg_extent_size = int(vg_dict["vg_extent_size"].rstrip("B"))
+                return (vg_free, vg_extent_size)
         raise ValueError(f"Volume group {vg_name} not found")
 
     def lv_dev_size(self, vg_name, lv_name):
@@ -1139,7 +1144,7 @@ class Lvm2Cow(_Lvm2):
         """
         vg_name, lv_name = vg_lv_from_origin(origin)
         fs_used = mount_point_space_used(mount_point)
-        vg_free = self.vg_free_space(vg_name)
+        vg_free, vg_extent_size = self.vg_free_space(vg_name)
         lv_size = self.lv_dev_size(vg_name, lv_name)
         policy = SizePolicy(origin, mount_point, vg_free, fs_used, lv_size, size_policy)
         snapshot_min_size = _snapshot_min_size(policy.size)
