@@ -965,6 +965,9 @@ class Manager:
 
         self._check_recursion(origins)
 
+        for provider in set(provider_map.values()):
+            _log_debug("%s transaction size map: %s", provider.name, provider.size_map)
+
         _suspend_journal()
 
         snapshots = []

@@ -1251,7 +1251,7 @@ class Lvm2Cow(_Lvm2):
 
     def resize_snapshot(self, name, origin, mount_point, size_policy):
         vg_name, lv_name = vg_lv_from_origin(origin)
-        snapshot_size = self.size_map[vg_name][lv_name]
+        size_change = self.size_map[vg_name][lv_name]
 
         lvresize_cmd = [
             LVRESIZE_CMD,

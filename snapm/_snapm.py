@@ -1195,6 +1195,9 @@ class SnapshotSet:
                     f"Insufficient free space to resize snapshot set {self.name}"
                 ) from err
 
+        for provider in providers:
+            _log_debug("%s transaction size map: %s", provider.name, provider.size_map)
+
         for source in sources:
             snapshot = self.snapshot_by_source(source)
             size_policy = size_policies[source]
