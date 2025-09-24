@@ -1242,8 +1242,10 @@ class Lvm2Cow(_Lvm2):
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
         vg_name, lv_name = vg_lv_from_origin(origin)
+        snapshot_size = self.size_map[vg_name][lv_name]
         self._log_debug(
-            "Creating CoW snapshot for %s/%s %s %s",
+            "Creating %s CoW snapshot for %s/%s %s %s",
+            size_fmt(snapshot_size),
             vg_name,
             lv_name,
             "mounted at" if mount_point else "",
@@ -1253,7 +1255,6 @@ class Lvm2Cow(_Lvm2):
             lv_name, snapset_name, timestamp, encode_mount_point(mount_point)
         )
         self._check_lvm_name(vg_name, snapshot_name)
-        snapshot_size = self.size_map[vg_name][lv_name]
         lvcreate_cmd = [
             LVCREATE_CMD,
             LVCREATE_SNAPSHOT,
@@ -1302,6 +1303,7 @@ class Lvm2Cow(_Lvm2):
         size_change = self.size_map[vg_name][lv_name]
 
         if size_change:
+            self._log_debug("Resizing CoW snapshot %s by +%s", name, size_fmt(size_change))
             lvresize_cmd = [
                 LVRESIZE_CMD,
                 LVCREATE_SIZE,
