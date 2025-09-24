@@ -101,9 +101,9 @@ jobs:
           thin-provisioning-tools
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.85.0  # CURRENT DEVELOPMENT RUST TOOLCHAIN
       - name: Check out stratisd
-        run: git clone https://github.com/stratis-storage/stratisd -b stratisd-v3.8.0
+        run: git clone https://github.com/stratis-storage/stratisd -b stratisd-v3.8.5
         working-directory: /var/tmp
       - name: Build stratisd
         run: make build-all
@@ -114,7 +114,7 @@ jobs:
           sudo systemctl enable --now stratisd
         working-directory: /var/tmp/stratisd
       - name: Check out stratis-cli
-        run: git clone https://github.com/stratis-storage/stratis-cli -b v3.8.0
+        run: git clone https://github.com/stratis-storage/stratis-cli -b v3.8.2
         working-directory: /var/tmp
       - name: Install stratis-cli
         run: sudo pip install -v .
