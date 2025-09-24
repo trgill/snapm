@@ -1184,6 +1184,10 @@ class Lvm2Cow(_Lvm2):
         rounded_size = _round_up_extents(
             _snapshot_min_size(policy.size), vg_extent_size
         )
+        if current_size and rounded_size < current_size:
+            raise SnapmSizePolicyError(
+                f"{self.name} does not support shrinking snapshots"
+            )
         needed = rounded_size - current_size
         used = sum(self.size_map[vg_name].values())
         if vg_free < (used + needed):
