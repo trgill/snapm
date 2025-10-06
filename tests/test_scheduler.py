@@ -183,6 +183,20 @@ class SchedulerTests(unittest.TestCase):
 
         self.manager.scheduler.delete("weekly")
 
+    def test_schedule_create_duplicate_sources_raises(self):
+        self.manager = manager.Manager()
+        with self.assertRaises(snapm.SnapmInvalidIdentifierError):
+            self.manager.scheduler.create(
+                "weekly",
+                [self.mount_points()[0], self.mount_points()[0]],
+                "10%SIZE",
+                True,
+                "weekly",
+                manager.GcPolicy("weekly", manager.GcPolicyType.ALL, {}),
+                False,
+                False,
+            )
+
     def test_schedule_delete(self):
         mount_points = self.mount_points()
         sched_file = join(_ETC_SNAPM_SCHEDULE_D, "hourly.json")

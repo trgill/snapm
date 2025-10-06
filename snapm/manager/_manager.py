@@ -608,6 +608,8 @@ class Scheduler:
         :returns: The new ``Schedule`` instance.
         :rtype: ``Schedule``
         """
+        _, _ = _parse_source_specs(sources, default_size_policy)
+
         schedule = Schedule(
             name,
             sources,
