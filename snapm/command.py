@@ -57,6 +57,7 @@ from snapm import (
     SNAPM_DEBUG_REPORT,
     SNAPM_DEBUG_ALL,
     SNAPM_SUBSYSTEM_COMMAND,
+    SubsystemFilter,
     set_debug_mask,
     bool_to_yes_no,
     Selection,
@@ -1583,14 +1584,25 @@ def setup_logging(cmd_args):
         level = logging.DEBUG
     elif cmd_args.verbose and cmd_args.verbose > 0:
         level = logging.INFO
+
     snapm_log = logging.getLogger("snapm")
-    snapm_log.setLevel(level)
     formatter = logging.Formatter("%(levelname)s - %(message)s")
+    snapm_log.setLevel(level)
+    if snapm_log.hasHandlers():
+        snapm_log.handlers.clear()
+
+    # Subsystem log filtering
+    _snapm_subsystem_filter = SubsystemFilter("snapm")
+
+    # Main console handler
     if _CONSOLE_HANDLER not in snapm_log.handlers:
         _CONSOLE_HANDLER = logging.StreamHandler()
-        snapm_log.addHandler(_CONSOLE_HANDLER)
+
     _CONSOLE_HANDLER.setLevel(level)
     _CONSOLE_HANDLER.setFormatter(formatter)
+    _CONSOLE_HANDLER.addFilter(_snapm_subsystem_filter)
+
+    snapm_log.addHandler(_CONSOLE_HANDLER)
 
 
 def shutdown_logging():
