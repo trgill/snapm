@@ -26,7 +26,7 @@ import sys
 import uuid
 from json import dumps
 
-from snapm import size_fmt, SNAPSET_INDEX_NONE
+from snapm import size_fmt, SNAPSET_INDEX_NONE, SNAPM_SUBSYSTEM_REPORT
 
 
 def find_minimum_sha_prefix(shas, min_prefix):
@@ -60,6 +60,12 @@ _log_debug = _log.debug
 _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
+
+
+def _log_debug_report(msg, *args, **kwargs):
+    """A wrapper for report subsystem debug logs."""
+    _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_REPORT}, **kwargs)
+
 
 _DEFAULT_COLUMNS = 80
 

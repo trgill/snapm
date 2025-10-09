@@ -25,7 +25,7 @@ import fcntl
 import os
 
 from snapm import (
-    SNAPM_DEBUG_MANAGER,
+    SNAPM_SUBSYSTEM_MANAGER,
     SNAPM_VALID_NAME_CHARS,
     SnapmError,
     SnapmSystemError,
@@ -62,13 +62,17 @@ from ._signals import suspend_signals
 from ._schedule import Schedule, GcPolicy
 
 _log = logging.getLogger(__name__)
-_log.set_debug_mask(SNAPM_DEBUG_MANAGER)
 
 _log_debug = _log.debug
-_log_debug_manager = _log.debug_masked
 _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
+
+
+def _log_debug_manager(msg, *args, **kwargs):
+    """A wrapper for manager subsystem debug logs."""
+    _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_MANAGER}, **kwargs)
+
 
 JOURNALCTL_CMD = "journalctl"
 

@@ -56,6 +56,7 @@ from snapm import (
     SNAPM_DEBUG_COMMAND,
     SNAPM_DEBUG_REPORT,
     SNAPM_DEBUG_ALL,
+    SNAPM_SUBSYSTEM_COMMAND,
     set_debug_mask,
     bool_to_yes_no,
     Selection,
@@ -78,13 +79,17 @@ from snapm.report import (
 )
 
 _log = logging.getLogger(__name__)
-_log.set_debug_mask(SNAPM_DEBUG_COMMAND)
 
 _log_debug = _log.debug
-_log_debug_command = _log.debug_masked
 _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
+
+
+def _log_debug_command(msg, *args, **kwargs):
+    """A wrapper for command subsystem debug logs."""
+    _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_COMMAND}, **kwargs)
+
 
 _DEFAULT_LOG_LEVEL = logging.WARNING
 _CONSOLE_HANDLER = None
