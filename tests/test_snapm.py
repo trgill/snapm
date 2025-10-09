@@ -46,24 +46,16 @@ class SnapmTests(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             snapm.set_debug_mask(snapm.SNAPM_DEBUG_ALL + 1)
 
-    def test_SnapmLogger(self):
-        sl = snapm.SnapmLogger("snapm", 0)
-        sl.debug("debug")
-
-    def test_SnapmLogger_set_debug_mask(self):
-        sl = snapm.SnapmLogger("snapm", 0)
-        sl.set_debug_mask(snapm.SNAPM_DEBUG_ALL)
-
-    def test_SnapmLogger_set_debug_mask_bad_mask(self):
-        sl = snapm.SnapmLogger("snapm", 0)
-        with self.assertRaises(ValueError) as cm:
-            sl.set_debug_mask(snapm.SNAPM_DEBUG_ALL + 1)
-
-    def test_SnapmLogger_debug_masked(self):
-        sl = snapm.SnapmLogger("snapm", 0)
-        snapm.set_debug_mask(snapm.SNAPM_DEBUG_ALL)
-        sl.set_debug_mask(snapm.SNAPM_DEBUG_MANAGER)
-        sl.debug_masked("quux")
+    def test_SubsystemFilter(self):
+        # Start with no subsystems enabled
+        snapm.set_debug_mask(0)
+        sf = snapm.SubsystemFilter("snapm")
+        self.assertEqual(sf.enabled_subsystems, set())
+        # Enable a couple and ensure new filters initialise from cache
+        snapm.set_debug_mask(snapm.SNAPM_DEBUG_COMMAND | snapm.SNAPM_DEBUG_MANAGER)
+        sf2 = snapm.SubsystemFilter("snapm")
+        self.assertIn(snapm.SNAPM_SUBSYSTEM_COMMAND, sf2.enabled_subsystems)
+        self.assertIn(snapm.SNAPM_SUBSYSTEM_MANAGER, sf2.enabled_subsystems)
 
     def test_Selection_is_null(self):
         s = snapm.Selection()

@@ -32,8 +32,6 @@ SNAPM_DEBUG_COMMAND = 2
 SNAPM_DEBUG_REPORT = 4
 SNAPM_DEBUG_ALL = SNAPM_DEBUG_MANAGER | SNAPM_DEBUG_COMMAND | SNAPM_DEBUG_REPORT
 
-__DEBUG_MASK = 0
-
 # Snapm debugging subsystem names
 SNAPM_SUBSYSTEM_MANAGER = "snapm.manager"
 SNAPM_SUBSYSTEM_COMMAND = "snapm.command"
@@ -45,6 +43,7 @@ _DEBUG_MASK_TO_SUBSYSTEM = {
     SNAPM_DEBUG_REPORT: SNAPM_SUBSYSTEM_REPORT,
 }
 
+_debug_subsystems = set()
 
 NAMESPACE_SNAPSHOT_SET = UUID("{952f0e38-24a1-406d-adf6-0e9fb3c707d8}")
 NAMESPACE_SNAPSHOT = UUID("{c17d07c7-1482-43b7-9b3c-12d490622d93}")
@@ -117,47 +116,32 @@ SNAPM_VALID_NAME_CHARS = set(
 )
 
 
-class SnapmLogger(logging.Logger):
+class SubsystemFilter(logging.Filter):
     """
-    Snapm logging wrapper class: wrap the Logger.debug() method
-    to allow filtering of submodule debug messages by log mask.
+    Filters DEBUG records based on a set of enabled subsystem names.
+    Non-DEBUG records or DEBUG records without a 'subsystem' attribute
+    are always passed through.
     """
 
-    mask_bits = 0
+    def __init__(self, name=""):
+        super().__init__(name)
+        self.enabled_subsystems = set(_debug_subsystems)
 
-    def set_debug_mask(self, mask_bits):
-        """
-        Set the debug mask for this ``SnapmLogger``.
+    def filter(self, record):
+        # Always pass non-DEBUG messages.
+        if record.levelno != logging.DEBUG:
+            return True
 
-        This should normally be set to the ``SNAPM_DEBUG_*`` value
-        corresponding to the ``snapm`` sub-module that this instance
-        of ``SnapmLogger`` belongs to.
+        # Always pass DEBUG messages that aren't for a specific subsystem.
+        if not hasattr(record, "subsystem"):
+            return True
 
-        :param mask_bits: The bits to set in this logger's mask.
-        :rtype: None
-        """
-        if mask_bits < 0 or mask_bits > SNAPM_DEBUG_ALL:
-            raise ValueError(
-                f"Invalid SnapmLogger mask bits: 0x{(mask_bits & ~SNAPM_DEBUG_ALL):x}"
-            )
+        # For subsystem-specific DEBUG messages, check if the subsystem is enabled.
+        return record.subsystem in self.enabled_subsystems
 
-        self.mask_bits = mask_bits
-
-    def debug_masked(self, msg, *args, **kwargs):
-        """
-        Log a debug message if it passes the current debug mask.
-
-        Log the specified message if it passes the current logger
-        debug mask.
-
-        :param msg: the message to be logged
-        :rtype: None
-        """
-        if self.mask_bits & get_debug_mask():
-            self.debug(msg, *args, **kwargs)
-
-
-logging.setLoggerClass(SnapmLogger)
+    def set_debug_subsystems(self, subsystems):
+        """Sets the collection of subsystems to allow."""
+        self.enabled_subsystems = set(subsystems)
 
 
 def get_debug_mask():
@@ -167,7 +151,19 @@ def get_debug_mask():
     :returns: The current debug mask value
     :rtype: int
     """
-    return __DEBUG_MASK
+    enabled_subsystems = set(_debug_subsystems)
+    snapm_log = logging.getLogger("snapm")
+
+    for handler in snapm_log.handlers:
+        for f in handler.filters:
+            if isinstance(f, SubsystemFilter):
+                enabled_subsystems.update(f.enabled_subsystems)
+
+    mask_map = {v: k for k, v in _DEBUG_MASK_TO_SUBSYSTEM.items()}
+    mask = 0
+    for subsystem_name in enabled_subsystems:
+        mask |= mask_map.get(subsystem_name, 0)
+    return mask
 
 
 def set_debug_mask(mask):
@@ -179,10 +175,23 @@ def set_debug_mask(mask):
     :rtype: None
     """
     # pylint: disable=global-statement
-    global __DEBUG_MASK
+    global _debug_subsystems
+
     if mask < 0 or mask > SNAPM_DEBUG_ALL:
         raise ValueError(f"Invalid snapm debug mask: {mask}")
-    __DEBUG_MASK = mask
+
+    enabled_subsystems = []
+    for flag, subsystem_name in _DEBUG_MASK_TO_SUBSYSTEM.items():
+        if mask & flag:
+            enabled_subsystems.append(subsystem_name)
+
+    snapm_log = logging.getLogger("snapm")
+    for handler in snapm_log.handlers:
+        for f in handler.filters:
+            if isinstance(f, SubsystemFilter):
+                f.set_debug_subsystems(enabled_subsystems)
+
+    _debug_subsystems = set(enabled_subsystems)
 
 
 #
@@ -1707,10 +1716,11 @@ __all__ = [
     "SNAPM_DEBUG_REPORT",
     "SNAPM_DEBUG_ALL",
     # Debug logging - subsystem name interface
+    "SubsystemFilter",
     "SNAPM_SUBSYSTEM_MANAGER",
     "SNAPM_SUBSYSTEM_COMMAND",
     "SNAPM_SUBSYSTEM_REPORT",
-    "SnapmLogger",
+    # Debug logging - legacy interface
     "set_debug_mask",
     "get_debug_mask",
     "SnapmError",
