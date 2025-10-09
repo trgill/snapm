@@ -19,7 +19,7 @@ import logging
 import re
 import os
 
-_log = logging.getLogger(__name__)
+_log = logging.getLogger("snapm")
 
 _log_debug = _log.debug
 _log_info = _log.info
