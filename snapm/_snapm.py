@@ -26,13 +26,24 @@ _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
 
-# Snapm debugging mask
+# Snapm debugging subsystem mask (legacy interface)
 SNAPM_DEBUG_MANAGER = 1
 SNAPM_DEBUG_COMMAND = 2
 SNAPM_DEBUG_REPORT = 4
 SNAPM_DEBUG_ALL = SNAPM_DEBUG_MANAGER | SNAPM_DEBUG_COMMAND | SNAPM_DEBUG_REPORT
 
 __DEBUG_MASK = 0
+
+# Snapm debugging subsystem names
+SNAPM_SUBSYSTEM_MANAGER = "snapm.manager"
+SNAPM_SUBSYSTEM_COMMAND = "snapm.command"
+SNAPM_SUBSYSTEM_REPORT = "snapm.report"
+
+_DEBUG_MASK_TO_SUBSYSTEM = {
+    SNAPM_DEBUG_MANAGER: SNAPM_SUBSYSTEM_MANAGER,
+    SNAPM_DEBUG_COMMAND: SNAPM_SUBSYSTEM_COMMAND,
+    SNAPM_DEBUG_REPORT: SNAPM_SUBSYSTEM_REPORT,
+}
 
 
 NAMESPACE_SNAPSHOT_SET = UUID("{952f0e38-24a1-406d-adf6-0e9fb3c707d8}")
@@ -1695,6 +1706,10 @@ __all__ = [
     "SNAPM_DEBUG_COMMAND",
     "SNAPM_DEBUG_REPORT",
     "SNAPM_DEBUG_ALL",
+    # Debug logging - subsystem name interface
+    "SNAPM_SUBSYSTEM_MANAGER",
+    "SNAPM_SUBSYSTEM_COMMAND",
+    "SNAPM_SUBSYSTEM_REPORT",
     "SnapmLogger",
     "set_debug_mask",
     "get_debug_mask",
