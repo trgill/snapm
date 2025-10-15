@@ -1303,7 +1303,9 @@ class Lvm2Cow(_Lvm2):
         size_change = self.size_map[vg_name][lv_name]
 
         if size_change:
-            self._log_debug("Resizing CoW snapshot %s by +%s", name, size_fmt(size_change))
+            self._log_debug(
+                "Resizing CoW snapshot %s by +%s", name, size_fmt(size_change)
+            )
             lvresize_cmd = [
                 LVRESIZE_CMD,
                 LVCREATE_SIZE,

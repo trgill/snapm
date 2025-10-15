@@ -425,9 +425,7 @@ def _lock_manager(lockdir: str) -> int:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError as err:
         cleanup()
-        raise SnapmBusyError(
-            f"Manager already locked at '{lockfile}': {err}"
-        ) from err
+        raise SnapmBusyError(f"Manager already locked at '{lockfile}': {err}") from err
     except OSError as err:
         cleanup()
         raise SnapmSystemError(
@@ -481,6 +479,7 @@ def _with_manager_lock(func):
     If ``kwargs`` is not None and contains the key 'name' or 'uuid' it is
     assumed that this is the 'name'/'uuid' argument for the locking function.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # args[0] is self
@@ -496,6 +495,7 @@ def _with_manager_lock(func):
                 _unlock_manager(lockdir, fd)
                 _log_debug("Released Manager lock at %s (tid=%d)", lockdir, tid)
         return ret
+
     return wrapper
 
 
