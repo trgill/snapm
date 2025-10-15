@@ -113,20 +113,20 @@ class ManagerTestsSimple(unittest.TestCase):
 
     def test__check_lock_dir(self):
         _manager = manager._manager
-        _orig_lock_dir = _manager._SNAPSET_LOCK_DIR
-        self.addCleanup(setattr, _manager, "_SNAPSET_LOCK_DIR", _orig_lock_dir)
+        _orig_lock_dir = _manager._SNAPM_LOCK_DIR
+        self.addCleanup(setattr, _manager, "_SNAPM_LOCK_DIR", _orig_lock_dir)
         with tempfile.TemporaryDirectory(suffix="_test_run_lock", dir="/tmp") as tempdir:
-            _manager._SNAPSET_LOCK_DIR = os.path.join(str(tempdir), _orig_lock_dir.lstrip(os.sep))
-            self.assertEqual(_manager._check_lock_dir(), _manager._SNAPSET_LOCK_DIR)
-            st = os.stat(_manager._SNAPSET_LOCK_DIR)
-            self.assertEqual(st.st_mode & 0o777, _manager._SNAPSET_LOCK_DIR_MODE)
+            _manager._SNAPM_LOCK_DIR = os.path.join(str(tempdir), _orig_lock_dir.lstrip(os.sep))
+            self.assertEqual(_manager._check_lock_dir(), _manager._SNAPM_LOCK_DIR)
+            st = os.stat(_manager._SNAPM_LOCK_DIR)
+            self.assertEqual(st.st_mode & 0o777, _manager._SNAPM_LOCK_DIR_MODE)
 
     def test__lock_unlock_manager(self):
         _manager = manager._manager
-        _orig_lock_dir = _manager._SNAPSET_LOCK_DIR
-        self.addCleanup(setattr, _manager, "_SNAPSET_LOCK_DIR", _orig_lock_dir)
+        _orig_lock_dir = _manager._SNAPM_LOCK_DIR
+        self.addCleanup(setattr, _manager, "_SNAPM_LOCK_DIR", _orig_lock_dir)
         with tempfile.TemporaryDirectory(suffix="_test_run_lock", dir="/tmp") as tempdir:
-            _manager._SNAPSET_LOCK_DIR = str(tempdir) + _orig_lock_dir
+            _manager._SNAPM_LOCK_DIR = str(tempdir) + _orig_lock_dir
             lockdir = _manager._check_lock_dir()
             fd = _manager._lock_manager(lockdir)
             self.assertGreater(fd, 0)

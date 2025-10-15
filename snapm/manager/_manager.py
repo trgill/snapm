@@ -99,10 +99,10 @@ _SCHEDULE_D_PATH = join(_SNAPM_CFG_DIR, "schedule.d")
 _SNAPM_MOUNTS_DIR = join(SNAPM_RUNTIME_DIR, "mounts")
 
 #: Directory for snapshot set lock files
-_SNAPSET_LOCK_DIR = "/run/lock/snapm"
+_SNAPM_LOCK_DIR = join(SNAPM_RUNTIME_DIR, "lock")
 
 #: Permissions for lock directory
-_SNAPSET_LOCK_DIR_MODE = 0o700
+_SNAPM_LOCK_DIR_MODE = 0o700
 
 
 @dataclass
@@ -375,13 +375,13 @@ def _check_lock_dir() -> str:
     Check for the presence of the snapm runtime lock directory and create
     it if necessary.
     """
-    lockdir = _SNAPSET_LOCK_DIR
-    makedirs(lockdir, mode=_SNAPSET_LOCK_DIR_MODE, exist_ok=True)
+    lockdir = _SNAPM_LOCK_DIR
+    makedirs(lockdir, mode=_SNAPM_LOCK_DIR_MODE, exist_ok=True)
     try:
-        os.chmod(lockdir, _SNAPSET_LOCK_DIR_MODE)
+        os.chmod(lockdir, _SNAPM_LOCK_DIR_MODE)
     except OSError as err:
         st = os.stat(lockdir)
-        if (st.st_mode & 0o777) != _SNAPSET_LOCK_DIR_MODE:
+        if (st.st_mode & 0o777) != _SNAPM_LOCK_DIR_MODE:
             raise SnapmSystemError(
                 f"Lock directory {lockdir} has insecure permissions"
             ) from err
@@ -735,7 +735,7 @@ class Manager:
             self._lock_dir = _check_lock_dir()
         except (OSError, SnapmSystemError) as err:
             raise SnapmSystemError(
-                f"Failed to create lock directory at {_SNAPSET_LOCK_DIR}: {err}"
+                f"Failed to create lock directory at {_SNAPM_LOCK_DIR}: {err}"
             ) from err
 
         self.plugins = []
