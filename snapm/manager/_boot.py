@@ -340,7 +340,7 @@ def _build_snapset_mount_list(snapset):
             if line == "\n" or line.startswith("#"):
                 continue
             what, where, fstype, options, _, _ = line.split()
-            if where == "/":
+            if where == "/" or fstype == "swap":
                 continue
             if where in snapset_mounts:
                 snapshot = snapset.snapshot_by_mount_point(where)
