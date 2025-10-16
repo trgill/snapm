@@ -388,7 +388,6 @@ def _create_boom_boot_entry(
                     used to associate the entry with a snapshot set name or
                     UUID.
     :param root_device: The root device for the entry. Passed to root=...
-    :param lvm_root_lv: An optional LVM2 root logical volume.
     :param mounts: An optional list of mount specifications to use for the
                    boot entry. If defined fstab=no will be appended to the
                    generated kernel command line.
