@@ -339,7 +339,11 @@ def _build_snapset_mount_list(snapset):
         for line in fstab.readlines():
             if line == "\n" or line.startswith("#"):
                 continue
-            what, where, fstype, options, _, _ = line.split()
+            parts = line.split()
+            if len(parts) != 6:
+                _log_warn("Skipping malformed fstab line: %s", line.strip())
+                continue
+            what, where, fstype, options, _, _ = parts
             if where == "/" or fstype == "swap":
                 continue
             if where in snapset_mounts:
@@ -350,7 +354,31 @@ def _build_snapset_mount_list(snapset):
     return mounts
 
 
-def _create_boom_boot_entry(version, title, tag_arg, root_device, mounts=None):
+def _build_swap_list():
+    """
+    Build a list of command line swap unit definitions for the running system.
+    Swap entries are extracted from /etc/fstab and returned as a list of
+    "WHAT:OPTIONS" strings.
+    """
+    swaps = []
+    with open(ETC_FSTAB, "r", encoding="utf8") as fstab:
+        for line in fstab.readlines():
+            if line == "\n" or line.startswith("#"):
+                continue
+            parts = line.split()
+            if len(parts) != 6:
+                _log_warn("Skipping malformed fstab line: %s", line.strip())
+                continue
+            what, _, fstype, options, _, _ = parts
+            if fstype != "swap":
+                continue
+            swaps.append(f"{what}:{options}")
+    return swaps
+
+
+def _create_boom_boot_entry(
+    version, title, tag_arg, root_device, mounts=None, swaps=None
+):
     """
     Create a boom boot entry according to the passed arguments.
 
@@ -364,6 +392,8 @@ def _create_boom_boot_entry(version, title, tag_arg, root_device, mounts=None):
     :param mounts: An optional list of mount specifications to use for the
                    boot entry. If defined fstab=no will be appended to the
                    generated kernel command line.
+    :param swaps: An optional list of swap specifications to use for the
+                  boot entry. Each entry should be in the format "WHAT:OPTIONS".
     """
     assert title is not None, "Boot entry argument title must have a value"
     assert version is not None, "Boot entry argument version must have a value"
@@ -400,6 +430,7 @@ def _create_boom_boot_entry(version, title, tag_arg, root_device, mounts=None):
         images=boom.command.I_BACKUP,
         no_fstab=bool(mounts),
         mounts=mounts,
+        swaps=swaps,
     )
 
     # Apply defaults for optional keys enabled in profile
@@ -428,12 +459,14 @@ def create_snapset_boot_entry(snapset, title=None):
     title = title or f"Snapshot {snapset.name} {snapset.time} ({version})"
     root_device = _find_snapset_root(snapset)
     mounts = _build_snapset_mount_list(snapset)
+    swaps = _build_swap_list()
     snapset.boot_entry = _create_boom_boot_entry(
         version,
         title,
         f"{SNAPSET_ARG}={snapset.uuid}",
         root_device,
         mounts=mounts,
+        swaps=swaps,
     )
     _log_debug(
         "Created boot entry '%s' for snapshot set with UUID=%s", title, snapset.uuid
