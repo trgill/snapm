@@ -23,7 +23,9 @@ from snapm import (
     SnapmPathError,
     SnapmMountError,
     SnapmUmountError,
+    Selection,
     SnapshotSet,
+    select_snapshot_set,
     FsTabReader,
     get_device_fstype,
     get_device_path,
@@ -648,12 +650,14 @@ class Mounts:
         # Clear snapset mount_root
         snapset.mount_root = ""
 
-    def find_mounts(self) -> List[Mount]:
+    def find_mounts(self, selection: Optional[Selection] = None) -> List[Mount]:
         """
         Return a list of `Mount` objects describing the currently mounted
         snapshot sets managed by this `Mounts` instance.
         """
-        return self._mounts.copy()
+        selection = selection or Selection()
+        selection.check_valid_selection(snapshot_set=True)
+        return [m for m in self._mounts if select_snapshot_set(selection, m.snapset)]
 
 
 __all__ = [
