@@ -865,7 +865,7 @@ def print_schedules(
     :param selection: A ``Selection`` object giving selection criteria for
                       the operation.
     :type selection: ``Selection``
-    :param output_fields: A comma-separateed list of output fields.
+    :param output_fields: A comma-separated list of output fields.
     :type output_fields: ``str``
     :param opts: Output formatting and control options.
     :type opts: ``ReportOpts``
