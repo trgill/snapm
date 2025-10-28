@@ -175,15 +175,15 @@ def _get_uts_release():
     return uname()[2]
 
 
-def _get_machine_id():
+def _get_machine_id() -> Optional[str]:
     """
     Return the current host's machine-id.
 
     Get the machine-id value for the running system by reading from
     ``/etc/machine-id`` and return it as a string.
 
-    :returns: The ``machine_id`` as a string
-    :rtype: str
+    :returns: The ``machine_id`` as a string, or ``None`` if not available.
+    :rtype: Optional[str]
     """
     if path_exists(_MACHINE_ID):
         path = _MACHINE_ID
