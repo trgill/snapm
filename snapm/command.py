@@ -1165,7 +1165,7 @@ def _resize_cmd(cmd_args):
 
 def _revert_cmd(cmd_args):
     """
-    Delete snapshot set command handler.
+    Revert snapshot set command handler.
 
     Attempt to revert the specified snapshot set.
 
