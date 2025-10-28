@@ -786,7 +786,7 @@ def create_schedule(
     :param name: The name of the new schedule.
     :param sources: A list of mount point or block devices to snapshot.
     :param default_size_policy: The default size policy for this snapshot set.
-    :param autoinxed: Enable autoindex names for this schedule.
+    :param autoindex: Enable autoindex names for this schedule.
     :param boot: Create a boot entry for this snapshot set.
     :param revert: Create a revert boot entry for this snapshot set.
     :param autoindex: Treat `name` as the basename of a recurring snapshot set
