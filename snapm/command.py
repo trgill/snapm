@@ -14,8 +14,8 @@ and may be used by application programs, or interactively in the
 Python shell by users who do not require all the features present
 in the snapm object API.
 """
+from typing import Union, List, Optional
 from argparse import ArgumentParser
-from typing import Union, List
 from os.path import basename
 from json import dumps
 from uuid import UUID
@@ -23,6 +23,7 @@ import logging
 import os
 
 from snapm import (
+    SnapmNotFoundError,
     SnapmInvalidIdentifierError,
     SNAPSET_NAME,
     SNAPSET_BASENAME,
@@ -815,6 +816,61 @@ def delete_schedule(manager: Manager, name: str):
     manager.scheduler.delete(name)
 
 
+def edit_schedule(
+    manager: Manager,
+    name: str,
+    sources: Optional[List[str]],
+    default_size_policy: Optional[str],
+    autoindex: bool,
+    calendarspec: Optional[Union[str, CalendarSpec]],
+    policy: Optional[GcPolicy],
+    boot: Optional[bool] = None,
+    revert: Optional[bool] = None,
+):
+    """
+    Edit an existing schedule from a list of mount point and block device
+    source paths.
+
+    :param manager: The manager context to use.
+    :param name: The name of the new schedule.
+    :param sources: A list of mount point or block devices to snapshot.
+    :param default_size_policy: The default size policy for this snapshot set.
+    :param autoindex: Enable autoindex names for this schedule.
+    :param boot: Create a boot entry for this snapshot set.
+    :param revert: Create a revert boot entry for this snapshot set.
+    :param autoindex: Treat `name` as the basename of a recurring snapshot set
+                      and generate and append an appropriate index value.
+    """
+    schedules = manager.scheduler.find_schedules(Selection(sched_name=name))
+    if len(schedules) != 1:
+        raise SnapmNotFoundError(f"Schedule named '{name}' does not exist")
+    old_schedule = schedules[0]
+
+    if not sources:
+        sources = old_schedule.sources
+    if not default_size_policy:
+        default_size_policy = old_schedule.default_size_policy
+    if not calendarspec:
+        calendarspec = old_schedule.calendarspec
+    if not policy or not policy.has_params:
+        policy = old_schedule.gc_policy
+    if boot is None:
+        boot = old_schedule.boot
+    if revert is None:
+        revert = old_schedule.revert
+
+    return manager.scheduler.edit(
+        name,
+        sources,
+        default_size_policy,
+        autoindex,
+        calendarspec,
+        policy,
+        boot=boot,
+        revert=revert,
+    )
+
+
 def enable_schedule(manager: Manager, name: str, start: bool):
     """
     Enable an existing schedule. This enables the systemd timer units
@@ -1484,6 +1540,43 @@ def _schedule_delete_cmd(cmd_args):
     return 0
 
 
+def _schedule_edit_cmd(cmd_args):
+    """
+    Edit schedule.
+
+    :param cmd_args: Command line arguments for the command
+    :returns: integer status code returned from ``main()``
+    """
+    manager = Manager()
+    policy = (
+        GcPolicy.from_cmd_args(cmd_args)
+        if getattr(cmd_args, "policy_type", None)
+        else None
+    )
+    schedule = edit_schedule(
+        manager,
+        cmd_args.schedule_name,
+        cmd_args.sources,
+        cmd_args.size_policy,
+        True,
+        cmd_args.calendarspec,
+        policy,
+        boot=cmd_args.bootable,
+        revert=cmd_args.revert,
+    )
+    if not schedule:
+        return 1
+    _log_info(
+        "Edited schedule %s",
+        schedule.name,
+    )
+    if cmd_args.json:
+        print(schedule.json(pretty=True))
+    else:
+        print(schedule)
+    return 0
+
+
 def _schedule_enable_cmd(cmd_args):
     """
     Enable schedule.
@@ -1787,12 +1880,12 @@ def _add_json_arg(parser):
     )
 
 
-def _add_policy_args(parser):
+def _add_policy_args(parser, required=True):
     parser.add_argument(
         "-p",
         "--policy-type",
         type=lambda s: s.lower(),
-        required=True,
+        required=required,
         choices=["all", "count", "age", "timeline"],
         help="Garbage collection policy type",
     )
@@ -1900,6 +1993,7 @@ def _add_schedule_config_arg(parser):
 CREATE_CMD = "create"
 CREATE_SCHEDULED_CMD = "create-scheduled"
 DELETE_CMD = "delete"
+EDIT_CMD = "edit"
 RENAME_CMD = "rename"
 RESIZE_CMD = "resize"
 REVERT_CMD = "revert"
@@ -2227,6 +2321,58 @@ def _add_schedule_subparser(type_subparser):
         help="The name of the schedule to delete",
     )
     schedule_delete_parser.set_defaults(func=_schedule_delete_cmd)
+
+    # schedule edit subcommand
+    schedule_edit_parser = schedule_subparser.add_parser(
+        EDIT_CMD,
+        help="Edit schedule",
+    )
+
+    schedule_edit_parser.add_argument(
+        "schedule_name",
+        metavar="SCHEDULE_NAME",
+        type=str,
+        action="store",
+        help="The name of the schedule to edit",
+    )
+    schedule_edit_parser.add_argument(
+        "-C",
+        "--calendarspec",
+        type=str,
+        metavar="CALENDARSPEC",
+        help="Calendar trigger expression",
+    )
+    schedule_edit_parser.add_argument(
+        "sources",
+        metavar="SOURCE",
+        type=str,
+        nargs="*",
+        help="A device or mount point path to include in this snapshot set",
+    )
+    schedule_edit_parser.add_argument(
+        "-s",
+        "--size-policy",
+        type=str,
+        action="store",
+        help="A default size policy for fixed size snapshots",
+    )
+    schedule_edit_parser.add_argument(
+        "-b",
+        "--bootable",
+        action="store_true",
+        default=None,
+        help="Create a boot entry for this snapshot set",
+    )
+    schedule_edit_parser.add_argument(
+        "-r",
+        "--revert",
+        action="store_true",
+        default=None,
+        help="Create a revert boot entry for this snapshot set",
+    )
+    _add_policy_args(schedule_edit_parser, required=False)
+    _add_json_arg(schedule_edit_parser)
+    schedule_edit_parser.set_defaults(func=_schedule_edit_cmd)
 
     # schedule enable subcommand
     schedule_enable_parser = schedule_subparser.add_parser(

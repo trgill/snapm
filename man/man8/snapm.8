@@ -57,7 +57,7 @@ split | prune | activate | deactivate | autoactivate | list | show
 .  RI schedule " "\c
 ..
 .de ARG_SCHEDULE_COMMANDS
-.  RI create | delete | enable | disable | list | show | gc
+.  RI create | delete | edit | enable | disable | list | show | gc
 ..
 .
 .de ARG_NAME_OR_UUID
@@ -380,6 +380,46 @@ snapm \- Linux Snapshot Manager
 .  IR schedule_name " "\c
 ..
 .CMD_SCHEDULE_DELETE
+.br
+.
+.B snapm
+.de CMD_SCHEDULE_EDIT
+.  B schedule
+.  B edit
+.  RB [ -p | --policy-type\ \c
+.  IR policy_type ] " "\c
+.  RB [ -b | --bootable] " "\c
+.  RB [ -C | --calendarspec\ \c
+.  IR calendarspec] " "\c
+.  RB [ -r | --revert] " "\c
+.  RB [ -s | --size-policy\ \c
+.  IR policy] " "\c
+.  RB [ --keep-count\ \c
+.  IR count ] " "\c
+.  RB [ --keep-years\ \c
+.  IR years ] " "\c
+.  RB [ --keep-months\ \c
+.  IR months ] " "\c
+.  RB [ --keep-weeks\ \c
+.  IR weeks ] " "\c
+.  RB [ --keep-days\ \c
+.  IR days ] " "\c
+.  RB [ --keep-yearly\ \c
+.  IR yearly ] " "\c
+.  RB [ --keep-quarterly\ \c
+.  IR quarterly ] " "\c
+.  RB [ --keep-monthly\ \c
+.  IR monthly ] " "\c
+.  RB [ --keep-weekly\ \c
+.  IR weekly ] " "\c
+.  RB [ --keep-daily\ \c
+.  IR daily ] " "\c
+.  RB [ --keep-hourly\ \c
+.  IR hourly ] " "\c
+.  IR schedule_name " "\c
+.  RI [ source[size_policy] ... ] " "\c
+..
+.CMD_SCHEDULE_EDIT
 .br
 .
 .B snapm
@@ -1101,6 +1141,24 @@ Delete an existing snapshot set schedule by name. The specified schedule
 is disabled and removed from the system. Existing snapshot sets created
 by the schedule before its deletion remain and continue to be available
 until deleted by the user.
+.
+.TP
+.B snapm
+.CMD_SCHEDULE_EDIT
+.br
+Modify an existing snapshot set schedule.
+.IP
+Modify a persistent schedule to automatically create snapshot sets
+according to the name and arguments given to the \fBsnapm schedule
+edit\fP command. Arguments not specified on the \fBedit\fP command
+line are taken from the existing schedule.
+.IP
+The \fBsnapm schedule edit\fP command accepts the same set of
+arguments as the \fBsnapm schedule create\fP command.
+.IP
+If \fB-p policy_type\fP is provided without type-specific parameters, the
+existing policy is retained (except for the \fBall\fP policy type, which has
+no parameters and is applied directly).
 .
 .TP
 .B snapm
