@@ -394,10 +394,14 @@ def _create_boom_boot_entry(
     :param swaps: An optional list of swap specifications to use for the
                   boot entry. Each entry should be in the format "WHAT:OPTIONS".
     """
-    assert title is not None, "Boot entry argument title must have a value"
-    assert version is not None, "Boot entry argument version must have a value"
-    assert tag_arg is not None, "Boot entry argument tag_arg must have a value"
-    assert root_device is not None, "Boot entry argument root_device must have a value"
+    if not isinstance(version, str) or not version:
+        raise TypeError("Boot entry version must have a string value")
+    if not isinstance(title, str) or not title:
+        raise TypeError("Boot entry title must have a string value")
+    if not isinstance(tag_arg, str) or not tag_arg:
+        raise TypeError("Boot entry tag_arg must have a string value")
+    if not isinstance(root_device, str) or not root_device:
+        raise TypeError("Boot entry root_device must have a string value")
 
     machine_id = _get_machine_id()
 
