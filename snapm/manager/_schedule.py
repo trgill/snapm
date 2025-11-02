@@ -105,6 +105,17 @@ class GcPolicyParams:
         """
         raise NotImplementedError
 
+    @property
+    def has_params(self):
+        """
+        Return ``True`` if this ``GcPolicyParams`` object has defined
+        parameters or ``False`` otherwise.
+
+        :returns: ``True`` if parameters are set else ``False``.
+        :rtype: ``bool``
+        """
+        raise NotImplementedError
+
 
 @dataclass
 class GcPolicyParamsAll(GcPolicyParams):
@@ -130,6 +141,17 @@ class GcPolicyParamsAll(GcPolicyParams):
         :rtype: ``list[SnapshotSet]``
         """
         return []
+
+    @property
+    def has_params(self):
+        """
+        Return ``True`` if this ``GcPolicyParams`` object has defined
+        parameters or ``False`` otherwise.
+
+        :returns: ``True`` if parameters are set else ``False``.
+        :rtype: ``bool``
+        """
+        return True
 
 
 @dataclass
@@ -159,6 +181,17 @@ class GcPolicyParamsCount(GcPolicyParams):
         :rtype: ``list[SnapshotSet]``
         """
         return sets[0 : len(sets) - self.keep_count]
+
+    @property
+    def has_params(self):
+        """
+        Return ``True`` if this ``GcPolicyParams`` object has defined
+        parameters or ``False`` otherwise.
+
+        :returns: ``True`` if parameters are set else ``False``.
+        :rtype: ``bool``
+        """
+        return self.keep_count > 0
 
 
 @dataclass
@@ -225,6 +258,17 @@ class GcPolicyParamsAge(GcPolicyParams):
         """
         limit = datetime.now() - self.to_timedelta()
         return [sset for sset in sets if sset.datetime < limit]
+
+    @property
+    def has_params(self):
+        """
+        Return ``True`` if this ``GcPolicyParams`` object has defined
+        parameters or ``False`` otherwise.
+
+        :returns: ``True`` if parameters are set else ``False``.
+        :rtype: ``bool``
+        """
+        return self.to_days() > 0
 
 
 @dataclass
@@ -374,6 +418,26 @@ class GcPolicyParamsTimeline(GcPolicyParams):
         to_delete += hourly[0 : len(hourly) - self.keep_hourly]
 
         return to_delete
+
+    @property
+    def has_params(self):
+        """
+        Return ``True`` if this ``GcPolicyParams`` object has defined
+        parameters or ``False`` otherwise.
+
+        :returns: ``True`` if parameters are set else ``False``.
+        :rtype: ``bool``
+        """
+        return any(
+            (
+                self.keep_yearly,
+                self.keep_quarterly,
+                self.keep_monthly,
+                self.keep_weekly,
+                self.keep_daily,
+                self.keep_hourly,
+            )
+        )
 
 
 #: Mapping from ``GcPolicyType`` values to ``GcPolicyParams`` subclasses.
@@ -613,6 +677,17 @@ class GcPolicy:
         :rtype: ``list[SnapshotSet]``
         """
         return self.params.evaluate(sets)
+
+    @property
+    def has_params(self):
+        """
+        Return ``True`` if this ``GcPolicy`` object has defined policy
+        parameters or ``False`` otherwise.
+
+        :returns: ``True`` if parameters are set else ``False``.
+        :rtype: ``bool``
+        """
+        return self.params.has_params
 
 
 # pylint: disable=too-many-public-methods
