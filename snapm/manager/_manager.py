@@ -648,6 +648,8 @@ class Scheduler:
         schedule.stop()
         schedule.disable()
         schedule.delete_config()
+        self._schedules.remove(schedule)
+        self._schedules_by_name.pop(schedule.name, None)
 
     @suspend_signals
     def enable(self, name: str, start: bool) -> Schedule:
