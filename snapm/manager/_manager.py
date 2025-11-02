@@ -42,6 +42,7 @@ from snapm import (
     SnapmStateError,
     SnapmRecursionError,
     SnapmArgumentError,
+    SnapmTimerError,
     Selection,
     bool_to_yes_no,
     is_size_policy,
@@ -616,6 +617,9 @@ class Scheduler:
         :returns: The new ``Schedule`` instance.
         :rtype: ``Schedule``
         """
+        if name in self._schedules_by_name:
+            raise SnapmExistsError(f"Schedule named '{name}' already exists")
+
         _, _ = _parse_source_specs(sources, default_size_policy)
 
         schedule = Schedule(
@@ -634,6 +638,85 @@ class Scheduler:
         self._schedules.append(schedule)
         self._schedules_by_name[name] = schedule
         return schedule
+
+    @suspend_signals
+    def edit(
+        self,
+        name: str,
+        sources: List[str],
+        default_size_policy: str,
+        autoindex: bool,
+        calendarspec: Union[str, CalendarSpec],
+        policy: GcPolicy,
+        boot=False,
+        revert=False,
+    ) -> Schedule:
+        """
+        Edit an existing ``Schedule`` instance and write it to disk.
+
+        :param name: The name of the ``Schedule``.
+        :type name: ``str``
+        :param sources: The source specs to include in this ``Schedule``.
+        :type sources: ``list[str]``
+        :param default_size_policy: The default size policy for this
+                                    ``Schedule``.
+        :type default_size_policy: ``str``
+        :param autoindex: Enable autoindex names for this ``Schedule``.
+        :type autoindex: ``bool``
+        :param calendarspec: The ``OnCalendar`` expression for this ``Schedule``.
+        :type calendarspec: ``str``
+        :param policy: The garbage collection policy for this ``Schedule``.
+        :type policy: ``GcPolicy``
+        :returns: The new ``Schedule`` instance.
+        :rtype: ``Schedule``
+        """
+        if name not in self._schedules_by_name:
+            raise SnapmNotFoundError(f"Schedule named '{name}' does not exist")
+
+        old_schedule = self._get_schedule_by_name(name)
+
+        _, _ = _parse_source_specs(sources, default_size_policy)
+
+        new_schedule = Schedule(
+            name,
+            sources,
+            default_size_policy,
+            autoindex,
+            calendarspec,
+            policy,
+            boot=boot,
+            revert=revert,
+        )
+        new_schedule.write_config(self._schedpath)
+
+        try:
+            old_schedule.stop()
+            old_schedule.disable()
+            self._schedules.remove(old_schedule)
+            self._schedules_by_name.pop(old_schedule.name, None)
+
+            new_schedule.enable()
+            new_schedule.start()
+            self._schedules.append(new_schedule)
+            self._schedules_by_name[name] = new_schedule
+            return new_schedule
+        except (SnapmSystemError, SnapmTimerError) as err:
+            _log_warn("Error modifying schedule '%s': %s", name, err)
+            try:
+                new_schedule.disable()
+            except SnapmError:
+                _log_warn(
+                    "Failed to disable replacement schedule '%s' during rollback", name
+                )
+            try:
+                old_schedule.enable()
+                old_schedule.start()
+                if old_schedule not in self._schedules:
+                    self._schedules.append(old_schedule)
+                self._schedules_by_name[name] = old_schedule
+                old_schedule.write_config(self._schedpath)
+            finally:
+                raise
 
     @suspend_signals
     def delete(self, name: str) -> None:
