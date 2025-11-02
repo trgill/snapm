@@ -580,7 +580,7 @@ class BootEntryCache(dict):
         """
         for word in boot_entry.options.split():
             if word.startswith(self.entry_arg):
-                _, value = word.split("=")
+                _, value = word.split("=", maxsplit=1)
                 return value
         return None
 
