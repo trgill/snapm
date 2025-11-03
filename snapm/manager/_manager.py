@@ -380,7 +380,7 @@ def _check_lock_dir() -> str:
     makedirs(lockdir, mode=_SNAPM_LOCK_DIR_MODE, exist_ok=True)
     try:
         os.chmod(lockdir, _SNAPM_LOCK_DIR_MODE)
-    except OSError as err:
+    except OSError as err:  # pragma: no cover
         st = os.stat(lockdir)
         if (st.st_mode & 0o777) != _SNAPM_LOCK_DIR_MODE:
             raise SnapmSystemError(
@@ -427,7 +427,7 @@ def _lock_manager(lockdir: str) -> int:
     except BlockingIOError as err:
         cleanup()
         raise SnapmBusyError(f"Manager already locked at '{lockfile}': {err}") from err
-    except OSError as err:
+    except OSError as err:  # pragma: no cover
         cleanup()
         raise SnapmSystemError(
             f"Failed to take exclusive lock on Manager lockfile {lockfile}: {err}"
@@ -436,14 +436,14 @@ def _lock_manager(lockdir: str) -> int:
     try:
         os.ftruncate(fd, 0)
         os.write(fd, f"{os.getpid()}\n".encode("utf8"))
-    except OSError:
+    except OSError:  # pragma: no cover
         pass
 
     # If O_CLOEXEC was unavailable, make fd non-inheritable.
     if not hasattr(os, "O_CLOEXEC"):
         try:
             os.set_inheritable(fd, False)
-        except OSError:
+        except OSError:  # pragma: no cover
             pass
 
     return fd
@@ -466,7 +466,7 @@ def _unlock_manager(lockdir: str, fd: int):
     finally:
         try:
             os.close(fd)
-        except OSError:
+        except OSError:  # pragma: no cover
             pass
 
 

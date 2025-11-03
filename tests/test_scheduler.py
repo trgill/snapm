@@ -297,3 +297,113 @@ class SchedulerTests(unittest.TestCase):
         self.manager = manager.Manager()
         with self.assertRaises(snapm.SnapmNotFoundError) as cm:
             self.manager.scheduler.delete("nosuch")
+
+    def test_schedule_edit(self):
+        """
+        Tests editing an existing schedule.
+        """
+        self.manager = manager.Manager()
+
+        def _cleanup_schedule():
+            self.manager.scheduler.delete("weekly")
+
+        # 1. Create initial schedule
+        policy1 = manager.GcPolicy("weekly", manager.GcPolicyType.COUNT, {"keep_count": 2})
+        schedule1 = self.manager.scheduler.create(
+            "weekly",
+            self.mount_points(),
+            "10%SIZE",
+            True,
+            "weekly",
+            policy1,
+            False,
+            False,
+        )
+
+        # Ensure cleanup if anything fails
+        self.addCleanup(_cleanup_schedule)
+
+        self.assertEqual(schedule1.gc_policy.type, manager.GcPolicyType.COUNT)
+        self.assertEqual(schedule1.gc_policy.params.keep_count, 2)
+        self.assertEqual(schedule1.calendarspec, "weekly")
+
+        # 2. Edit the schedule
+        policy2 = manager.GcPolicy("weekly", manager.GcPolicyType.COUNT, {"keep_count": 5})
+        schedule2 = self.manager.scheduler.edit(
+            "weekly",
+            self.mount_points(),
+            "20%SIZE",  # Changed
+            True,
+            "daily",      # Changed
+            policy2,      # Changed
+            False,
+            False,
+        )
+
+        # 3. Verify changes
+        self.assertIsNot(schedule1, schedule2)
+        self.assertEqual(schedule2.gc_policy.type, manager.GcPolicyType.COUNT)
+        self.assertEqual(schedule2.gc_policy.params.keep_count, 5)
+        self.assertEqual(schedule2.calendarspec, "daily")
+
+        # Verify the scheduler's internal cache points to the new object
+        self.assertIs(self.manager.scheduler._schedules_by_name["weekly"], schedule2)
+        self.assertIn(schedule2, self.manager.scheduler._schedules)
+        self.assertNotIn(schedule1, self.manager.scheduler._schedules)
+
+        # 4. Verify re-load from disk
+        self.manager = manager.Manager() # Re-init
+        reloaded_sched = self.manager.scheduler.find_schedules(snapm.Selection(sched_name="weekly"))[0]
+        self.assertEqual(reloaded_sched.gc_policy.type, manager.GcPolicyType.COUNT)
+        self.assertEqual(reloaded_sched.gc_policy.params.keep_count, 5)
+
+    def test_schedule_edit_not_found_raises(self):
+        """
+        Tests editing a non-existent schedule raises SnapmNotFoundError.
+        """
+        self.manager = manager.Manager()
+        policy = manager.GcPolicy("weekly", manager.GcPolicyType.COUNT, {"keep_count": 2})
+        with self.assertRaises(snapm.SnapmNotFoundError):
+            self.manager.scheduler.edit(
+                "no-such-schedule",
+                self.mount_points(),
+                "10%SIZE",
+                True,
+                "weekly",
+                policy,
+                False,
+                False,
+            )
+
+    def test_gc_policy_empty_params(self):
+        """
+        Tests the has_params False path and __str__ for GcPolicyParams.
+        """
+        from snapm.manager._schedule import (
+            GcPolicy, GcPolicyType,
+            GcPolicyParamsAll, GcPolicyParamsCount,
+            GcPolicyParamsAge, GcPolicyParamsTimeline
+        )
+
+        # 1. Test ALL (has_params is always True, but test str)
+        p_all = GcPolicyParamsAll()
+        self.assertEqual(str(p_all), "")
+
+        # 2. Test COUNT
+        p_count = GcPolicyParamsCount(keep_count=0)
+        self.assertEqual(str(p_count), "")
+        self.assertFalse(p_count.has_params)
+
+        # 3. Test AGE
+        p_age = GcPolicyParamsAge()
+        self.assertEqual(str(p_age), "")
+        self.assertFalse(p_age.has_params)
+
+        # 4. Test TIMELINE
+        p_timeline = GcPolicyParamsTimeline()
+        self.assertEqual(str(p_timeline), "")
+        self.assertFalse(p_timeline.has_params)
+
+        # 5. Test GcPolicy
+        policy = GcPolicy("test-policy", GcPolicyType.COUNT, {})
+        self.assertFalse(policy.has_params)
