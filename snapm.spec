@@ -1,7 +1,7 @@
 %global summary A set of tools for managing snapshots
 
 Name:		snapm
-Version:	0.5.0
+Version:	0.5.1
 Release:	1%{?dist}
 Summary:	%{summary}
 
@@ -141,6 +141,34 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_tmpfilesdir}
 %doc doc
 
 %changelog
+* Mon Nov 03 2025 Bryn M. Reeves <bmr@redhat.com> - 0.5.1-1
+- dist: don't recursively set SELinux contexts for /run/snapm
+- tests: coverage for Scheduler.edit()
+- snapm: implement schedule edit command
+- scheduler: add Scheduler.edit() method
+- scheduler: add GcPolicy.has_params property
+- scheduler: remove schedule from lists/dicts on Scheduler.delete()
+- boot: use maxsplit=1 in BootEntryCache._parse_entry()
+- boot: Replace asserts with explicit exceptions
+- boot: Type the machine-id helper as Optional and align docstring
+- command: Fix typo in print_schedules doc - 'separateed' → 'separated'
+- command: Fix typo in create_schedule doc - 'autoinxed' → 'autoindex'
+- command: Fix _revert_cmd docstring - 'Delete' instead of 'Revert'
+- boot: drop `lvm_root_lv` docstring from _create_boom_boot_entry()
+- boot: handle swap entries explicitly in create_snapset_boot_entry()
+- boot: don't include swap entries in the snapset mount list
+- snapm: fix formatting glitches in snapm.manager
+- dist: add /run/snapm/lock to systemd/tmpfiles.d/snapm.conf
+- manager: re-locate lock files to /run/snapm/lock
+- dist: add tmpfiles.d drop-in for /run/snapm to snapm.spec
+- snapm: add systemd/tmpfiles.d/snapm.conf
+- snapm: add constants for runtime and mount dirs
+- snapm: wire up new debug log filttering in snapm.command.setup_logging()
+- snapm: convert modules to new log filtering interface
+- snapm: replace SnapmLogger Logging class with SubsystemFilter Filter class
+- snapm: use "snapm" rather than __name__ (snapm._snapm) for getLogger()
+- snapm: add string constants for new name-based subsystem log filtering
+
 * Mon Oct 06 2025 Bryn M. Reeves <bmr@redhat.com> - 0.5.0-1
 - snapm: bump release to 0.5.0
 - snapm: reject duplicates in Scheduler.create() sources argument
