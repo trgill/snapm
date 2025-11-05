@@ -520,27 +520,38 @@ class _Lvm2(Plugin):
             **kwargs,
         )
 
-    def _is_lvm_device(self, devpath):
+    def _is_lvm_device(self, device):
         """
-        Test whether ``devpath`` is an LVM device.
+        Test whether ``device`` is an LVM device.
 
-        Return ``True`` if the device at ``devpath`` is an LVM device or
+        Return ``True`` if the device at ``device`` is an LVM device or
         ``False`` otherwise.
         """
-        if path_isabs(devpath):
-            if not path_exists(devpath):
-                return False
 
-            st = stat(devpath, follow_symlinks=True)
+        def _check_dm_major(dev):
+            st = stat(dev, follow_symlinks=True)
             if not S_ISBLK(st.st_mode):
                 return False
             if dev_major(st.st_rdev) != _get_dm_major():
                 return False
+            return True
 
-        if devpath.startswith(DEV_MAPPER_PREFIX):
-            dm_name = devpath.removeprefix(DEV_MAPPER_PREFIX)
+        if path_isabs(device):
+            if not path_exists(device):
+                return False
+            if not _check_dm_major(device):
+                return False
         else:
-            dm_name = devpath
+            check_path = path_join(DEV_MAPPER_PREFIX, device)
+            if not path_exists(check_path):
+                return False
+            if not _check_dm_major(check_path):
+                return False
+
+        if device.startswith(DEV_MAPPER_PREFIX):
+            dm_name = device.removeprefix(DEV_MAPPER_PREFIX)
+        else:
+            dm_name = device
 
         dmsetup_cmd_args = [
             DMSETUP_CMD,
