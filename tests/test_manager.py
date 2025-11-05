@@ -8,6 +8,7 @@
 import unittest
 import logging
 import os
+import os.path
 from uuid import UUID
 from json import loads
 import tempfile
@@ -506,6 +507,7 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmPathError) as cm:
             self.manager.create_snapshot_set("testset0", [non_mount])
 
+    @unittest.skipIf(not os.path.ismount("/boot"), "no suitable mount path")
     def test_create_snapshot_set_no_provider(self):
         with self.assertRaises(snapm.SnapmNoProviderError):
             self.manager.create_snapshot_set("testset0", ["/boot"])
