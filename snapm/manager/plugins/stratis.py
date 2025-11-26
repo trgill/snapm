@@ -192,14 +192,21 @@ class StratisSnapshot(Snapshot):
         provider,
         pool_name,
         fs_name,
+        cache_pool=None,
+        cache_filesystem=None,
     ):
         super().__init__(name, snapset_name, origin, timestamp, mount_point, provider)
         self.pool_name = pool_name
         self.fs_name = fs_name
-        self._pool = None
-        self._filesystem = None
-        self._cache_ts = 0
-        self._get_dbus_cache()
+        if cache_pool and cache_filesystem:
+            self._pool = cache_pool
+            self._filesystem = cache_filesystem
+            self._cache_ts = time()
+        else:
+            self._pool = None
+            self._filesystem = None
+            self._cache_ts = 0
+            self._get_dbus_cache()
 
     def __str__(self):
         return "".join(
@@ -500,6 +507,9 @@ class Stratis(Plugin):
                 (snapset, timestamp, mount_point) = fields
                 full_name = f"{pool_name}/{filesystem_name}"
                 self._log_debug("Found %s snapshot: %s", self.name, full_name)
+                pool_object_path = filesystem.Pool()
+                cache_pool = MOPool(managed_objects[pool_object_path])
+                cache_filesystem = filesystem
                 snapshots.append(
                     StratisSnapshot(
                         full_name,
@@ -510,6 +520,8 @@ class Stratis(Plugin):
                         self,
                         pool_name,
                         filesystem_name,
+                        cache_pool=cache_pool,
+                        cache_filesystem=cache_filesystem,
                     )
                 )
 
