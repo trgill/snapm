@@ -320,8 +320,8 @@ class JsonContentDiffer(ContentDifferBase):
 
             content_diff = ContentDiff(
                 "json",
-                old_content="".join(old_pretty),
-                new_content="".join(new_pretty),
+                old_content=old_pretty,
+                new_content=new_pretty,
             )
             content_diff.diff_data = diff_lines
             content_diff.has_changes = len(diff_lines) > 0
