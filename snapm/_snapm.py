@@ -22,6 +22,14 @@ import logging
 import re
 import os
 
+from ._progress import (
+    Progress,
+    ProgressFactory,
+    QuietProgress,
+    SimpleProgress,
+    TermControl,
+)
+
 _log = logging.getLogger("snapm")
 
 _log_debug = _log.debug
@@ -2258,6 +2266,11 @@ __all__ = [
     "SnapmLimitError",
     "SnapmMountError",
     "SnapmUmountError",
+    "Progress",
+    "ProgressFactory",
+    "QuietProgress",
+    "SimpleProgress",
+    "TermControl",
     "Selection",
     "size_fmt",
     "is_size_policy",
