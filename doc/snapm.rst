@@ -6,8 +6,8 @@ Module contents
 
 .. automodule:: snapm
     :members:
-    :special-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
+    :special-members: __init__, __str__, __repr__
     :undoc-members:
     :show-inheritance:
 
@@ -21,7 +21,7 @@ snapm.manager module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -32,7 +32,7 @@ snapm.manager._boot module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -43,7 +43,7 @@ snapm.manager._calendar module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -54,7 +54,7 @@ snapm.manager._schedule module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __dataclass_fields__, __dataclass_params__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -65,7 +65,7 @@ snapm.manager._timers module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -76,7 +76,7 @@ snapm.command module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -87,7 +87,7 @@ snapm.report module
 .. automodule:: snapm.report
     :members:
     :special-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
@@ -99,7 +99,7 @@ snapm.manager.plugins module
     :members:
     :special-members:
     :private-members:
-    :exclude-members: __dict__, __module__, __weakref__, __annotations__
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
     :undoc-members:
     :show-inheritance:
 
