@@ -557,7 +557,6 @@ class Progress(ProgressBase):
             print(self.term.CLEAR_BOL + self.term.BOL, file=self.stream, end="")
         if message:
             print(message, file=self.stream)
-        self.total = 0
         if hasattr(self.stream, "flush"):
             self.stream.flush()
 
