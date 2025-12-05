@@ -24,6 +24,7 @@ import os
 
 from ._progress import (
     Progress,
+    ProgressBase,
     ProgressFactory,
     QuietProgress,
     SimpleProgress,
@@ -2267,6 +2268,7 @@ __all__ = [
     "SnapmMountError",
     "SnapmUmountError",
     "Progress",
+    "ProgressBase",
     "ProgressFactory",
     "QuietProgress",
     "SimpleProgress",
