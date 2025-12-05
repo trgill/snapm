@@ -662,14 +662,14 @@ class NullProgress(ProgressBase):
         """
         return  # pragma: no cover
 
-    def _do_progress(self, done: int, _message: Optional[str] = None):
+    def _do_progress(self, _done: int, _message: Optional[str] = None):
         """
         Report progress on this ``NullProgress`` instance.
 
         No-op for ``NullProgress`` instances.
 
-        :param done: The number of completed progress items.
-        :type done: ``int``
+        :param _done: The number of completed progress items.
+        :type _done: ``int``
         :param _message: An optional progress message (unused).
         :type _message: ``Optional[str]``
         """
