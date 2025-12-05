@@ -472,6 +472,7 @@ class Progress(ProgressBase):
         self.width: int = self._calculate_width(width=width, width_frac=width_frac)
         self.no_clear = no_clear
         self.pbar: Optional[str] = None
+        self.first_update = False
 
         encoding = getattr(self.stream, "encoding", None)
         if not encoding:
@@ -489,19 +490,13 @@ class Progress(ProgressBase):
 
     def _do_start(self):
         """
-        Render and output the initial two-line progress bar header.
+        Prepare rendering state for the progress bar.
+
+        Sets up the rendered bar template and marks the progress as ready
+        for its first update.
         """
         self.pbar = self.term.render(self.BAR)
-
-        print(
-            self.term.BOL
-            + (self.pbar % (self.header, 0, "", self.todo * (self.width - 10)))
-            + self.term.CLEAR_EOL,
-            file=self.stream,
-            end="",
-        )
-        if hasattr(self.stream, "flush"):
-            self.stream.flush()
+        self.first_update = True
 
     def _do_progress(self, done: int, message: Optional[str] = None):
         """
@@ -513,14 +508,17 @@ class Progress(ProgressBase):
         :type message: ``Optional[str]``
         """
         message = message or ""
-
         percent = float(done) / float(self.total)
         n = int((self.width - 10) * percent)
 
+        if self.first_update:
+            prefix = self.term.BOL
+            self.first_update = False
+        else:
+            prefix = self.term.BOL + self.term.UP + self.term.CLEAR_EOL
+
         print(
-            self.term.BOL
-            + self.term.UP
-            + self.term.CLEAR_EOL
+            prefix
             + (
                 self.pbar
                 % (

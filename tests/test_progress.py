@@ -186,18 +186,28 @@ class TestProgress(unittest.TestCase):
         # 1. Start
         p.start(total=10)
         output = mock_tc.term_stream.getvalue()
-        self.assertIn("<BOL>", output)
-        self.assertIn("Test", output)
+        self.assertEqual(output, "")
 
-        # 2. Progress
+        # 2. Progress: first update
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
         p.progress(5, "Halfway")
         output = mock_tc.term_stream.getvalue()
-        self.assertIn("<UP>", output)
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
         self.assertIn("Halfway", output)
 
-        # 3. End
+        # 3. Progress: second update
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        p.progress(7, "Over Halfway")
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
+        self.assertIn("<UP>", output)
+        self.assertIn("Over Halfway", output)
+
+        # 4. End
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
         p.end("Done!")
@@ -220,18 +230,28 @@ class TestProgress(unittest.TestCase):
         # 1. Start
         p.start(total=10)
         output = mock_tc.term_stream.getvalue()
-        self.assertIn("<BOL>", output)
-        self.assertIn("Test", output)
+        self.assertEqual(output, "")
 
-        # 2. Progress
+        # 2. Progress: first update
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
         p.progress(5, "Halfway")
         output = mock_tc.term_stream.getvalue()
-        self.assertIn("<UP>", output)
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
         self.assertIn("Halfway", output)
 
-        # 3. End
+        # 3. Progress: second update
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        p.progress(7, "Over Halfway")
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
+        self.assertIn("<UP>", output)
+        self.assertIn("Over Halfway", output)
+
+        # 4. End
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
         p.end("Done!")
