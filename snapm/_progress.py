@@ -635,14 +635,14 @@ class SimpleProgress(ProgressBase):
             self.stream.flush()
 
 
-class QuietProgress(ProgressBase):
+class NullProgress(ProgressBase):
     """
     A progress class that produces no output.
     """
 
     def _do_start(self):
         """
-        Start reporting progress on this ``QuietProgress`` object.
+        Start reporting progress on this ``NullProgress`` object.
 
         :param total: The total number of expected progress items.
         :type total: ``int``
@@ -651,7 +651,7 @@ class QuietProgress(ProgressBase):
 
     def _do_progress(self, done: int, _message: Optional[str] = None):
         """
-        Report progress on this ``QuietProgress`` instance.
+        Report progress on this ``NullProgress`` instance.
 
         :param done: The number of completed progress items.
         :type done: ``int``
@@ -662,7 +662,7 @@ class QuietProgress(ProgressBase):
 
     def _do_end(self, _message: Optional[str] = None):
         """
-        End progress reporting on this ``QuietProgress`` instance.
+        End progress reporting on this ``NullProgress`` instance.
 
         :param _message: An optional completion message (unused).
         :type _message: ``Optional[str]``
@@ -718,7 +718,7 @@ class ProgressFactory:
         :type no_clear: ``bool``
         """
         if quiet:
-            return QuietProgress()
+            return NullProgress()
 
         term_stream = term_stream or sys.stdout
         if not hasattr(term_stream, "isatty") or not term_stream.isatty():
@@ -737,10 +737,10 @@ class ProgressFactory:
 
 
 __all__ = [
+    "NullProgress",
     "Progress",
     "ProgressBase",
     "ProgressFactory",
-    "QuietProgress",
     "SimpleProgress",
     "TermControl",
 ]

@@ -23,10 +23,10 @@ import re
 import os
 
 from ._progress import (
+    NullProgress,
     Progress,
     ProgressBase,
     ProgressFactory,
-    QuietProgress,
     SimpleProgress,
     TermControl,
 )
@@ -2267,10 +2267,10 @@ __all__ = [
     "SnapmLimitError",
     "SnapmMountError",
     "SnapmUmountError",
+    "NullProgress",
     "Progress",
     "ProgressBase",
     "ProgressFactory",
-    "QuietProgress",
     "SimpleProgress",
     "TermControl",
     "Selection",
