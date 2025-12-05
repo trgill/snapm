@@ -130,10 +130,14 @@ class TermControl:
 
     def __init__(self, term_stream: Optional[TextIO] = None):
         """
-        Create a `TermControl` and initialize its attributes with appropriate
-        values for the current terminal.  `term_stream` is the stream that will
-        be used for terminal output; if this stream is not a tty, then the
-        terminal is assumed to be a dumb terminal (i.e., have no capabilities).
+        Initialize terminal capabilities and size information.
+
+        If the output stream is not a tty or terminal setup fails,
+        the instance will have no terminal capabilities (all control
+        attributes remain empty strings or None).
+
+        :param term_stream: Output stream to probe for capabilities.
+        :type term_stream: ``Optional[TextIO]``
         """
         # Default to stdout
         if term_stream is None:
@@ -205,9 +209,16 @@ class TermControl:
 
     def render(self, template):
         """
-        Replace each $-substitutions in the given template string with
-        the corresponding terminal control string (if it's defined) or
-        '' (if it's not).
+        Replace each $-substitution with the corresponding control.
+
+        Replace each $-substitution in the template string with the
+        corresponding terminal control string (if defined) or an
+        empty string (if not defined).
+
+        :param template: Template string containing ${NAME} patterns.
+        :type template: ``str``
+        :returns: Rendered string with substitutions applied.
+        :rtype: ``str``
         """
         return re.sub(r"\$\$|\${\w+}", self._render_sub, template)
 
@@ -227,7 +238,9 @@ class ProgressBase(ABC):
 
     def __init__(self):
         """
-        Initialise a ``ProgressBase`` child instance.
+        Initialize base progress state.
+
+        Sets default state for lifecycle and rendering configuration.
         """
         self.total: int = 0
         self.header: Optional[str] = None
@@ -239,10 +252,9 @@ class ProgressBase(ABC):
         self, width: Optional[int] = None, width_frac: Optional[float] = None
     ) -> int:
         """
-        Calculate the width for the progress bar using values
-        defined by child classes. The ``header`` and (optionally, for classes
-        that use it) ``term`` members must be initialised before calling this
-        method.
+        Calculate the width for the progress bar using values defined by
+        child classes. The ``header`` and (optionally, for classes that use it)
+        ``term`` members must be initialised before calling this method.
 
         :param width: An optional width value in characters. If specified
                       the progress bar will occupy this width. Cannot be used
@@ -256,6 +268,8 @@ class ProgressBase(ABC):
         :type width_frac: ``Optional[float]``
         :returns: The calculated progress bar width in characters.
         :rtype: ``int``
+        :raises ``ValueError``: If FIXED is negative, header is unset,
+                                or both width and width_frac are specified.
         """
         if self.FIXED < 0:
             raise ValueError(
@@ -288,7 +302,7 @@ class ProgressBase(ABC):
 
     def start(self, total: int):
         """
-        Start reporting progress on this ``ProgressBase`` object.
+        Begin a progress run with the specified ``total``.
 
         :param total: The total number of expected progress items.
         :type total: ``int``
@@ -303,8 +317,10 @@ class ProgressBase(ABC):
     @abstractmethod
     def _do_start(self):
         """
-        Start reporting progress on this ``ProgressBase`` object. Implements
-        subclass specific start behaviour.
+        Hook invoked when progress begins.
+
+        Subclasses implement startup behavior such as rendering an
+        initial progress display.
 
         :param total: The total number of expected progress items.
         :type total: ``int``
@@ -312,13 +328,12 @@ class ProgressBase(ABC):
 
     def _check_in_progress(self, done: int):
         """
-        Validate whether this ``ProgressBase`` instance has been started, and
-        whether ``done`` falls within the permissible range.
+        Validate that progress is active and ``done`` is in range.
 
         :param done: The number of completed progress items.
         :type done: ``int``
-        :raises: ``ValueError`` if progress has not been started, has already
-                 ended or ``done`` falls outside the range [0..total].
+        :raises ``ValueError``: If progress has not started, if done is
+                                negative, or if done exceeds total.
         """
         theclass = self.__class__.__name__
         if self.total == 0:
@@ -332,7 +347,7 @@ class ProgressBase(ABC):
 
     def progress(self, done: int, message: Optional[str] = None):
         """
-        Report progress on this ``ProgressBase`` instance.
+        Advance the progress indicator to the specified ``done`` count.
 
         :param done: The number of completed progress items.
         :type done: ``int``
@@ -345,8 +360,7 @@ class ProgressBase(ABC):
     @abstractmethod
     def _do_progress(self, done: int, message: Optional[str] = None):
         """
-        Report progress on this ``ProgressBase`` child instance. Implements
-        subclass specific progress update behaviour.
+        Hook for subclasses to update the progress display.
 
         :param done: The number of completed progress items.
         :type done: ``int``
@@ -356,7 +370,7 @@ class ProgressBase(ABC):
 
     def end(self, message: Optional[str] = None):
         """
-        End progress reporting on this ``Progress`` instance.
+        End the progress run and finalize the display.
 
         :param message: An optional completion message.
         :type message: ``Optional[str]``
@@ -368,9 +382,7 @@ class ProgressBase(ABC):
     @abstractmethod
     def _do_end(self, message: Optional[str] = None):
         """
-        End progress reporting on this ``ProgressBase`` child instance.
-        Implements subclass specific progress update behaviour.
-
+        Perform final end-of-progress handling.
 
         :param message: An optional completion message.
         :type message: ``Optional[str]``
@@ -410,7 +422,7 @@ class Progress(ProgressBase):
         tc: Optional[TermControl] = None,
     ):
         """
-        Initialise a new ``Progress`` object.
+        Initialise a two-line terminal progress renderer.
 
         :param term_stream: The terminal stream to write to.
         :type term_stream: ``TextIO``
@@ -435,6 +447,7 @@ class Progress(ProgressBase):
                                a ``term_stream`` value. If this argument is set
                                it will override any ``term_stream`` argument.
         :type tc: ``Optional[TermControl]``
+        :raises ValueError: If terminal lacks required capabilities.
         """
         super().__init__()
 
@@ -468,7 +481,7 @@ class Progress(ProgressBase):
 
     def _do_start(self):
         """
-        Start reporting progress on this ``Progress`` object.
+        Render and output the initial two-line progress bar header.
 
         :param total: The total number of expected progress items.
         :type total: ``int``
@@ -487,7 +500,7 @@ class Progress(ProgressBase):
 
     def _do_progress(self, done: int, message: Optional[str] = None):
         """
-        Report progress on this ``Progress`` instance.
+        Update the two-line progress bar.
 
         :param done: The number of completed progress items.
         :type done: ``int``
@@ -588,6 +601,8 @@ class SimpleProgress(ProgressBase):
         """
         Start reporting progress on this ``SimpleProgress`` object.
 
+        No-op for ``SimpleProgress`` instances.
+
         :param total: The total number of expected progress items.
         :type total: ``int``
         """
@@ -644,6 +659,8 @@ class NullProgress(ProgressBase):
         """
         Start reporting progress on this ``NullProgress`` object.
 
+        No-op for ``NullProgress`` instances.
+
         :param total: The total number of expected progress items.
         :type total: ``int``
         """
@@ -652,6 +669,8 @@ class NullProgress(ProgressBase):
     def _do_progress(self, done: int, _message: Optional[str] = None):
         """
         Report progress on this ``NullProgress`` instance.
+
+        No-op for ``NullProgress`` instances.
 
         :param done: The number of completed progress items.
         :type done: ``int``
@@ -663,6 +682,8 @@ class NullProgress(ProgressBase):
     def _do_end(self, _message: Optional[str] = None):
         """
         End progress reporting on this ``NullProgress`` instance.
+
+        No-op for ``NullProgress`` instances.
 
         :param _message: An optional completion message (unused).
         :type _message: ``Optional[str]``
@@ -686,8 +707,7 @@ class ProgressFactory:
         no_clear: bool = False,
     ) -> ProgressBase:
         """
-        Factory method to construct progress objects derived from
-        ``ProgressBase``.
+        Return an appropriate ProgressBase implementation.
 
         :param header: The progress report header.
         :type header: ``str``
@@ -716,6 +736,8 @@ class ProgressFactory:
                          by ``ProgressBase`` child classes that do not use
                          ``TerminalControl``.
         :type no_clear: ``bool``
+        :returns: An appropriate progress implementation.
+        :rtype: ``ProgressBase``
         """
         if quiet:
             return NullProgress()
