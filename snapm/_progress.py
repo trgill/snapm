@@ -332,9 +332,6 @@ class ProgressBase(ABC):
 
         Subclasses implement startup behavior such as rendering an
         initial progress display.
-
-        :param total: The total number of expected progress items.
-        :type total: ``int``
         """
 
     def _check_in_progress(self, done: int):
@@ -493,9 +490,6 @@ class Progress(ProgressBase):
     def _do_start(self):
         """
         Render and output the initial two-line progress bar header.
-
-        :param total: The total number of expected progress items.
-        :type total: ``int``
         """
         self.pbar = self.term.render(self.BAR)
 
@@ -613,9 +607,6 @@ class SimpleProgress(ProgressBase):
         Start reporting progress on this ``SimpleProgress`` object.
 
         No-op for ``SimpleProgress`` instances.
-
-        :param total: The total number of expected progress items.
-        :type total: ``int``
         """
         return
 
@@ -671,9 +662,6 @@ class NullProgress(ProgressBase):
         Start reporting progress on this ``NullProgress`` object.
 
         No-op for ``NullProgress`` instances.
-
-        :param total: The total number of expected progress items.
-        :type total: ``int``
         """
         return  # pragma: no cover
 
