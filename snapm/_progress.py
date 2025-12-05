@@ -125,8 +125,41 @@ class TermControl:
     BLINK:blink DIM:dim REVERSE:rev UNDERLINE:smul NORMAL:sgr0 BELL:bel
     HIDE_CURSOR:civis SHOW_CURSOR:cnorm""".split()
     )
-    _COLORS: List[str] = """BLACK BLUE GREEN CYAN RED MAGENTA YELLOW WHITE""".split()
+    _LEGACY_COLORS: List[str] = (
+        """BLACK BLUE GREEN CYAN RED MAGENTA YELLOW WHITE""".split()
+    )
     _ANSI_COLORS: List[str] = "BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE".split()
+
+    def _init_colors(self):
+        """
+        Initialize terminal color codes.
+        """
+        set_fg = self._tigetstr("setf")
+        if set_fg:
+            set_fg = set_fg.encode("utf8")
+            for i, color in enumerate(self._LEGACY_COLORS):
+                setattr(self, color, curses.tparm(set_fg, i).decode("utf8") or "")
+        set_fg_ansi = self._tigetstr("setaf")
+        if set_fg_ansi:
+            set_fg_ansi = set_fg_ansi.encode("utf8")
+            for i, color in enumerate(self._ANSI_COLORS):
+                setattr(self, color, curses.tparm(set_fg_ansi, i).decode("utf8") or "")
+        set_bg = self._tigetstr("setb")
+        if set_bg:
+            set_bg = set_bg.encode("utf8")
+            for i, color in enumerate(self._LEGACY_COLORS):
+                setattr(
+                    self, "BG_" + color, curses.tparm(set_bg, i).decode("utf8") or ""
+                )  # pragma: no cover
+        set_bg_ansi = self._tigetstr("setab")
+        if set_bg_ansi:
+            set_bg_ansi = set_bg_ansi.encode("utf8")
+            for i, color in enumerate(self._ANSI_COLORS):
+                setattr(
+                    self,
+                    "BG_" + color,
+                    curses.tparm(set_bg_ansi, i).decode("utf8") or "",
+                )
 
     def __init__(self, term_stream: Optional[TextIO] = None):
         """
@@ -159,7 +192,10 @@ class TermControl:
         #
         #     Help on class error in module _curses:
         #     class error(builtins.Exception)
-        except BaseException:  # pylint: disable=broad-exception-caught
+        except BaseException as err:  # pylint: disable=broad-exception-caught
+            # Preserve normal interruption/termination semantics.
+            if isinstance(err, (KeyboardInterrupt, SystemExit)):  # pragma: no cover
+                raise
             return  # pragma: no cover
 
         # Look up numeric capabilities.
@@ -172,32 +208,7 @@ class TermControl:
             setattr(self, attr, self._tigetstr(cap_name) or "")
 
         # Colors
-        set_fg = self._tigetstr("setf")
-        if set_fg:
-            set_fg = set_fg.encode("utf8")
-            for i, color in enumerate(self._COLORS):
-                setattr(self, color, curses.tparm(set_fg, i).decode("utf8") or "")
-        set_fg_ansi = self._tigetstr("setaf")
-        if set_fg_ansi:
-            set_fg_ansi = set_fg_ansi.encode("utf8")
-            for i, color in enumerate(self._ANSI_COLORS):
-                setattr(self, color, curses.tparm(set_fg_ansi, i).decode("utf8") or "")
-        set_bg = self._tigetstr("setb")
-        if set_bg:
-            set_bg = set_bg.encode("utf8")
-            for i, color in enumerate(self._COLORS):
-                setattr(
-                    self, "BG_" + color, curses.tparm(set_bg, i).decode("utf8") or ""
-                )  # pragma: no cover
-        set_bg_ansi = self._tigetstr("setab")
-        if set_bg_ansi:
-            set_bg_ansi = set_bg_ansi.encode("utf8")
-            for i, color in enumerate(self._ANSI_COLORS):
-                setattr(
-                    self,
-                    "BG_" + color,
-                    curses.tparm(set_bg_ansi, i).decode("utf8") or "",
-                )
+        self._init_colors()
 
     def _tigetstr(self, cap_name):
         # String capabilities can include "delays" of the form "$<2>".
