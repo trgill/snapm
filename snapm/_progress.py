@@ -20,6 +20,9 @@ DEFAULT_COLUMNS = 80
 #: Minimum width of a progress bar.
 PROGRESS_MIN_WIDTH = 10
 
+#: Minimum budget to reserve for status messages
+MIN_BUDGET = 10
+
 #: Default width of a progress bar as a fraction of the terminal size.
 DEFAULT_WIDTH_FRAC = 0.5
 
@@ -472,7 +475,9 @@ class Progress(ProgressBase):
         self.width: int = self._calculate_width(width=width, width_frac=width_frac)
         self.no_clear = no_clear
         self.pbar: Optional[str] = None
-        self.first_update = False
+        self.first_update: bool = False
+        columns = self.term.columns or DEFAULT_COLUMNS
+        self.budget: int = max(MIN_BUDGET, columns - 10)
 
         encoding = getattr(self.stream, "encoding", None)
         if not encoding:
@@ -516,6 +521,9 @@ class Progress(ProgressBase):
             self.first_update = False
         else:
             prefix = self.term.BOL + self.term.UP + self.term.CLEAR_EOL
+
+        if len(message) > self.budget:
+            message = message[0 : self.budget - 3] + "..."
 
         print(
             prefix

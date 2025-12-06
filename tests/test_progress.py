@@ -207,7 +207,19 @@ class TestProgress(unittest.TestCase):
         self.assertIn("<UP>", output)
         self.assertIn("Over Halfway", output)
 
-        # 4. End
+        # 4. Progress: very long message: test budget truncation
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        p.progress(9, "Nearly Done " + 100 * "X")
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
+        self.assertIn("<UP>", output)
+        self.assertIn("Nearly Done", output)
+        self.assertIn("XXX", output)
+        self.assertIn("...", output)
+
+        # 5. End
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
         p.end("Done!")
@@ -251,7 +263,19 @@ class TestProgress(unittest.TestCase):
         self.assertIn("<UP>", output)
         self.assertIn("Over Halfway", output)
 
-        # 4. End
+        # 4. Progress: very long message: test budget truncation
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        p.progress(9, "Nearly Done " + 100 * "X")
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
+        self.assertIn("<UP>", output)
+        self.assertIn("Nearly Done", output)
+        self.assertIn("XXX", output)
+        self.assertIn("...", output)
+
+        # 5. End
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
         p.end("Done!")
