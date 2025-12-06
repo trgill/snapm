@@ -597,6 +597,16 @@ class MountsTests(MountsTestsBase):
             self.assertIn("Missing API file system submounts", log_output)
             self.assertIn("/proc", log_output)
 
+    def test_get_sys_mount(self):
+        """
+        Tests that ``Mounts.get_sys_mount()`` returns a ``SysMount`` object
+        with the correct property values.
+        """
+        sm = self.mounts.get_sys_mount()
+        self.assertIsInstance(sm, mounts.SysMount)
+        self.assertEqual(sm.root, "/")
+        self.assertEqual(sm.snapset, None)
+
 
 @unittest.skipIf(not have_root(), "requires root privileges")
 @unittest.skipIf(not is_redhat(), "requires Fedora-like OS")
@@ -635,3 +645,147 @@ class MountsTestsExec(MountsTestsBase):
         self.assertEqual(retcode, 0)
 
         self.mounts.umount(self.snapset)
+
+
+class SysMountTests(unittest.TestCase):
+    """
+    Tests for the SysMount class.
+    """
+    def test_init_and_properties(self):
+        """Test initialization and property values."""
+        sm = mounts.SysMount()
+        self.assertEqual(sm.root, "/")
+        self.assertEqual(sm.name, "System Root")
+        self.assertTrue(sm.mounted)
+        # _chroot should return empty list for SysMount
+        self.assertEqual(sm._chroot(), [])
+
+    def test_mount_lifecycle_restrictions(self):
+        """Test that SysMount restricts mount/umount operations."""
+        sm = mounts.SysMount()
+
+        # 1. mount() should be a no-op (log only) because it's already mounted
+        with self.assertLogs(mounts._log, level='INFO') as cm:
+            sm.mount()
+            log_output = "\n".join(cm.output)
+            self.assertIn("already mounted", log_output)
+
+        # 2. _do_mount() should strictly raise if called directly
+        with self.assertRaises(snapm.SnapmPathError):
+            sm._do_mount()
+
+        # 3. umount() should raise because SysMount refuses to unmount root
+        with self.assertRaises(snapm.SnapmPathError):
+            sm.umount()
+
+    @unittest.mock.patch("snapm.manager._mounts.run")
+    def test_exec(self, mock_run):
+        """
+        Test command execution within SysMount.
+
+        Verifies that commands are executed directly on the host WITHOUT chroot,
+        as SysMount._chroot() returns an empty list.
+        """
+        sm = mounts.SysMount()
+        mock_run.return_value.returncode = 0
+
+        # Test string command
+        sm.exec("ls -l /boot")
+        # Expect NO chroot prefix: ["ls", "-l", "/boot"]
+        mock_run.assert_called_with(["ls", "-l", "/boot"], check=False)
+
+        # Test list command
+        sm.exec(["echo", "hello"])
+        # Expect NO chroot prefix: ["echo", "hello"]
+        mock_run.assert_called_with(["echo", "hello"], check=False)
+
+    @unittest.mock.patch("snapm.manager._mounts.ProcMountsReader")
+    def test_missing_api_mounts_warning(self, mock_pmr_cls):
+        """Test that SysMount warns if critical API filesystems are missing."""
+        mock_pmr = mock_pmr_cls.return_value
+        # Return empty submounts -> simulates missing /proc, /dev, etc.
+        mock_pmr.submounts.return_value = []
+
+        with self.assertLogs(mounts._log, level='WARNING') as cm:
+            mounts.SysMount()
+            log_out = "\n".join(cm.output)
+            self.assertIn("Missing API file system submounts", log_out)
+            self.assertIn("Missing: /proc", log_out)
+
+
+class MountBaseTests(unittest.TestCase):
+    """
+    Tests for the abstract MountBase class logic.
+    """
+    def test_init_validation(self):
+        """Test that MountBase validates the mount root directory."""
+        with tempfile.TemporaryDirectory() as tempdir:
+            not_a_dir = os.path.join(tempdir, "file")
+            with open(not_a_dir, "w") as f:
+                f.write("data")
+
+            # Define a concrete stub
+            class StubMount(mounts.MountBase):
+                def _do_mount(self): pass
+                def _do_umount(self): pass
+                def _chroot(self): return []
+
+            # 1. Test invalid directory
+            with self.assertRaisesRegex(snapm.SnapmPathError, "is not a directory"):
+                StubMount(not_a_dir, "Stub")
+
+            # 2. Test valid directory
+            m = StubMount(tempdir, "Stub")
+            self.assertEqual(m.root, tempdir)
+            self.assertEqual(m.name, "Stub")
+
+    @unittest.mock.patch("snapm.manager._mounts.run")
+    def test_exec_uses_chroot_hook(self, mock_run):
+        """
+        Test that exec correctly utilizes the _chroot hook.
+        This verifies the fix in MountBase.exec.
+        """
+        mock_run.return_value.returncode = 0
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            # Concrete stub that returns a specific chroot command
+            class ChrootMount(mounts.MountBase):
+                def _do_mount(self): pass
+                def _do_umount(self): pass
+                def _chroot(self): return ["fake-chroot", self.root]
+                @property
+                def mounted(self): return True
+
+            m = ChrootMount(tempdir, "ChrootStub")
+
+            # Execute a command
+            m.exec(["ls", "-la"])
+
+            # Verify the final command is [chroot_cmd + user_cmd]
+            mock_run.assert_called_with(["fake-chroot", tempdir, "ls", "-la"], check=False)
+
+    @unittest.mock.patch("snapm.manager._mounts.run")
+    def test_exec_argument_parsing(self, mock_run):
+        """Test command parsing logic in MountBase.exec."""
+        mock_run.return_value.returncode = 0
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            # Concrete stub that claims to be mounted
+            class StubMount(mounts.MountBase):
+                is_mounted = True
+                def _do_mount(self): pass
+                def _do_umount(self): pass
+                def _chroot(self): return []
+                @property
+                def mounted(self): return self.is_mounted
+
+            m = StubMount(tempdir, "Stub")
+
+            # Test shlex parsing failure
+            with self.assertRaises(snapm.SnapmArgumentError):
+                m.exec("ls 'unclosed string")
+
+            # Test execution when not mounted
+            m.is_mounted = False
+            with self.assertRaisesRegex(snapm.SnapmPathError, "is not mounted"):
+                m.exec("ls")

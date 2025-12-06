@@ -9,7 +9,8 @@
 Mount integration for snapshot manager
 """
 from subprocess import run, CalledProcessError, TimeoutExpired
-from typing import List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
+from abc import ABC, abstractmethod
 import collections
 import logging
 import shlex
@@ -338,11 +339,178 @@ class ProcMountsReader:
                     _log_warn("Skipping malformed %s line: %s", self.path, line)
 
 
-class Mount:
+class MountBase(ABC):
+    """
+    An abstract base class representing a file system mount.
+    """
+
+    TYPE = "Base"  #: Description of the type of mount object.
+
+    def __init__(self, mount_root: str, name: str):
+        """
+        Initialise base mount state.
+
+        :param mount_root: The absolute path to the root directory of this
+                           mount.
+        :type mount_root: ``str``
+        :raises SnapmPathError: If mount_root is not a directory.
+        """
+        if not os.path.isdir(mount_root):
+            raise SnapmPathError(f"Mount path {mount_root} is not a directory.")
+
+        self.root: str = mount_root
+        self.name: str = name
+        self.snapset: Optional[SnapshotSet] = None
+
+    def _check_submounts(
+        self,
+        mount_points: Iterable[str],
+        submounts: List[str],
+        # pmr: Optional[ProcMountsReader] = None,
+        name_map: Optional[Dict[str, str]] = None,
+    ):
+        """
+        Verify that the expected submounts (both device file systems and API
+        file system mounts) are present under ``self.root``.
+
+        :param mount_points: The list of expected device mount points to check.
+        :type mount_points: ``Iterable[str]``
+        :param submounts: A list of present submounts for this mount to be
+                          checked against the expected device and API file
+                          system mount points.
+        :type submounts: ``List[str]``
+        :param name_map: A map of mount points to device names for logging.
+        :type name_map: ``Dict[str, str]``
+        """
+        # Check device and API file system submounts
+        checked = {mp: False for mp in mount_points if mp != "/"}
+        bind_checked = {mp: False for mp in _BIND_MOUNTS}
+
+        for abs_mount_path in submounts:
+            rel_mount_path = (
+                abs_mount_path.removeprefix(self.root)
+                if self.root != "/"
+                else abs_mount_path
+            )
+            path_is_mount = os.path.ismount(abs_mount_path)
+            if rel_mount_path in checked:
+                checked[rel_mount_path] = path_is_mount
+            elif rel_mount_path in bind_checked:
+                bind_checked[rel_mount_path] = path_is_mount
+
+        if not all(checked.values()):
+            _log_warn("Missing snapshot set submounts for %s:", self.name)
+            for mount_point in [mp for mp in checked if not checked[mp]]:
+                _log_warn(
+                    "  Missing: %s (%s)",
+                    mount_point,
+                    name_map.get(mount_point, "??") if name_map else "??",
+                )
+
+        if not all(bind_checked.values()):
+            _log_warn("Missing API file system submounts for %s:", self.name)
+            for mount_point in [mp for mp in bind_checked if not bind_checked[mp]]:
+                _log_warn("  Missing: %s", mount_point)
+
+    @property
+    def mounted(self):
+        """
+        Determine whether this snapshot set mount is currently mounted.
+        """
+        return os.path.ismount(self.root)
+
+    def mount(self):
+        """
+        Mount the configured file system and its submounts at `self.root`.
+        """
+        if self.mounted:
+            _log_info("%s %s already mounted at '%s'", self.TYPE, self.name, self.root)
+            return
+        self._do_mount()
+
+    @abstractmethod
+    def _do_mount(self):
+        """
+        Hook invoked to mount a tree.
+
+        Subclasses implement mount behaviour such as mounting snapshots and
+        bind mounting API and runtime file systems.
+        """
+
+    def umount(self):
+        """
+        Unmount the configured file system and its submounts from `self.root`.
+        """
+        if not self.mounted:
+            _log_warn("%s mount at '%s' is not mounted", self.TYPE, self.root)
+            return
+        self._do_umount()
+
+    @abstractmethod
+    def _do_umount(self):
+        """
+        Hook invoked to unmount a tree.
+
+        Subclasses implement unmount behaviour such as umounting snapshots and
+        umounting API and runtime file systems.
+        """
+
+    @abstractmethod
+    def _chroot(self):
+        """
+        Hook invoked to obtain an appropriate chroot command list for this
+        mount.
+
+        :returns: A command list including an appropriate chroot invocation
+                  if necessary.
+        :rtype: ``List[str]``
+        """
+
+    def exec(self, command: Union[str, Iterable[str]]) -> int:
+        """
+        Execute a ``command`` chrooted inside this mount namespace.
+
+        We explicitly trust the caller-provided command since snapm requires
+        root privileges for all operations.
+
+        :param command: A command and its arguments, suitable for passing to
+                        ``shlex.split()``.
+        """
+        if not self.mounted:
+            raise SnapmPathError(
+                f"{self.TYPE} {self.name} is not mounted at {self.root}"
+            )
+        if isinstance(command, str):
+            try:
+                cmd_args = shlex.split(command)
+            except ValueError as err:
+                raise SnapmArgumentError(
+                    f"Cannot parse command string: {command}"
+                ) from err
+        else:
+            cmd_args = list(command)
+
+        chroot_cmd = list(self._chroot())
+
+        chroot_cmd.extend(cmd_args)
+        _log_debug_mounts(
+            "Invoking snapshot set chroot command: %s", " ".join(chroot_cmd)
+        )
+        try:
+            status = run(chroot_cmd, check=False)
+        except FileNotFoundError as err:  # pragma: no cover
+            _log_error("Failed to execute chroot command: %s", err)
+            return 127
+        return status.returncode
+
+
+class Mount(MountBase):
     """
     Representation of a mounted snapshot set, including snapshot set mounts,
     non-snapshot mounts from /etc/fstab, and bind mounts for API file systems.
     """
+
+    TYPE = "Snapshot set"
 
     def __init__(
         self,
@@ -356,27 +524,23 @@ class Mount:
         the snapshot set and check for the presence of expected submounts.
 
         :param snapset: The snapshot set to mount or represent.
-        :type snapset: SnapshotSet
+        :type snapset: ``SnapshotSet``
         :param mount_root: The absolute path to the root directory where the snapshot
                            set will be mounted or is already mounted.
-        :type mount_root: str
+        :type mount_root: ``str``
         :param discover: If True, validate that mount_root is an existing mount point
                          and discover its submounts. If False, prepare a new mount
                          object without validation.
-        :type discover: bool
+        :type discover: ``bool``
         :raises SnapmPathError: If mount_root is not a directory, or if discover is True
                                 and mount_root is not a mount point.
         """
-        if not os.path.isdir(mount_root):
-            raise SnapmPathError(f"Mount path {mount_root} is not a directory.")
+        super().__init__(mount_root, snapset.name)
 
         _log_debug("Building snapshot set Mount instance for %s", snapset.name)
 
-        # The root directory of this snapshot set mount.
-        self.root = mount_root
-
         # The snapshot set that this mount belongs to.
-        self.snapset = snapset
+        self.snapset: Optional[SnapshotSet] = snapset
 
         if discover:
             if not os.path.ismount(mount_root):
@@ -390,58 +554,18 @@ class Mount:
 
             self.snapset.mount_root = mount_root
 
-            self._check_submounts(pmr)
+            name_map = {
+                mp: self.snapset.snapshot_by_source(mp)
+                for mp in self.snapset.mount_points
+            }
+            self._check_submounts(
+                self.snapset.mount_points, submounts, name_map=name_map
+            )
 
-    def _check_submounts(self, pmr: Optional[ProcMountsReader] = None):
-        """
-        Verify that the expected submounts (both snapshot set file systems and API
-        file system bind mounts) are present under ``self.root``.
-        """
-        # Check snapshot set and API file system submounts
-        checked = {mp: False for mp in self.snapset.mount_points if mp != "/"}
-        bind_checked = {mp: False for mp in _BIND_MOUNTS}
-
-        pmr = pmr or ProcMountsReader()
-        for entry in pmr.submounts(self.root):
-            abs_mount_path = entry.where
-            rel_mount_path = entry.where.removeprefix(self.root)
-            path_is_mount = os.path.ismount(abs_mount_path)
-            if rel_mount_path in checked:
-                checked[rel_mount_path] = path_is_mount
-            elif rel_mount_path in bind_checked:
-                bind_checked[rel_mount_path] = path_is_mount
-
-        if not all(checked.values()):
-            _log_warn("Missing snapshot set submounts for %s:", self.snapset.name)
-            for mount_point in [mp for mp in checked if not checked[mp]]:
-                _log_warn(
-                    "  Missing: %s (%s)",
-                    mount_point,
-                    self.snapset.snapshot_by_mount_point(mount_point).name,
-                )
-
-        if not all(bind_checked.values()):
-            _log_warn("Missing API file system submounts for %s:", self.snapset.name)
-            for mount_point in [mp for mp in bind_checked if not bind_checked[mp]]:
-                _log_warn("  Missing: %s", mount_point)
-
-    @property
-    def mounted(self):
-        """
-        Determine whether this snapshot set mount is currently mounted.
-        """
-        return os.path.ismount(self.root)
-
-    def mount(self):
+    def _do_mount(self):
         """
         Mount the configured snapshot set and its submounts at `self.root`.
         """
-        if self.mounted:
-            _log_info(
-                "Snapshot set %s already mounted at %s", self.snapset.name, self.root
-            )
-            return
-
         try:
             # 0. Initialise FsTabReader
             fstab = FsTabReader()
@@ -508,14 +632,10 @@ class Mount:
                     )
             raise
 
-    def umount(self):
+    def _do_umount(self):
         """
         Unmount the configured snapshot set and its submounts from `self.root`.
         """
-        if not self.mounted:
-            _log_warn("Snapshot set mount at '%s' is not mounted", self.root)
-            return
-
         # 1. Discover and unmount each submount under self.root
         pmr = ProcMountsReader()
         submounts = [mnt.where for mnt in pmr.submounts(self.root)]
@@ -530,35 +650,76 @@ class Mount:
         _log_debug_mounts("Attempting to unmount snapshot set root: %s", self.root)
         _umount(self.root)
 
-    def exec(self, command: Union[str, List[str]]) -> int:
+    def _chroot(self):
         """
-        Execute a ``command`` chrooted inside this mount namespace.
+        Return a chrooted command list for this snapshot set mount.
 
-        :param command: A command and its arguments, suitable for passing to
-                        ``shlex.split()``.
+        :returns: A command list including an appropriate chroot invocation
+                  if necessary.
+        :rtype: ``List[str]``
         """
-        chroot_cmd = ["chroot", self.root]
-        if not self.mounted:
-            raise SnapmPathError(
-                f"Snapshot set {self.snapset.name} is not mounted at {self.root}"
-            )
-        if isinstance(command, str):
-            try:
-                cmd_args = shlex.split(command)
-            except ValueError as err:
-                raise SnapmArgumentError(
-                    f"Cannot parse command string: {command}"
-                ) from err
-        else:
-            cmd_args = command
-        chroot_cmd.extend(cmd_args)
-        _log_debug("Invoking snapshot set chroot command: %s", " ".join(chroot_cmd))
-        try:
-            status = run(chroot_cmd, check=False)
-            return status.returncode
-        except FileNotFoundError as err:  # pragma: no cover
-            _log_error("Failed to execute chroot command: %s", err)
-            return 127
+        return ["chroot", self.root]
+
+
+class SysMount(MountBase):
+    """
+    A class representing the system root file system tree mounted at '/'.
+    """
+
+    TYPE = "System root"
+
+    def __init__(self):
+        """
+        Initialize a new SysMount instance for the root file system.
+        :raises SnapmPathError: If root is not a directory, or not a mount
+                                point. This should never happen for the root
+                                file system.
+        """
+        super().__init__("/", "System Root")
+        self.snapset: Optional[SnapshotSet] = None
+
+        _log_debug("Building SysMount instance")
+
+        if not os.path.ismount(self.root):
+            raise SnapmPathError(f"Mount path {self.root} is not a mount point.")
+        pmr = ProcMountsReader()
+        submounts = [mnt.where for mnt in pmr.submounts(self.root)]
+        submounts.sort(key=lambda mnt: mnt.count("/"), reverse=True)
+        _log_debug_mounts("Submounts by depth (%s)", self.name)
+        for submount in submounts:
+            _log_debug_mounts(submount)
+        name_map = {
+            mnt.where: os.path.basename(mnt.what)
+            for mnt in pmr.submounts("/")
+            if mnt.what.startswith(os.sep)
+        }
+        mount_points = name_map.keys()
+        self._check_submounts(mount_points, submounts, name_map=name_map)
+
+    def _do_mount(self):
+        """
+        Dummy template mount method hook for the system root file system.
+        """
+        # Unreachable sanity check: ``MountBase.mount()`` will already reject
+        # an attempt to mount a mounted file system.
+        raise SnapmPathError("Root file system is already mounted")
+
+    def _do_umount(self):
+        """
+        Template unmount method hook. Always rejects attempts to unmount
+        the root file system.
+        """
+        raise SnapmPathError("Root file system cannot be unmounted")
+
+    def _chroot(self):
+        """
+        Return a non-chrooted command list for the root file system mount.
+
+        :returns: A command list including an appropriate chroot invocation
+                  if necessary.
+        :rtype: ``List[str]``
+        """
+        return []
 
 
 class Mounts:
@@ -578,6 +739,7 @@ class Mounts:
         self._root = mounts_dir
         self._mounts = []
         self._mounts_by_name = {}
+        self._sys_mount = SysMount()
         self.discover_mounts()
 
     def discover_mounts(self):
@@ -689,8 +851,18 @@ class Mounts:
         selection.check_valid_selection(snapshot_set=True)
         return [m for m in self._mounts if select_snapshot_set(selection, m.snapset)]
 
+    def get_sys_mount(self) -> SysMount:
+        """
+        Return an object representing the system root file system mounts.
+
+        :returns: A ``SysMount`` instance representing '/'.
+        :rtype: ``SysMount``
+        """
+        return self._sys_mount
+
 
 __all__ = [
     "Mount",
     "Mounts",
+    "SysMount",
 ]
