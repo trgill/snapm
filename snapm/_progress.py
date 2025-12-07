@@ -12,6 +12,7 @@ from typing import List, Optional, TextIO
 from abc import ABC, abstractmethod
 import curses
 import sys
+import os
 import re
 
 #: Default number of columns if not detected from terminal.
@@ -270,6 +271,7 @@ class ProgressBase(ABC):
         child classes. The ``header`` and (optionally, for classes that use it)
         ``term`` members must be initialised before calling this method.
 
+        :type term: ``Optional[TermControl]``
         :param width: An optional width value in characters. If specified
                       the progress bar will occupy this width. Cannot be used
                       with ``width_frac``.
@@ -398,6 +400,27 @@ class ProgressBase(ABC):
         :param message: An optional completion message.
         :type message: ``Optional[str]``
         """
+
+
+def _flush_with_broken_pipe_guard(stream: TextIO) -> None:
+    """
+    Handle ``BrokenPipeError`` when attempting to flush output streams.
+
+    :param stream: The stream to flush.
+    :type stream: TextIO
+    """
+    if not hasattr(stream, "flush"):
+        return
+    try:
+        stream.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        try:
+            if hasattr(stream, "fileno"):
+                os.dup2(devnull, stream.fileno())
+        finally:
+            os.close(devnull)
+        raise
 
 
 class Progress(ProgressBase):
@@ -541,8 +564,7 @@ class Progress(ProgressBase):
             file=self.stream,
             end="",
         )
-        if hasattr(self.stream, "flush"):
-            self.stream.flush()
+        _flush_with_broken_pipe_guard(self.stream)
 
     def _do_end(self, message: Optional[str] = None):
         """
@@ -565,8 +587,7 @@ class Progress(ProgressBase):
             print(self.term.CLEAR_BOL + self.term.BOL, file=self.stream, end="")
         if message:
             print(message, file=self.stream)
-        if hasattr(self.stream, "flush"):
-            self.stream.flush()
+        _flush_with_broken_pipe_guard(self.stream)
 
 
 class SimpleProgress(ProgressBase):
@@ -590,7 +611,7 @@ class SimpleProgress(ProgressBase):
         Initialise a new ``SimpleProgress`` object.
 
         :param term_stream: The terminal stream to write to.
-        :type term_stream: ``TextIO``
+        :type term_stream: ``Optional[TextIO]``
         :param width: An optional width value in characters. If specified
                       the progress bar will occupy this width. Cannot be used
                       with ``width_frac``.
@@ -640,8 +661,7 @@ class SimpleProgress(ProgressBase):
             ),
             file=self.stream,
         )
-        if hasattr(self.stream, "flush"):
-            self.stream.flush()
+        _flush_with_broken_pipe_guard(self.stream)
 
     def _do_end(self, message: Optional[str] = None):
         """
@@ -653,8 +673,7 @@ class SimpleProgress(ProgressBase):
         if message:
             print(message, file=self.stream)
 
-        if hasattr(self.stream, "flush"):
-            self.stream.flush()
+        _flush_with_broken_pipe_guard(self.stream)
 
 
 class NullProgress(ProgressBase):
