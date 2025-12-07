@@ -342,7 +342,8 @@ class TestSimpleProgress(unittest.TestCase):
 
         output = mock_stream.getvalue()
         self.assertIn(
-            "Simple:  50% [====================--------------------] (working)", output
+            "Simple:  50% [=========================-------------------------] (working)",
+            output,
         )
 
         sp.end("Finished")

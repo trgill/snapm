@@ -627,7 +627,7 @@ class SimpleProgress(ProgressBase):
         message = message or ""
 
         percent = float(done) / float(self.total)
-        n = int((self.width - 10) * percent)
+        n = int(self.width * percent)
 
         print(
             self.BAR
@@ -635,7 +635,7 @@ class SimpleProgress(ProgressBase):
                 self.header,
                 percent * 100,
                 self.DID * n,
-                self.TODO * (self.width - 10 - n),
+                self.TODO * (self.width - n),
                 message,
             ),
             file=self.stream,
