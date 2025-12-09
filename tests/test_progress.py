@@ -93,6 +93,38 @@ class TestTermControl(unittest.TestCase):
         # Test escaped $
         self.assertEqual(tc.render("Money$$"), "Money$")
 
+class TestFlushGuard(unittest.TestCase):
+    def test_flush_guard_broken_pipe(self):
+        """Test BrokenPipeError handling in flush guard (Lines 265-272)."""
+        from snapm._progress import _flush_with_broken_pipe_guard
+
+        mock_stream = MagicMock()
+        mock_stream.flush.side_effect = BrokenPipeError()
+        # Mock fileno to ensure os.dup2 path is taken
+        mock_stream.fileno.return_value = 10
+
+        with patch("snapm._progress.os") as mock_os:
+            mock_os.open.return_value = 999
+            mock_os.devnull = "/dev/null"
+            mock_os.O_WRONLY = 1
+
+            # Should raise the error after attempting to redirect to devnull
+            with self.assertRaises(SystemExit):
+                _flush_with_broken_pipe_guard(mock_stream)
+
+            # Verify recovery logic
+            mock_os.open.assert_called_with("/dev/null", 1)
+            mock_os.dup2.assert_called_with(999, 10)
+            mock_os.close.assert_called_with(999)
+
+    def test_flush_guard_no_flush_attr(self):
+        """Test flush guard with stream lacking flush method."""
+        from snapm._progress import _flush_with_broken_pipe_guard
+        mock_stream = MagicMock()
+        del mock_stream.flush
+        # Should not raise
+        _flush_with_broken_pipe_guard(mock_stream)
+
 
 class TestProgressBase(unittest.TestCase):
     def test_bad_child_no_FIXED(self):
