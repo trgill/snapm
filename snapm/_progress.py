@@ -258,18 +258,18 @@ def _flush_with_broken_pipe_guard(stream: TextIO) -> None:
     :param stream: The stream to flush.
     :type stream: TextIO
     """
-    if not hasattr(stream, "flush"):
+    if stream is None or not hasattr(stream, "flush"):
         return
     try:
         stream.flush()
-    except BrokenPipeError:
+    except BrokenPipeError as err:
         devnull = os.open(os.devnull, os.O_WRONLY)
         try:
             if hasattr(stream, "fileno"):
                 os.dup2(devnull, stream.fileno())
         finally:
             os.close(devnull)
-        raise
+        raise SystemExit() from err
 
 
 class ProgressBase(ABC):
