@@ -93,6 +93,17 @@ class TestTermControl(unittest.TestCase):
         # Test escaped $
         self.assertEqual(tc.render("Money$$"), "Money$")
 
+    def test_term_control_init_keyboard_interrupt(self):
+        """Test that KeyboardInterrupt in setupterm is re-raised."""
+        mock_stream = MagicMock()
+        mock_stream.isatty.return_value = True
+
+        with patch("snapm._progress.curses") as mock_curses:
+            mock_curses.setupterm.side_effect = KeyboardInterrupt()
+            with self.assertRaises(KeyboardInterrupt):
+                TermControl(term_stream=mock_stream)
+
+
 class TestFlushGuard(unittest.TestCase):
     def test_flush_guard_broken_pipe(self):
         """Test BrokenPipeError handling in flush guard (Lines 265-272)."""
