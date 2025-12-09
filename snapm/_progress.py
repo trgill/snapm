@@ -458,6 +458,8 @@ class Progress(ProgressBase):
         """
         Initialise a two-line terminal progress renderer.
 
+        :param header: The progress header to display.
+        :type header: ``str``
         :param term_stream: The terminal stream to write to.
         :type term_stream: ``TextIO``
         :param width: An optional width value in characters. If specified
