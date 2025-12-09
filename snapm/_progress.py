@@ -244,6 +244,27 @@ class TermControl:
         return getattr(self, s[2:-1], "")
 
 
+def _flush_with_broken_pipe_guard(stream: TextIO) -> None:
+    """
+    Handle ``BrokenPipeError`` when attempting to flush output streams.
+
+    :param stream: The stream to flush.
+    :type stream: TextIO
+    """
+    if not hasattr(stream, "flush"):
+        return
+    try:
+        stream.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        try:
+            if hasattr(stream, "fileno"):
+                os.dup2(devnull, stream.fileno())
+        finally:
+            os.close(devnull)
+        raise
+
+
 class ProgressBase(ABC):
     """
     An abstract progress reporting class.
@@ -400,27 +421,6 @@ class ProgressBase(ABC):
         :param message: An optional completion message.
         :type message: ``Optional[str]``
         """
-
-
-def _flush_with_broken_pipe_guard(stream: TextIO) -> None:
-    """
-    Handle ``BrokenPipeError`` when attempting to flush output streams.
-
-    :param stream: The stream to flush.
-    :type stream: TextIO
-    """
-    if not hasattr(stream, "flush"):
-        return
-    try:
-        stream.flush()
-    except BrokenPipeError:
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        try:
-            if hasattr(stream, "fileno"):
-                os.dup2(devnull, stream.fileno())
-        finally:
-            os.close(devnull)
-        raise
 
 
 class Progress(ProgressBase):
