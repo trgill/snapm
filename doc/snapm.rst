@@ -47,6 +47,17 @@ snapm.manager._calendar module
     :undoc-members:
     :show-inheritance:
 
+snapm.manager._mounts module
+-------------------------------
+
+.. automodule:: snapm.manager._mounts
+    :members:
+    :special-members:
+    :private-members:
+    :exclude-members: __dict__, __module__, __weakref__, __annotations__, __annotate_func__, __annotations_cache__, __dataclass_fields__, __dataclass_params__, __getnewargs__, __match_args__, __new__, __replace__, __slots__, __firstlineno__, __static_attributes__, __hash__
+    :undoc-members:
+    :show-inheritance:
+
 snapm.manager._schedule module
 -------------------------------
 
