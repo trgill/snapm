@@ -767,6 +767,9 @@ class ProgressFactory:
         if quiet:
             return NullProgress()
 
+        if term_control:
+            term_stream = term_control.term_stream
+
         term_stream = term_stream or sys.stdout
         if not hasattr(term_stream, "isatty") or not term_stream.isatty():
             return SimpleProgress(
