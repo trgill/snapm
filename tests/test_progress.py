@@ -301,6 +301,44 @@ class TestProgress(unittest.TestCase):
         self.assertEqual(len(output.splitlines()), 2)
         self.assertEqual(p.total, 0)
 
+    def test_lifecycle_cancel(self):
+        """Test start, progress, and cancel flow."""
+        mock_tc = MagicMock(spec=TermControl)
+        mock_tc.CLEAR_EOL = "<CE>"
+        mock_tc.CLEAR_BOL = "<CB>"
+        mock_tc.UP = "<UP>"
+        mock_tc.BOL = "<BOL>"
+        mock_tc.HIDE_CURSOR="<HIDE_CURSOR>"
+        mock_tc.SHOW_CURSOR="<SHOW_CURSOR>"
+        mock_tc.columns = 100
+        mock_tc.render.side_effect = lambda x: x  # pass through
+        mock_tc.term_stream = StringIO()
+
+        p = Progress("Test", tc=mock_tc, width=20)
+
+        # 1. Start
+        p.start(total=10)
+        output = mock_tc.term_stream.getvalue()
+        self.assertEqual(output, "")
+
+        # 2. Progress: first update
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        p.progress(5, "Halfway")
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("<HIDE_CURSOR>", output)
+        self.assertIn("<BOL>", output)
+        self.assertIn("Test", output)
+        self.assertIn("Halfway", output)
+
+        # 3. Cancel while in progres
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        p.cancel("Quit!")
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("<SHOW_CURSOR>", output)
+        self.assertIn("Quit!", output)
+
     def test_start_non_positive_raises(self):
         p = Progress("H", tc=self.mock_tc)
 

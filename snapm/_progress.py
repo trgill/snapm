@@ -425,9 +425,32 @@ class ProgressBase(ABC):
         """
         Perform final end-of-progress handling.
 
+        This hook is called for both normal completion (via ``end()``)
+        and error termination (via ``cancel()``/``_do_cancel()``).
+
         :param message: An optional completion message.
         :type message: ``Optional[str]``
         """
+
+    def cancel(self, message: Optional[str] = None):
+        """
+        End the progress run with error and finalize the display.
+
+        :param message: An optional error message.
+        :type message: ``Optional[str]``
+        """
+        self._check_in_progress(self.total)
+        self._do_cancel(message)
+        self.total = 0
+
+    def _do_cancel(self, message: Optional[str] = None):
+        """
+        Perform error case final end-of-progress handling.
+
+        :param message: An optional error message.
+        :type message: ``Optional[str]``
+        """
+        self._do_end(message=message)
 
 
 class Progress(ProgressBase):
