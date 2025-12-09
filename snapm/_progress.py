@@ -9,6 +9,7 @@
 Terminal control and progress indicator
 """
 from typing import List, Optional, TextIO
+from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 import curses
 import sys
@@ -26,6 +27,12 @@ MIN_BUDGET = 10
 
 #: Default width of a progress bar as a fraction of the terminal size.
 DEFAULT_WIDTH_FRAC = 0.5
+
+#: Default frames-per-second for Throbber classes
+DEFAULT_THROBBER_FPS = 10
+
+#: Microseconds per second
+_USECS_PER_SEC = 1000000
 
 
 class TermControl:
@@ -723,6 +730,237 @@ class NullProgress(ProgressBase):
         return  # pragma: no cover
 
 
+class ThrobberBase(ABC):
+    """
+    An abstract busy indicator class. Unlike ``ProgressBase`` classes
+    the throbber reports progress of a time consuming task where the
+    total number of items is unknown (for instance, generating tree
+    walk lists).
+    """
+
+    def __init__(self, header):
+        """
+        Initialize base throbber state.
+
+        Sets default state for lifecycle and rendering configuration.
+        """
+        self.header: str = header
+        self.frames: str = r"."
+        self.term: Optional[TermControl] = None
+        self.stream: Optional[TextIO] = None
+        self.started: bool = False
+        self.first_update: bool = True
+        self.nr_frames: int = len(self.frames)
+        self.fps: int = DEFAULT_THROBBER_FPS
+        self._frame_index: int = 0
+        self._interval_us: int = round((1.0 / self.fps) * _USECS_PER_SEC)
+        self._last: Optional[datetime] = None
+
+    def start(self):
+        """
+        Begin a throbber run.
+        """
+        self.started = True
+        self._last = datetime.now() - timedelta(microseconds=self._interval_us)
+        self._do_start()
+        self.throb()
+
+    def _do_start(self):
+        """
+        Hook invoked when throbber begins.
+
+        Subclasses implement startup behavior such as rendering an
+        initial throbber display.
+        """
+        print(f"{self.header}: ..", end="", file=self.stream)
+
+    def _check_started(self):
+        """
+        Validate that throbber is active.
+
+        :raises ``ValueError``: If throbber has not started, if done is
+                                negative, or if done exceeds total.
+        """
+        theclass = self.__class__.__name__
+        if not self.started:
+            raise ValueError(f"{theclass}.throb() called before start()")
+        if self._last is None:
+            raise ValueError(
+                f"{theclass}.throb() invalid throbber state:"
+                "self.started=True but self._last=None"
+            )
+
+    def throb(self):
+        """
+        Maintain liveness for this throbber and output frame if required.
+        """
+        self._check_started()
+        now = datetime.now()
+        if (now - self._last).total_seconds() * _USECS_PER_SEC >= self._interval_us:
+            self._do_throb()
+            _flush_with_broken_pipe_guard(self.stream)
+            self._last = now
+            self._frame_index = (self._frame_index + 1) % self.nr_frames
+            self.first_update = False
+
+    @abstractmethod
+    def _do_throb(self):
+        """
+        Hook for subclasses to update the throbber display.
+        """
+
+    def end(self, message: Optional[str] = None):
+        """
+        End the throbber run and finalize the display.
+
+        :param message: An optional completion message.
+        :type message: ``Optional[str]``
+        """
+        self._check_started()
+        self._do_end(message=message)
+        _flush_with_broken_pipe_guard(self.stream)
+        self.started = False
+        self._last = None
+
+    def _do_end(self, message: Optional[str] = None):
+        """
+        Perform final end-of-throbber handling.
+
+
+        Subclasses that implement fancy throbbers with ``TermControl``
+        should override this method to perform clearing/redrawing the
+        throbber frame.
+
+        :param message: An optional completion message.
+        :type message: ``Optional[str]``
+        """
+        print(f"\n{message}" if message else "", file=self.stream)
+
+
+class Throbber(ThrobberBase):
+    """
+    A ``ThrobberBase`` subclass to display a one line Unicode or ASCII
+    throbber for capable terminals.
+    """
+
+    def __init__(
+        self,
+        header: str,
+        term_stream: Optional[TextIO] = None,
+        no_clear: bool = False,
+        tc: Optional[TermControl] = None,
+    ):
+        """
+        Initialise a new one line throbber instance.
+        """
+        super().__init__(header)
+
+        if tc is not None:
+            term_stream = tc.term_stream
+
+        self.term: Optional[TermControl] = tc or TermControl(term_stream=term_stream)
+        self.stream: Optional[TextIO] = term_stream or sys.stdout
+        self.no_clear = no_clear
+
+        # Override default frames
+        ascii_frames = r"-\|/"
+        encoding = getattr(self.stream, "encoding", None)
+        if not encoding:
+            # Stream has no usable encoding; fall back to ASCII frames.
+            self.frames = ascii_frames
+        else:
+            try:
+                unicode_frames = "█▉▊▋▌▍▎▏▎▍▌▋▊▉█"
+                unicode_frames.encode(encoding)
+                self.frames = unicode_frames
+            except UnicodeEncodeError:
+                self.frames = ascii_frames
+        self.nr_frames = len(self.frames)
+
+    def _do_start(self):
+        """
+        Print the initial throbber display.
+        """
+        print(f"{self.header}: {self.term.HIDE_CURSOR}", end="", file=self.stream)
+
+    def _do_throb(self):
+        """
+        Update the throbber frame.
+        """
+        if not self.first_update:
+            # Erase previous throb frame.
+            print(self.term.LEFT + self.term.CLEAR_EOL, end="", file=self.stream)
+
+        # Draw current throb frame.
+        print(
+            (
+                f"{self.term.GREEN}"
+                f"{self.frames[self._frame_index]}"
+                f"{self.term.NORMAL}"
+            ),
+            end="",
+            file=self.stream,
+        )
+
+    def _do_end(self, message: Optional[str] = None):
+        """
+        Finalise the throbber.
+        """
+        if not self.first_update and not self.no_clear:
+            # Erase previous throb frame.
+            print(self.term.LEFT + self.term.CLEAR_EOL, end="", file=self.stream)
+
+        print(self.term.SHOW_CURSOR, end="", file=self.stream)
+
+        print(f"{message}" if message else "", file=self.stream)
+
+
+class SimpleThrobber(ThrobberBase):
+    """
+    A simple throbber that does not rely on terminal capabilities.
+    """
+
+    def __init__(self, header: str, term_stream: Optional[TextIO] = None):
+        """
+        Initialise a simple ascii throbber.
+
+        :param header: The throbber header.
+        :type header: ``str``
+        :param term_stream: The terminal stream to write to.
+        :type term_stream: ``Optional[TextIO]``
+        """
+        super().__init__(header)
+        self.stream = term_stream or sys.stdout
+
+    def _do_throb(self):
+        """
+        Output simple throb frame.
+        """
+        print(self.frames[self._frame_index], end="", file=self.stream)
+
+
+class NullThrobber(ThrobberBase):
+    """
+    A throbber class that produces no output.
+    """
+
+    def _do_start(self):
+        """No-op start for NullThrobber."""
+
+    def _do_throb(self):
+        """No-op throb hook for NullThrobber."""
+
+    def _do_end(self, message: Optional[str] = None):
+        """No-op end for NullThrobber."""
+
+    def throb(self):
+        """No-op throb for NullThrobber."""
+
+    def end(self, message: Optional[str] = None):
+        """No-op end for NullThrobber."""
+        self.started = False
+
+
 class ProgressFactory:
     """
     A factory for constructing progress objects.
@@ -792,12 +1030,67 @@ class ProgressFactory:
             tc=term_control,
         )
 
+    @staticmethod
+    def get_throbber(
+        header: str,
+        quiet: bool = False,
+        term_stream: Optional[TextIO] = None,
+        term_control: Optional[TermControl] = None,
+        no_clear: bool = False,
+    ) -> ThrobberBase:
+        """
+        Return an appropriate ThrobberBase implementation.
+
+        :param header: The throbber header.
+        :type header: ``str``
+        :param quiet: Suppress all output.
+        :type quiet: ``bool``
+        :param term_stream: An optional ``TextIO`` output object.
+                            Defaults to ``sys.stdout`` if unspecified.
+        :type term_stream: ``Optional[TextIO]``
+        :param term_control: An optional ``TermControl`` object to use
+                             for the throbber.
+        :type term_control: ``Optional[TermControl]``
+        :param no_clear: For throbber indicators that clear and re-draw the
+                         content on throbber, do not erase the throbber bar
+                         when ``ThrobberBase.end()`` is called, leaving it
+                         on the terminal for the user to refer to. Ignored
+                         by ``ThrobberBase`` child classes that do not use
+                         ``TerminalControl``.
+        :type no_clear: ``bool``
+        :returns: An appropriate throbber implementation.
+        :rtype: ``ThrobberBase``
+        """
+        if quiet:
+            return NullThrobber(header)
+
+        if term_control:
+            term_stream = term_control.term_stream
+
+        term_stream = term_stream or sys.stdout
+        if not hasattr(term_stream, "isatty") or not term_stream.isatty():
+            return SimpleThrobber(
+                header,
+                term_stream,
+            )
+
+        return Throbber(
+            header,
+            term_stream,
+            no_clear=no_clear,
+            tc=term_control,
+        )
+
 
 __all__ = [
     "NullProgress",
+    "NullThrobber",
     "Progress",
     "ProgressBase",
     "ProgressFactory",
     "SimpleProgress",
+    "SimpleThrobber",
     "TermControl",
+    "ThrobberBase",
+    "Throbber",
 ]

@@ -24,11 +24,15 @@ import os
 
 from ._progress import (
     NullProgress,
+    NullThrobber,
     Progress,
     ProgressBase,
     ProgressFactory,
     SimpleProgress,
+    SimpleThrobber,
     TermControl,
+    ThrobberBase,
+    Throbber,
 )
 
 _log = logging.getLogger("snapm")
@@ -2268,11 +2272,15 @@ __all__ = [
     "SnapmMountError",
     "SnapmUmountError",
     "NullProgress",
+    "NullThrobber",
     "Progress",
     "ProgressBase",
     "ProgressFactory",
     "SimpleProgress",
+    "SimpleThrobber",
     "TermControl",
+    "ThrobberBase",
+    "Throbber",
     "Selection",
     "size_fmt",
     "is_size_policy",

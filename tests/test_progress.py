@@ -8,16 +8,21 @@
 import unittest
 import sys
 from unittest.mock import MagicMock, patch
+from datetime import datetime, timedelta
 from io import StringIO
 import curses
 
 from snapm._progress import (
-    TermControl,
-    ProgressBase,
-    Progress,
-    SimpleProgress,
     NullProgress,
+    NullThrobber,
+    Progress,
+    ProgressBase,
     ProgressFactory,
+    SimpleProgress,
+    SimpleThrobber,
+    TermControl,
+    ThrobberBase,
+    Throbber,
 )
 
 
@@ -490,3 +495,247 @@ class TestProgressFactory(unittest.TestCase):
     def test_args_validation(self):
         with self.assertRaises(ValueError):
             ProgressFactory.get_progress("H", width=10, width_frac=0.5)
+
+
+class TestThrobber(unittest.TestCase):
+    def setUp(self):
+        # Create a mock TermControl with necessary capabilities
+        self.mock_tc = MagicMock(spec=TermControl)
+        self.mock_tc.HIDE_CURSOR = "<HIDE>"
+        self.mock_tc.SHOW_CURSOR = "<SHOW>"
+        self.mock_tc.LEFT = "<LEFT>"
+        self.mock_tc.CLEAR_EOL = "<CE>"
+        self.mock_tc.GREEN = "<G>"
+        self.mock_tc.NORMAL = "<N>"
+        self.mock_tc.term_stream = MagicMock()
+        self.mock_tc.term_stream.encoding = "ascii"
+        self.mock_tc.render.side_effect = lambda x: x
+
+    def test_init_defaults(self):
+        """Test Throbber initialization and default frame selection."""
+        self.mock_tc.term_stream.encoding = "utf-8"
+        # Test Unicode frames
+        t = Throbber("H", tc=self.mock_tc)
+        self.assertIn("▉", t.frames)
+
+        # Test ASCII fallback
+        self.mock_tc.term_stream.encoding = "ascii"
+        t_ascii = Throbber("H", tc=self.mock_tc)
+        self.assertIn("-", t_ascii.frames)
+        self.assertNotIn("▉", t_ascii.frames)
+
+    @patch("snapm._progress.datetime")
+    def test_lifecycle_flow(self, mock_dt):
+        """Test the start -> throb -> end lifecycle with output verification."""
+        # Create a mock TermControl with necessary capabilities
+        mock_tc = MagicMock(spec=TermControl)
+        mock_tc.HIDE_CURSOR = "<HIDE>"
+        mock_tc.SHOW_CURSOR = "<SHOW>"
+        mock_tc.LEFT = "<LEFT>"
+        mock_tc.CLEAR_EOL = "<CE>"
+        mock_tc.GREEN = "<G>"
+        mock_tc.NORMAL = "<N>"
+        mock_tc.term_stream = StringIO()
+        mock_tc.render.side_effect = lambda x: x
+
+        t = Throbber("Working", tc=mock_tc)
+
+        # Setup time: Start at T0
+        start_time = datetime(2024, 1, 1, 12, 0, 0)
+        # Sequence of times returned by datetime.now():
+        # 1. start() -> sets _last
+        # 2. start() -> calls throb() -> checks time (no update)
+        # 3. explicit throb() call -> checks time (update triggers)
+        mock_dt.now.side_effect = [
+            start_time,
+            start_time + timedelta(microseconds=100001),
+            start_time + timedelta(microseconds=200001)
+        ]
+
+        # 1. Start
+        t.start()
+        output = mock_tc.term_stream.getvalue()
+        self.assertIn("Working: <HIDE>", output)
+        self.assertIn(t.frames[0], output)
+        self.assertTrue(t.started)
+
+        # 2. Throb (Time advances, frame updates)
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        t.throb()
+        output = mock_tc.term_stream.getvalue()
+        # Expect: Left move, Clear Line, Color, Frame char, Normal
+        self.assertIn("<LEFT><CE>", output)
+        self.assertIn("<G>", output)
+        self.assertIn(t.frames[1], output)
+
+        # 3. End
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+        t.end("Done!")
+        output = mock_tc.term_stream.getvalue()
+        # Expect: Left move, Clear Line, Show Cursor, Message
+        self.assertIn("<LEFT><CE>", output)
+        self.assertIn("<SHOW>", output)
+        self.assertIn("Done!", output)
+        self.assertFalse(t.started)
+
+    def test_no_clear_behavior(self):
+        """Test that no_clear=True prevents clearing the spinner on end."""
+        # Create a mock TermControl with necessary capabilities
+        mock_tc = MagicMock(spec=TermControl)
+        mock_tc.HIDE_CURSOR = "<HIDE>"
+        mock_tc.SHOW_CURSOR = "<SHOW>"
+        mock_tc.LEFT = "<LEFT>"
+        mock_tc.CLEAR_EOL = "<CE>"
+        mock_tc.GREEN = "<G>"
+        mock_tc.NORMAL = "<N>"
+        mock_tc.term_stream = StringIO()
+        mock_tc.render.side_effect = lambda x: x
+
+        t = Throbber("H", tc=mock_tc, no_clear=True)
+
+        # Manually set state to simulate having updated at least once
+        t.first_update = False
+
+        t._do_end("Finished")
+        output = mock_tc.term_stream.getvalue()
+
+        # Should NOT clear the line (no <LEFT><CE>)
+        self.assertNotIn("<LEFT><CE>", output)
+        # Should still show cursor
+        self.assertIn("<SHOW>", output)
+
+    def test_validation(self):
+        """Test state validation (throb before start)."""
+        t = Throbber("H", tc=self.mock_tc)
+        with self.assertRaisesRegex(ValueError, "called before start"):
+            t.throb()
+
+    def test_throbber_end_no_message(self):
+        """Test ending a throbber without a message (Line 952)."""
+        mock_tc = MagicMock(spec=TermControl)
+        mock_tc.term_stream = StringIO()
+        mock_tc.render.side_effect = lambda x: x
+        # Mock required caps to enter the logic block
+        mock_tc.LEFT = "<L>"
+        mock_tc.CLEAR_EOL = "<CE>"
+        mock_tc.SHOW_CURSOR = "<SHOW>"
+
+        t = Throbber("H", tc=mock_tc)
+        t.start()
+        # Force first_update=False to trigger the clearing logic
+        t.first_update = False
+
+        # Reset stream to capture only end output
+        mock_tc.term_stream.truncate(0)
+        mock_tc.term_stream.seek(0)
+
+        # Call with None to test the ternary 'else ""' branch
+        t.end(None)
+
+        output = mock_tc.term_stream.getvalue()
+        # Should contain clearing logic
+        self.assertIn("<L><CE>", output)
+        self.assertIn("<SHOW>", output)
+        # Should NOT contain "None" string
+        self.assertNotIn("None", output)
+        # Should finish with a newline
+        self.assertTrue(output.endswith("\n"))
+
+    def test_throbber_invalid_state(self):
+        """Test throb() raises if started=True but _last is None (Line 791)."""
+        t = Throbber("H")
+        t.started = True
+        t._last = None # Explicitly corrupt state
+
+        with self.assertRaisesRegex(ValueError, "invalid throbber state"):
+            t.throb()
+
+
+class TestSimpleThrobber(unittest.TestCase):
+    @patch("snapm._progress.datetime")
+    def test_simple_flow(self, mock_dt):
+        stream = StringIO()
+        st = SimpleThrobber("Loading", term_stream=stream)
+
+        # Setup time sequence
+        start_time = datetime(2024, 1, 1, 12, 0, 0)
+        mock_dt.now.side_effect = [
+            start_time,
+            start_time + timedelta(microseconds=100001),
+            start_time + timedelta(microseconds=200001),
+        ]
+
+        # Start
+        st.start()
+        self.assertIn("Loading: ", stream.getvalue())
+
+        # Throb
+        st.throb()
+        # SimpleThrobber appends dots/frames without clearing
+        self.assertIn(".", stream.getvalue())
+
+        # End
+        st.end("Done")
+        self.assertIn("Done\n", stream.getvalue())
+
+
+class TestNullThrobber(unittest.TestCase):
+    def test_silent_operation(self):
+        nt = NullThrobber("H")
+        # Should not raise errors
+        nt.start()
+        nt.throb()
+        nt.end("Msg")
+        # No stream output to check since it doesn't hold one,
+        # but we verified it runs without crashing.
+
+
+class TestThrobberFactory(unittest.TestCase):
+    def setUp(self):
+        # Create a mock TermControl with necessary capabilities
+        self.mock_tc = MagicMock(spec=TermControl)
+        self.mock_tc.HIDE_CURSOR = "<HIDE>"
+        self.mock_tc.SHOW_CURSOR = "<SHOW>"
+        self.mock_tc.LEFT = "<LEFT>"
+        self.mock_tc.CLEAR_EOL = "<CE>"
+        self.mock_tc.GREEN = "<G>"
+        self.mock_tc.NORMAL = "<N>"
+        self.mock_tc.term_stream = MagicMock()
+        self.mock_tc.term_stream.isatty.return_value = True
+        self.mock_tc.term_stream.encoding = "utf8"
+        self.mock_tc.render.side_effect = lambda x: x
+
+
+    def test_get_throbber_quiet(self):
+        t = ProgressFactory.get_throbber("H", quiet=True)
+        self.assertIsInstance(t, NullThrobber)
+
+    def test_get_throbber_simple(self):
+        # Mock stream as non-tty
+        mock_stream = MagicMock()
+        mock_stream.isatty.return_value = False
+
+        t = ProgressFactory.get_throbber("H", term_stream=mock_stream)
+        self.assertIsInstance(t, SimpleThrobber)
+
+    def test_get_throbber_fancy(self):
+        t = ProgressFactory.get_throbber("H", term_control=self.mock_tc)
+        self.assertIsInstance(t, Throbber)
+
+    def test_get_throbber_params(self):
+        """Test passing no_clear and TermControl to factory."""
+        t = ProgressFactory.get_throbber("H", term_control=self.mock_tc, no_clear=True)
+
+        self.assertIsInstance(t, Throbber)
+        self.assertEqual(t.term, self.mock_tc)
+        self.assertTrue(t.no_clear)
+
+    def test_throbber_factory_missing_isatty_attr(self):
+        """Test factory with stream completely missing isatty attribute (Line 1010)."""
+        class DumbStream:
+            pass
+        # This hits the 'not hasattr' branch of the OR condition
+        t = ProgressFactory.get_throbber("H", term_stream=DumbStream())
+        self.assertIsInstance(t, SimpleThrobber)
