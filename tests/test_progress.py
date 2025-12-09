@@ -175,8 +175,11 @@ class TestProgress(unittest.TestCase):
         """Test start, progress, and end flow."""
         mock_tc = MagicMock(spec=TermControl)
         mock_tc.CLEAR_EOL = "<CE>"
+        mock_tc.CLEAR_BOL = "<CB>"
         mock_tc.UP = "<UP>"
         mock_tc.BOL = "<BOL>"
+        mock_tc.HIDE_CURSOR="<HIDE_CURSOR>"
+        mock_tc.SHOW_CURSOR="<SHOW_CURSOR>"
         mock_tc.columns = 100
         mock_tc.render.side_effect = lambda x: x  # pass through
         mock_tc.term_stream = StringIO()
@@ -193,6 +196,7 @@ class TestProgress(unittest.TestCase):
         mock_tc.term_stream.seek(0)
         p.progress(5, "Halfway")
         output = mock_tc.term_stream.getvalue()
+        self.assertIn("<HIDE_CURSOR>", output)
         self.assertIn("<BOL>", output)
         self.assertIn("Test", output)
         self.assertIn("Halfway", output)
@@ -224,6 +228,7 @@ class TestProgress(unittest.TestCase):
         mock_tc.term_stream.seek(0)
         p.end("Done!")
         output = mock_tc.term_stream.getvalue()
+        self.assertIn("<SHOW_CURSOR>", output)
         self.assertIn("Done!", output)
         self.assertEqual(p.total, 0)
 
@@ -231,8 +236,11 @@ class TestProgress(unittest.TestCase):
         """Test lifecycle with no_clear=True preserves final bar."""
         mock_tc = MagicMock(spec=TermControl)
         mock_tc.CLEAR_EOL = "<CE>"
+        mock_tc.CLEAR_BOL = "<CB>"
         mock_tc.UP = "<UP>"
         mock_tc.BOL = "<BOL>"
+        mock_tc.HIDE_CURSOR="<HIDE_CURSOR>"
+        mock_tc.SHOW_CURSOR="<SHOW_CURSOR>"
         mock_tc.columns = 100
         mock_tc.render.side_effect = lambda x: x  # pass through
         mock_tc.term_stream = StringIO()
@@ -249,6 +257,7 @@ class TestProgress(unittest.TestCase):
         mock_tc.term_stream.seek(0)
         p.progress(5, "Halfway")
         output = mock_tc.term_stream.getvalue()
+        self.assertIn("<HIDE_CURSOR>", output)
         self.assertIn("<BOL>", output)
         self.assertIn("Test", output)
         self.assertIn("Halfway", output)
@@ -280,6 +289,7 @@ class TestProgress(unittest.TestCase):
         mock_tc.term_stream.seek(0)
         p.end("Done!")
         output = mock_tc.term_stream.getvalue()
+        self.assertIn("<SHOW_CURSOR>", output)
         self.assertIn("Test", output)
         self.assertIn("Done!", output)
         self.assertIn(": 100% ", output)

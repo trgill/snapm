@@ -542,7 +542,7 @@ class Progress(ProgressBase):
         n = int((self.width - 10) * percent)
 
         if self.first_update:
-            prefix = self.term.BOL
+            prefix = self.term.HIDE_CURSOR + self.term.BOL
             self.first_update = False
         else:
             prefix = self.term.BOL + self.term.UP + self.term.CLEAR_EOL
@@ -578,15 +578,22 @@ class Progress(ProgressBase):
         if not self.no_clear:
             print(self.term.BOL + self.term.UP + self.term.CLEAR_EOL, file=self.stream)
             print(
-                self.term.BOL
-                + self.term.CLEAR_EOL
-                + self.term.UP
-                + self.term.CLEAR_EOL,
+                (
+                    self.term.BOL
+                    + self.term.CLEAR_EOL
+                    + self.term.UP
+                    + self.term.CLEAR_EOL
+                    + self.term.SHOW_CURSOR
+                ),
                 file=self.stream,
                 end="",
             )
         else:
-            print(self.term.CLEAR_BOL + self.term.BOL, file=self.stream, end="")
+            print(
+                self.term.CLEAR_BOL + self.term.BOL + self.term.SHOW_CURSOR,
+                file=self.stream,
+                end="",
+            )
         if message:
             print(message, file=self.stream)
         _flush_with_broken_pipe_guard(self.stream)
