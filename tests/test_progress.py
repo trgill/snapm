@@ -577,6 +577,15 @@ class TestProgressFactory(unittest.TestCase):
         with self.assertRaises(ValueError):
             ProgressFactory.get_progress("H", width=10, width_frac=0.5)
 
+    def test_progress_factory_missing_isatty_attr(self):
+        """Test factory with stream completely missing isatty attribute (Line 1010)."""
+        class DumbStream:
+            pass
+
+        # This hits the 'not hasattr' branch of the OR condition
+        p = ProgressFactory.get_progress("H", term_stream=DumbStream())
+        self.assertIsInstance(p, SimpleProgress)
+
 
 class TestThrobber(unittest.TestCase):
     def setUp(self):
