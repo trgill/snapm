@@ -606,13 +606,20 @@ class TestThrobber(unittest.TestCase):
         self.mock_tc.term_stream.encoding = "utf-8"
         # Test Unicode frames
         t = Throbber("H", tc=self.mock_tc)
-        self.assertIn("▉", t.frames)
+        self.assertIn("⠁", t.frames)
 
         # Test ASCII fallback
         self.mock_tc.term_stream.encoding = "ascii"
         t_ascii = Throbber("H", tc=self.mock_tc)
         self.assertIn("-", t_ascii.frames)
-        self.assertNotIn("▉", t_ascii.frames)
+        self.assertNotIn("⠁", t_ascii.frames)
+
+    def test_init_style_bouncing_ball(self):
+        """Test Throbber initialization and bouncingball frame selection."""
+        self.mock_tc.term_stream.encoding = "utf-8"
+        # Test Unicode frames
+        t = Throbber("H", style="bouncingball", tc=self.mock_tc)
+        self.assertIn("[●     ]", t.frames)
 
     @patch("snapm._progress.datetime")
     def test_lifecycle_flow(self, mock_dt):
@@ -798,6 +805,11 @@ class TestThrobberFactory(unittest.TestCase):
         self.mock_tc.render.side_effect = lambda x: x
 
 
+    def test_get_throbber_styles(self):
+        xstyles = sorted(list(Throbber.STYLES.keys()))
+        styles = sorted(ProgressFactory.get_throbber_styles())
+        self.assertEqual(styles, xstyles)
+
     def test_get_throbber_quiet(self):
         t = ProgressFactory.get_throbber("H", quiet=True)
         self.assertIsInstance(t, NullThrobber)
@@ -821,6 +833,10 @@ class TestThrobberFactory(unittest.TestCase):
         self.assertIsInstance(t, Throbber)
         self.assertEqual(t.term, self.mock_tc)
         self.assertTrue(t.no_clear)
+
+    def test_get_throbber_unknown_style(self):
+        with self.assertRaises(ValueError):
+            ProgressFactory.get_throbber("Foo", style="quux", term_control=self.mock_tc)
 
     def test_throbber_factory_missing_isatty_attr(self):
         """Test factory with stream completely missing isatty attribute (Line 1010)."""

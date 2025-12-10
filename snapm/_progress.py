@@ -8,7 +8,7 @@
 """
 Terminal control and progress indicator
 """
-from typing import List, Optional, TextIO
+from typing import ClassVar, Dict, List, Optional, TextIO, Union
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 import curses
@@ -866,17 +866,80 @@ class Throbber(ThrobberBase):
     throbber for capable terminals.
     """
 
+    STYLES: ClassVar[Dict[str, Union[str, List[str]]]] = {
+        "ascii": r"-\|/",
+        "wave": "⠁⠂⠄⡀⢀⠠⠐⠈",
+        "braillewave": "⣾⣽⣻⢿⡿⣟⣯⣷",
+        "horizontalbars": "█▉▊▋▌▍▎▏▎▍▌▋▊▉█",
+        "verticalbars": "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁",
+        "arrowspinner": "←↖↑↗→↘↓↙",
+        "braillecircle": ["⢎⡰", "⢎⡡", "⢎⡑", "⢎⠱", "⠎⡱", "⢊⡱", "⢌⡱", "⢆⡱"],
+        "bouncingball": [
+            "[●     ]",
+            "[ ●    ]",
+            "[  ●   ]",
+            "[   ●  ]",
+            "[    ● ]",
+            "[     ●]",
+            "[    ● ]",
+            "[   ●  ]",
+            "[  ●   ]",
+            "[ ●    ]",
+            "[●     ]",
+        ],
+        "bouncingbar": [
+            "[|     ]",
+            "[ |    ]",
+            "[  |   ]",
+            "[   |  ]",
+            "[    | ]",
+            "[     |]",
+            "[    | ]",
+            "[   |  ]",
+            "[  |   ]",
+            "[ |    ]",
+            "[|     ]",
+        ],
+    }
+
     def __init__(
         self,
         header: str,
+        style: Optional[str] = None,
         term_stream: Optional[TextIO] = None,
         no_clear: bool = False,
         tc: Optional[TermControl] = None,
     ):
         """
         Initialise a new one line throbber instance.
+
+        :param header: The header string to print.
+        :type header: ``str``
+        :param style: A Unicode throbber style string. Ignored if the terminal
+                      does not support Unicode encoding. Defaults to "wave" if
+                      unset.
+        :type style: ``Optional[str]``
+        :param term_stream: The terminal stream to write to.
+        :type term_stream: ``TextIO``
+        :param no_clear: For throbber indicators that clear and re-draw the
+                         content on progress, do not erase the throbber frame
+                         when ``ThrobberBase.end()`` is called, leaving it
+                         on the terminal for the user to refer to. Ignored
+                         by ``ThrobberBase`` child classes that do not use
+                         ``TerminalControl``.
+        :type no_clear: ``bool``
+        :param tc: An optional ``TermControl`` object already initialised with
+                               a ``term_stream`` value. If this argument is set
+                               it will override any ``term_stream`` argument.
+        :type tc: ``Optional[TermControl]``
+        :raises ValueError: If terminal lacks required capabilities.
         """
         super().__init__(header)
+
+        if style is not None and style not in Throbber.STYLES:
+            raise ValueError(f"Unknown Throbber style: {style}")
+
+        style = style or "wave"
 
         if tc is not None:
             term_stream = tc.term_stream
@@ -893,7 +956,7 @@ class Throbber(ThrobberBase):
             self.frames = ascii_frames
         else:
             try:
-                unicode_frames = "█▉▊▋▌▍▎▏▎▍▌▋▊▉█"
+                unicode_frames = self.STYLES[style]
                 if isinstance(unicode_frames, str):
                     unicode_frames.encode(encoding)
                 else:
@@ -1079,9 +1142,20 @@ class ProgressFactory:
         )
 
     @staticmethod
+    def get_throbber_styles() -> List[str]:
+        """
+        Return a list of known ``Throbber`` style strings.
+
+        :returns: A list of throbber styles.
+        :rtype: ``List[str]``
+        """
+        return list(Throbber.STYLES.keys())
+
+    @staticmethod
     def get_throbber(
         header: str,
         quiet: bool = False,
+        style: Optional[str] = None,
         term_stream: Optional[TextIO] = None,
         term_control: Optional[TermControl] = None,
         no_clear: bool = False,
@@ -1093,6 +1167,9 @@ class ProgressFactory:
         :type header: ``str``
         :param quiet: Suppress all output.
         :type quiet: ``bool``
+        :param style: An optional Unicode throbber style string. Ignored if the
+                      terminal does not support Unicode encoding.
+        :type style: ``Optional[str]``
         :param term_stream: An optional ``TextIO`` output object.
                             Defaults to ``sys.stdout`` if unspecified.
         :type term_stream: ``Optional[TextIO]``
@@ -1124,7 +1201,8 @@ class ProgressFactory:
 
         return Throbber(
             header,
-            term_stream,
+            style=style,
+            term_stream=term_stream,
             no_clear=no_clear,
             tc=term_control,
         )
