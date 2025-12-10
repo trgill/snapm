@@ -935,7 +935,9 @@ class Throbber(ThrobberBase):
 
         print(self.term.SHOW_CURSOR, end="", file=self.stream)
 
-        print(f"{message}" if message else "", file=self.stream)
+        sep = "\n" if self.no_clear else ""
+
+        print(f"{sep}{message}" if message else "", file=self.stream)
 
 
 class SimpleThrobber(ThrobberBase):
