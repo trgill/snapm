@@ -886,7 +886,7 @@ class Throbber(ThrobberBase):
         self.no_clear = no_clear
 
         # Override default frames
-        ascii_frames = r"-\|/"
+        ascii_frames = self.STYLES["ascii"]
         encoding = getattr(self.stream, "encoding", None)
         if not encoding:
             # Stream has no usable encoding; fall back to ASCII frames.
@@ -894,11 +894,24 @@ class Throbber(ThrobberBase):
         else:
             try:
                 unicode_frames = "█▉▊▋▌▍▎▏▎▍▌▋▊▉█"
-                unicode_frames.encode(encoding)
+                if isinstance(unicode_frames, str):
+                    unicode_frames.encode(encoding)
+                else:
+                    for frame in unicode_frames:
+                        frame.encode(encoding)
                 self.frames = unicode_frames
             except UnicodeEncodeError:
                 self.frames = ascii_frames
         self.nr_frames = len(self.frames)
+
+    def _last_frame_width(self):
+        """
+        Return the width in characters of the last frame output.
+
+        :returns: The previous frame width in characters.
+        :rtype: ``int``
+        """
+        return len(self.frames[(self._frame_index - 1) % len(self.frames)])
 
     def _do_start(self):
         """
@@ -911,8 +924,13 @@ class Throbber(ThrobberBase):
         Update the throbber frame.
         """
         if not self.first_update:
+            frame_width = self._last_frame_width()
             # Erase previous throb frame.
-            print(self.term.LEFT + self.term.CLEAR_EOL, end="", file=self.stream)
+            print(
+                frame_width * self.term.LEFT + self.term.CLEAR_EOL,
+                end="",
+                file=self.stream,
+            )
 
         # Draw current throb frame.
         print(
@@ -930,8 +948,13 @@ class Throbber(ThrobberBase):
         Finalise the throbber.
         """
         if not self.first_update and not self.no_clear:
+            frame_width = self._last_frame_width()
             # Erase previous throb frame.
-            print(self.term.LEFT + self.term.CLEAR_EOL, end="", file=self.stream)
+            print(
+                frame_width * self.term.LEFT + self.term.CLEAR_EOL,
+                end="",
+                file=self.stream,
+            )
 
         print(self.term.SHOW_CURSOR, end="", file=self.stream)
 
