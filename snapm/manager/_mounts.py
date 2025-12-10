@@ -555,7 +555,7 @@ class Mount(MountBase):
             self.snapset.mount_root = mount_root
 
             name_map = {
-                mp: self.snapset.snapshot_by_source(mp)
+                mp: self.snapset.snapshot_by_source(mp).name
                 for mp in self.snapset.mount_points
             }
             self._check_submounts(
