@@ -480,7 +480,12 @@ class TreeWalker:
                         # Path vanished between discovery and stat; skip it.
                         continue
                 else:
-                    path_stat = os.lstat(pathname)
+                    try:
+                        path_stat = os.lstat(pathname)
+                    except FileNotFoundError:
+                        # Not a broken symlink: start does not exist in this root.
+                        continue
+
                 exists = os.path.exists(pathname)
                 is_lnk = stat.S_ISLNK(path_stat.st_mode)
                 if not exists and not is_lnk:
