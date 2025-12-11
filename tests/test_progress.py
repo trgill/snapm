@@ -341,7 +341,7 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Test", output)
         self.assertIn("Done!", output)
         self.assertIn(": 100% ", output)
-        self.assertEqual(len(output.splitlines()), 2)
+        self.assertEqual(len(output.splitlines()), 3)
         self.assertEqual(p.total, 0)
 
     def test_lifecycle_cancel(self):
@@ -635,6 +635,9 @@ class TestThrobber(unittest.TestCase):
         mock_tc.HIDE_CURSOR = "<HIDE>"
         mock_tc.SHOW_CURSOR = "<SHOW>"
         mock_tc.LEFT = "<LEFT>"
+        mock_tc.RIGHT = "<RIGHT>"
+        mock_tc.BOL = "<BOL>"
+        mock_tc.UP = "<UP>"
         mock_tc.CLEAR_EOL = "<CE>"
         mock_tc.GREEN = "<G>"
         mock_tc.NORMAL = "<N>"
@@ -658,7 +661,7 @@ class TestThrobber(unittest.TestCase):
         # 1. Start
         t.start()
         output = mock_tc.term_stream.getvalue()
-        self.assertIn("Working: <HIDE>", output)
+        self.assertIn("<HIDE>Working:", output)
         self.assertIn(t.frames[0], output)
         self.assertTrue(t.started)
 
@@ -667,8 +670,8 @@ class TestThrobber(unittest.TestCase):
         mock_tc.term_stream.seek(0)
         t.throb()
         output = mock_tc.term_stream.getvalue()
-        # Expect: Left move, Clear Line, Color, Frame char, Normal
-        self.assertIn("<LEFT><CE>", output)
+        # Expect: Begin, Up, Clear Line, Color, Frame char, Normal
+        self.assertIn("<BOL><UP><CE>", output)
         self.assertIn("<G>", output)
         self.assertIn(t.frames[1], output)
 
@@ -678,7 +681,8 @@ class TestThrobber(unittest.TestCase):
         t.end("Done!")
         output = mock_tc.term_stream.getvalue()
         # Expect: Left move, Clear Line, Show Cursor, Message
-        self.assertIn("<LEFT><CE>", output)
+        # <UP><RIGHT><RIGHT><RIGHT><RIGHT><RIGHT><RIGHT><RIGHT><RIGHT><RIGHT><CE><SHOW>
+        self.assertIn("<UP>" + (len(t.header) + 2) * "<RIGHT>" + "<CE>", output)
         self.assertIn("<SHOW>", output)
         self.assertIn("Done!", output)
         self.assertFalse(t.started)
@@ -689,7 +693,8 @@ class TestThrobber(unittest.TestCase):
         mock_tc = MagicMock(spec=TermControl)
         mock_tc.HIDE_CURSOR = "<HIDE>"
         mock_tc.SHOW_CURSOR = "<SHOW>"
-        mock_tc.LEFT = "<LEFT>"
+        mock_tc.RIGHT = "<RIGHT>"
+        mock_tc.UP = "<UP>"
         mock_tc.CLEAR_EOL = "<CE>"
         mock_tc.GREEN = "<G>"
         mock_tc.NORMAL = "<N>"
@@ -721,7 +726,8 @@ class TestThrobber(unittest.TestCase):
         mock_tc.term_stream = StringIO()
         mock_tc.render.side_effect = lambda x: x
         # Mock required caps to enter the logic block
-        mock_tc.LEFT = "<L>"
+        mock_tc.UP = "<UP>"
+        mock_tc.RIGHT = "<R>"
         mock_tc.CLEAR_EOL = "<CE>"
         mock_tc.SHOW_CURSOR = "<SHOW>"
 
@@ -739,12 +745,10 @@ class TestThrobber(unittest.TestCase):
 
         output = mock_tc.term_stream.getvalue()
         # Should contain clearing logic
-        self.assertIn("<L><CE>", output)
+        self.assertIn("<UP>" + (len(t.header) + 2) * "<R>" + "<CE>", output)
         self.assertIn("<SHOW>", output)
         # Should NOT contain "None" string
         self.assertNotIn("None", output)
-        # Should finish with a newline
-        self.assertTrue(output.endswith("\n"))
 
     def test_end_before_start_raises(self):
         t = Throbber("H")

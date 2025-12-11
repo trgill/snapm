@@ -590,7 +590,7 @@ class Progress(ProgressBase):
             prefix = self.term.HIDE_CURSOR + self.term.BOL
             self.first_update = False
         else:
-            prefix = self.term.BOL + self.term.UP + self.term.CLEAR_EOL
+            prefix = 2 * (self.term.BOL + self.term.UP + self.term.CLEAR_EOL)
 
         if len(message) > self.budget:
             message = message[0 : self.budget - 3] + "..."
@@ -607,7 +607,8 @@ class Progress(ProgressBase):
                 )
             )
             + self.term.CLEAR_EOL
-            + message.center(self.width),
+            + message.center(self.width)
+            + "\n",
             file=self.stream,
             end="",
         )
@@ -621,7 +622,10 @@ class Progress(ProgressBase):
         :type message: ``Optional[str]``
         """
         if not self.no_clear:
-            print(self.term.BOL + self.term.UP + self.term.CLEAR_EOL, file=self.stream)
+            print(
+                2 * (self.term.BOL + self.term.UP + self.term.CLEAR_EOL),
+                file=self.stream,
+            )
             print(
                 (
                     self.term.BOL
@@ -635,7 +639,14 @@ class Progress(ProgressBase):
             )
         else:
             print(
-                self.term.CLEAR_BOL + self.term.BOL + self.term.SHOW_CURSOR,
+                (
+                    self.term.UP
+                    + self.term.CLEAR_BOL
+                    + self.term.BOL
+                    + self.term.CLEAR_BOL
+                    + self.term.BOL
+                    + self.term.SHOW_CURSOR
+                ),
                 file=self.stream,
                 end="",
             )
@@ -990,43 +1001,31 @@ class Throbber(ThrobberBase):
                 self.frames = ascii_frames
         self.nr_frames = len(self.frames)
 
-    def _last_frame_width(self):
-        """
-        Return the width in characters of the last frame output.
-
-        :returns: The previous frame width in characters.
-        :rtype: ``int``
-        """
-        # On the first throb() this will return the length of the last frame
-        # in the active style's self.frames. This is not an issue since we
-        # do not erase anything anyway since first_update=True.
-        return len(self.frames[(self._frame_index - 1) % len(self.frames)])
-
     def _do_start(self):
         """
-        Print the initial throbber display.
+        Just turn off the cursor: ``_do_throb()`` will print the header.
         """
-        print(f"{self.header}: {self.term.HIDE_CURSOR}", end="", file=self.stream)
+        print(f"{self.term.HIDE_CURSOR}", end="", file=self.stream)
 
     def _do_throb(self):
         """
         Update the throbber frame.
         """
         if not self.first_update:
-            frame_width = self._last_frame_width()
             # Erase previous throb frame.
             print(
-                frame_width * self.term.LEFT + self.term.CLEAR_EOL,
+                self.term.BOL + self.term.UP + self.term.CLEAR_EOL,
                 end="",
                 file=self.stream,
             )
 
         # Draw current throb frame.
+        print(f"{self.header}: ", end="", file=self.stream)
         print(
             (
                 f"{self.term.GREEN}"
                 f"{self.frames[self._frame_index]}"
-                f"{self.term.NORMAL}"
+                f"{self.term.NORMAL}\n"
             ),
             end="",
             file=self.stream,
@@ -1037,19 +1036,18 @@ class Throbber(ThrobberBase):
         Finalise the throbber.
         """
         if not self.first_update and not self.no_clear:
-            frame_width = self._last_frame_width()
+            # Header length plus ": ".
+            header_width = len(self.header) + 2
             # Erase previous throb frame.
             print(
-                frame_width * self.term.LEFT + self.term.CLEAR_EOL,
+                self.term.UP + header_width * self.term.RIGHT + self.term.CLEAR_EOL,
                 end="",
                 file=self.stream,
             )
 
         print(self.term.SHOW_CURSOR, end="", file=self.stream)
 
-        sep = "\n" if self.no_clear else ""
-
-        print(f"{sep}{message}" if message else "", file=self.stream)
+        print(f"{message}\n" if message else "", end="", file=self.stream)
 
 
 class SimpleThrobber(ThrobberBase):
