@@ -978,6 +978,9 @@ class Throbber(ThrobberBase):
         :returns: The previous frame width in characters.
         :rtype: ``int``
         """
+        # On the first throb() this will return the length of the last frame
+        # in the active style's self.frames. This is not an issue since we
+        # do not erase anything anyway since first_update=True.
         return len(self.frames[(self._frame_index - 1) % len(self.frames)])
 
     def _do_start(self):
