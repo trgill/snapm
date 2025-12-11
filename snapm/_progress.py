@@ -800,19 +800,21 @@ class ThrobberBase(ABC):
         """
         print(f"{self.header}: ..", end="", file=self.stream)
 
-    def _check_started(self):
+    def _check_started(self, step: str):
         """
         Validate that throbber is active.
 
+        :param step: The throbber step (method name) that is active.
+        :type step: ``str``
         :raises ``ValueError``: If throbber has not started, if done is
                                 negative, or if done exceeds total.
         """
         theclass = self.__class__.__name__
         if not self.started:
-            raise ValueError(f"{theclass}.throb() called before start()")
+            raise ValueError(f"{theclass}.{step}() called before start()")
         if self._last is None:
             raise ValueError(
-                f"{theclass}.throb() invalid throbber state:"
+                f"{theclass}.{step}() invalid throbber state:"
                 "self.started=True but self._last=None"
             )
 
@@ -820,7 +822,7 @@ class ThrobberBase(ABC):
         """
         Maintain liveness for this throbber and output frame if required.
         """
-        self._check_started()
+        self._check_started("throb")
         now = datetime.now()
         if (now - self._last).total_seconds() * _USECS_PER_SEC >= self._interval_us:
             self._do_throb()
@@ -842,7 +844,7 @@ class ThrobberBase(ABC):
         :param message: An optional completion message.
         :type message: ``Optional[str]``
         """
-        self._check_started()
+        self._check_started("end")
         self._do_end(message=message)
         _flush_with_broken_pipe_guard(self.stream)
         self.started = False
@@ -1068,10 +1070,12 @@ class NullThrobber(ThrobberBase):
         """No-op end for NullThrobber."""
 
     def throb(self):
-        """No-op throb for NullThrobber."""
+        """Silent throb for NullThrobber."""
+        self._check_started("throb")
 
     def end(self, message: Optional[str] = None):
-        """No-op end for NullThrobber."""
+        """Silent end for NullThrobber."""
+        self._check_started("end")
         self.started = False
 
 
