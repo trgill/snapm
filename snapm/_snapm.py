@@ -22,18 +22,8 @@ import logging
 import re
 import os
 
-from ._progress import (
-    NullProgress,
-    NullThrobber,
-    Progress,
-    ProgressBase,
-    ProgressFactory,
-    SimpleProgress,
-    SimpleThrobber,
-    TermControl,
-    ThrobberBase,
-    Throbber,
-)
+if TYPE_CHECKING:
+    from ._progress import ProgressBase, ThrobberBase
 
 _log = logging.getLogger("snapm")
 
@@ -2277,16 +2267,6 @@ __all__ = [
     "SnapmLimitError",
     "SnapmMountError",
     "SnapmUmountError",
-    "NullProgress",
-    "NullThrobber",
-    "Progress",
-    "ProgressBase",
-    "ProgressFactory",
-    "SimpleProgress",
-    "SimpleThrobber",
-    "TermControl",
-    "ThrobberBase",
-    "Throbber",
     "Selection",
     "size_fmt",
     "is_size_policy",

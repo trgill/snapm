@@ -10,7 +10,7 @@ Top-level fsdiff interface.
 """
 from typing import List, Optional, TYPE_CHECKING
 
-from snapm import ProgressBase, TermControl
+from snapm._progress import ProgressBase, TermControl
 
 from .engine import DiffEngine, FsDiffRecord
 from .options import DiffOptions

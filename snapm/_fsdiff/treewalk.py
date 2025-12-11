@@ -18,12 +18,13 @@ import logging
 import stat
 import os
 
-from snapm import (
+from snapm import SNAPM_SUBSYSTEM_FSDIFF
+
+from snapm._progress import (
     ProgressBase,
     ProgressFactory,
     TermControl,
     ThrobberBase,
-    SNAPM_SUBSYSTEM_FSDIFF,
 )
 
 from .filetypes import FileTypeDetector, FileTypeInfo
