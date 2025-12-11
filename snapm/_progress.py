@@ -367,24 +367,26 @@ class ProgressBase(ABC):
         initial progress display.
         """
 
-    def _check_in_progress(self, done: int):
+    def _check_in_progress(self, done: int, step: str):
         """
         Validate that progress is active and ``done`` is in range.
 
         :param done: The number of completed progress items.
         :type done: ``int``
+        :param step: The progress step (method name) that is active.
+        :type step: ``str``
         :raises ``ValueError``: If progress has not started, if done is
                                 negative, or if done exceeds total.
         """
         theclass = self.__class__.__name__
         if self.total == 0:
-            raise ValueError(f"{theclass}.progress() called before start()")
+            raise ValueError(f"{theclass}.{step}() called before start()")
 
         if done < 0:
-            raise ValueError(f"{theclass}.progress() done cannot be negative.")
+            raise ValueError(f"{theclass}.{step}() done cannot be negative.")
 
         if done > self.total:
-            raise ValueError(f"{theclass}.progress() done cannot be > total.")
+            raise ValueError(f"{theclass}.{step}() done cannot be > total.")
 
     def progress(self, done: int, message: Optional[str] = None):
         """
@@ -395,7 +397,7 @@ class ProgressBase(ABC):
         :param message: An optional progress message.
         :type message: ``Optional[str]``
         """
-        self._check_in_progress(done)
+        self._check_in_progress(done, "progress")
         self._do_progress(done, message)
 
     @abstractmethod
@@ -416,6 +418,7 @@ class ProgressBase(ABC):
         :param message: An optional completion message.
         :type message: ``Optional[str]``
         """
+        self._check_in_progress(self.total, "end")
         self.progress(self.total, "")
         self._do_end(message)
         self.total = 0
@@ -439,7 +442,7 @@ class ProgressBase(ABC):
         :param message: An optional error message.
         :type message: ``Optional[str]``
         """
-        self._check_in_progress(self.total)
+        self._check_in_progress(self.total, "cancel")
         self._do_cancel(message)
         self.total = 0
 
