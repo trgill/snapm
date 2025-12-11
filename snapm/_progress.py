@@ -281,11 +281,14 @@ class ProgressBase(ABC):
 
     FIXED = -1
 
-    def __init__(self):
+    def __init__(self, register: bool = True):
         """
         Initialize base progress state.
 
         Sets default state for lifecycle and rendering configuration.
+
+        :param register: Register this ``ProgressBase`` for log callbacks.
+        :type register: ``bool``
         """
         self.total: int = 0
         self.header: Optional[str] = None
@@ -294,6 +297,7 @@ class ProgressBase(ABC):
         self.width: int = -1
         self.first_update: bool = True
         self.registered: bool = False
+        self.register: bool = register
 
     def reset_position(self):
         """Mark progress bar as displaced by external output."""
@@ -363,6 +367,9 @@ class ProgressBase(ABC):
             raise ValueError("total must be positive.")
 
         self.total = total
+
+        if self.register:
+            register_progress(self)
 
         self._do_start()
 
@@ -494,6 +501,7 @@ class Progress(ProgressBase):
     def __init__(
         self,
         header,
+        register: bool = True,
         term_stream: Optional[TextIO] = None,
         width: Optional[int] = None,
         width_frac: Optional[float] = None,
@@ -505,6 +513,8 @@ class Progress(ProgressBase):
 
         :param header: The progress header to display.
         :type header: ``str``
+        :param register: Register this ``Progress`` for log callbacks.
+        :type register: ``bool``
         :param term_stream: The terminal stream to write to.
         :type term_stream: ``TextIO``
         :param width: An optional width value in characters. If specified
@@ -530,7 +540,7 @@ class Progress(ProgressBase):
         :type tc: ``Optional[TermControl]``
         :raises ValueError: If terminal lacks required capabilities.
         """
-        super().__init__()
+        super().__init__(register=register)
 
         if tc is not None:
             term_stream = tc.term_stream
@@ -668,6 +678,7 @@ class SimpleProgress(ProgressBase):
     def __init__(
         self,
         header,
+        register: bool = True,
         term_stream: Optional[TextIO] = None,
         width: Optional[int] = None,
         width_frac: Optional[float] = None,
@@ -675,6 +686,10 @@ class SimpleProgress(ProgressBase):
         """
         Initialise a new ``SimpleProgress`` object.
 
+        :param header: The progress header to display.
+        :type header: ``str``
+        :param register: Register this ``SimpleProgress`` for log callbacks.
+        :type register: ``bool``
         :param term_stream: The terminal stream to write to.
         :type term_stream: ``Optional[TextIO]``
         :param width: An optional width value in characters. If specified
@@ -688,7 +703,7 @@ class SimpleProgress(ProgressBase):
                            used with ``width``.
         :type width_frac: ``Optional[float]``
         """
-        super().__init__()
+        super().__init__(register=register)
         self.header: Optional[str] = header
         self.stream: Optional[TextIO] = term_stream or sys.stdout
         self.width: int = self._calculate_width(width=width, width_frac=width_frac)
@@ -787,11 +802,14 @@ class ThrobberBase(ABC):
     walk lists).
     """
 
-    def __init__(self, header):
+    def __init__(self, header, register: bool = True):
         """
         Initialize base throbber state.
 
         Sets default state for lifecycle and rendering configuration.
+
+        :param register: Register this ``ThrobberBase`` for log callbacks.
+        :type register: ``bool``
         """
         self.header: str = header
         self.frames: str = r"."
@@ -805,6 +823,7 @@ class ThrobberBase(ABC):
         self._interval_us: int = round((1.0 / self.fps) * _USECS_PER_SEC)
         self._last: Optional[datetime] = None
         self.registered: bool = False
+        self.register: bool = register
 
     def reset_position(self):
         """Mark throbber as displaced by external output."""
@@ -816,6 +835,10 @@ class ThrobberBase(ABC):
         """
         self.started = True
         self._last = datetime.now() - timedelta(microseconds=self._interval_us)
+
+        if self.register:
+            register_progress(self)
+
         self._do_start()
         self.throb()
 
@@ -939,6 +962,7 @@ class Throbber(ThrobberBase):
     def __init__(
         self,
         header: str,
+        register: bool = True,
         style: Optional[str] = None,
         term_stream: Optional[TextIO] = None,
         no_clear: bool = False,
@@ -949,6 +973,8 @@ class Throbber(ThrobberBase):
 
         :param header: The header string to print.
         :type header: ``str``
+        :param register: Register this ``Throbber`` for log callbacks.
+        :type register: ``bool``
         :param style: A Unicode throbber style string. Ignored if the terminal
                       does not support Unicode encoding. Defaults to "wave" if
                       unset.
@@ -968,7 +994,7 @@ class Throbber(ThrobberBase):
         :type tc: ``Optional[TermControl]``
         :raises ValueError: If terminal lacks required capabilities.
         """
-        super().__init__(header)
+        super().__init__(header, register=register)
 
         if style is not None and style not in Throbber.STYLES:
             raise ValueError(f"Unknown Throbber style: {style}")
@@ -1055,16 +1081,20 @@ class SimpleThrobber(ThrobberBase):
     A simple throbber that does not rely on terminal capabilities.
     """
 
-    def __init__(self, header: str, term_stream: Optional[TextIO] = None):
+    def __init__(
+        self, header: str, register: bool = True, term_stream: Optional[TextIO] = None
+    ):
         """
         Initialise a simple ascii throbber.
 
         :param header: The throbber header.
         :type header: ``str``
+        :param register: Register this ``SimpleThrobber`` for log callbacks.
+        :type register: ``bool``
         :param term_stream: The terminal stream to write to.
         :type term_stream: ``Optional[TextIO]``
         """
-        super().__init__(header)
+        super().__init__(header, register=register)
         self.stream = term_stream or sys.stdout
 
     def _do_throb(self):
@@ -1157,24 +1187,26 @@ class ProgressFactory:
 
         term_stream = term_stream or sys.stdout
         if quiet:
-            progress = NullProgress()
+            progress = NullProgress(register=register)
         elif not hasattr(term_stream, "isatty") or not term_stream.isatty():
             progress = SimpleProgress(
-                header, term_stream, width=width, width_frac=width_frac
+                header,
+                register=register,
+                term_stream=term_stream,
+                width=width,
+                width_frac=width_frac,
             )
         else:
             progress = Progress(
                 header,
-                term_stream,
+                register=register,
+                term_stream=term_stream,
                 width=width,
                 width_frac=width_frac,
                 no_clear=no_clear,
                 tc=term_control,
             )
 
-        if register:
-            register_progress(progress)
-            progress.registered = True
         return progress
 
     @staticmethod
@@ -1231,23 +1263,23 @@ class ProgressFactory:
 
         term_stream = term_stream or sys.stdout
         if quiet:
-            throbber = NullThrobber(header)
+            throbber = NullThrobber(header, register=register)
         elif not hasattr(term_stream, "isatty") or not term_stream.isatty():
             throbber = SimpleThrobber(
                 header,
-                term_stream,
+                register=register,
+                term_stream=term_stream,
             )
         else:
             throbber = Throbber(
                 header,
+                register=register,
                 style=style,
                 term_stream=term_stream,
                 no_clear=no_clear,
                 tc=term_control,
             )
-        if register:
-            register_progress(throbber)
-            throbber.registered = True
+
         return throbber
 
 
