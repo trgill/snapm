@@ -231,11 +231,13 @@ def set_debug_mask(mask):
 def register_progress(progress: Union["ProgressBase", "ThrobberBase"]):
     """Register a progress instance for log coordination."""
     _active_progress.add(progress)
+    progress.registered = True
 
 
 def unregister_progress(progress: Union["ProgressBase", "ThrobberBase"]):
     """Unregister a progress instance."""
     _active_progress.discard(progress)
+    progress.registered = False
 
 
 def notify_log_output(stream: TextIO):
@@ -250,7 +252,7 @@ def notify_log_output(stream: TextIO):
     if stream not in (sys.stdout, sys.stderr):
         return
     # Only reset if progress is writing to sys.stdout or sys.stderr
-    for progress in _active_progress:
+    for progress in list(_active_progress):
         if hasattr(progress, "reset_position"):
             progress.reset_position()
 
