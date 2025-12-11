@@ -68,6 +68,7 @@ from snapm import (
     SNAPM_SUBSYSTEM_COMMAND,
     SubsystemFilter,
     set_debug_mask,
+    ProgressAwareHandler,
     bool_to_yes_no,
     Selection,
     __version__,
@@ -1831,8 +1832,7 @@ def setup_logging(cmd_args):
     _snapm_subsystem_filter = SubsystemFilter("snapm")
 
     # Main console handler
-    if _CONSOLE_HANDLER not in snapm_log.handlers:
-        _CONSOLE_HANDLER = logging.StreamHandler()
+    _CONSOLE_HANDLER = ProgressAwareHandler()
 
     _CONSOLE_HANDLER.setLevel(level)
     _CONSOLE_HANDLER.setFormatter(formatter)
