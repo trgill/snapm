@@ -443,7 +443,7 @@ class ProgressBase(ABC):
         :type message: ``Optional[str]``
         """
         self._check_in_progress(self.total, "cancel")
-        self._do_cancel(message)
+        self._do_cancel(message=message)
         self.total = 0
 
     def _do_cancel(self, message: Optional[str] = None):

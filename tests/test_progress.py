@@ -404,10 +404,16 @@ class TestProgress(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot be negative"):
             p.progress(-1)
 
+    def test_cancel_before_start_raises(self):
+        p = Progress("H", tc=self.mock_tc)
+
+        with self.assertRaisesRegex(ValueError, r"Progress.cancel\(\) called before start\(\)"):
+            p.cancel("BadQuit!")
+
     def test_end_before_start_raises(self):
         p = Progress("H", tc=self.mock_tc)
 
-        with self.assertRaisesRegex(ValueError, "called before start"):
+        with self.assertRaisesRegex(ValueError, r"Progress.end\(\) called before start\(\)"):
             p.end("2BadMice!")
 
     def test_progress_after_end_raises(self):
@@ -739,6 +745,12 @@ class TestThrobber(unittest.TestCase):
         self.assertNotIn("None", output)
         # Should finish with a newline
         self.assertTrue(output.endswith("\n"))
+
+    def test_end_before_start_raises(self):
+        t = Throbber("H")
+
+        with self.assertRaisesRegex(ValueError, r"Throbber.end\(\) called before start\(\)"):
+            t.end("BadQuit!")
 
     def test_throbber_invalid_state(self):
         """Test throb() raises if started=True but _last is None (Line 791)."""
