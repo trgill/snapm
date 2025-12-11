@@ -8,17 +8,19 @@
 """
 Global definitions for the top-level snapm package.
 """
-from typing import Union, Optional
+from typing import Optional, TextIO, Union, TYPE_CHECKING
 from uuid import UUID, uuid5
 from datetime import datetime
 from stat import S_ISBLK
 from enum import Enum
 import collections
 import subprocess
+import logging
+import weakref
 import string
 import json
 import math
-import logging
+import sys
 import re
 import os
 
@@ -66,6 +68,10 @@ _DEBUG_MASK_TO_SUBSYSTEM = {
 }
 
 _debug_subsystems = set()
+
+# Registry of active progress instances: uses a WeakSet so we don't prevent
+# garbage collection.
+_active_progress: weakref.WeakSet = weakref.WeakSet()
 
 #: Top-level state directory: managed by systemd/tmpfiles.d/snapm.conf
 SNAPM_RUNTIME_DIR = "/run/snapm"
@@ -220,6 +226,55 @@ def set_debug_mask(mask):
                 f.set_debug_subsystems(enabled_subsystems)
 
     _debug_subsystems = set(enabled_subsystems)
+
+
+def register_progress(progress: Union["ProgressBase", "ThrobberBase"]):
+    """Register a progress instance for log coordination."""
+    _active_progress.add(progress)
+
+
+def unregister_progress(progress: Union["ProgressBase", "ThrobberBase"]):
+    """Unregister a progress instance."""
+    _active_progress.discard(progress)
+
+
+def notify_log_output(stream: TextIO):
+    """
+    Notify progress instances that log output occurred on stream.
+
+    Called by ProgressAwareHandler after emitting a record.
+
+    :param stream: The stream that received output.
+    :type stream: ``TextIO``
+    """
+    if stream not in (sys.stdout, sys.stderr):
+        return
+    # Only reset if progress is writing to sys.stdout or sys.stderr
+    for progress in _active_progress:
+        if hasattr(progress, "reset_position"):
+            progress.reset_position()
+
+
+class ProgressAwareHandler(logging.StreamHandler):
+    """
+    A logging handler that coordinates with active Progress instances.
+
+    After emitting a log record, notifies any Progress instances writing
+    to the same stream so they can avoid erasing the log message.
+    """
+
+    def __init__(self, stream: Optional[TextIO] = None, **kwargs):
+        super().__init__(stream=stream or sys.stderr, **kwargs)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.stream.write(msg + "\n")
+            self.stream.flush()
+            # Notify after write completes
+            notify_log_output(self.stream)
+        except Exception:  # pylint: disable=broad-exception-caught
+            self.handleError(record)
 
 
 #
@@ -2247,6 +2302,11 @@ __all__ = [
     # Debug logging - legacy interface
     "set_debug_mask",
     "get_debug_mask",
+    # Progress log callbacks
+    "register_progress",
+    "unregister_progress",
+    "notify_log_output",
+    "ProgressAwareHandler",
     "SnapmError",
     "SnapmSystemError",
     "SnapmCalloutError",
