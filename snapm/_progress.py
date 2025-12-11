@@ -16,6 +16,8 @@ import sys
 import os
 import re
 
+from snapm import register_progress, unregister_progress
+
 #: Default number of columns if not detected from terminal.
 DEFAULT_COLUMNS = 80
 
@@ -290,6 +292,12 @@ class ProgressBase(ABC):
         self.term: Optional[TermControl] = None
         self.stream: Optional[TextIO] = None
         self.width: int = -1
+        self.first_update: bool = True
+        self.registered: bool = False
+
+    def reset_position(self):
+        """Mark progress bar as displaced by external output."""
+        self.first_update = True
 
     def _calculate_width(
         self, width: Optional[int] = None, width_frac: Optional[float] = None
@@ -422,6 +430,8 @@ class ProgressBase(ABC):
         self.progress(self.total, "")
         self._do_end(message)
         self.total = 0
+        if self.registered:
+            unregister_progress(self)
 
     @abstractmethod
     def _do_end(self, message: Optional[str] = None):
@@ -445,6 +455,8 @@ class ProgressBase(ABC):
         self._check_in_progress(self.total, "cancel")
         self._do_cancel(message=message)
         self.total = 0
+        if self.registered:
+            unregister_progress(self)
 
     def _do_cancel(self, message: Optional[str] = None):
         """
@@ -781,6 +793,11 @@ class ThrobberBase(ABC):
         self._frame_index: int = 0
         self._interval_us: int = round((1.0 / self.fps) * _USECS_PER_SEC)
         self._last: Optional[datetime] = None
+        self.registered: bool = False
+
+    def reset_position(self):
+        """Mark throbber as displaced by external output."""
+        self.first_update = True
 
     def start(self):
         """
@@ -849,6 +866,8 @@ class ThrobberBase(ABC):
         _flush_with_broken_pipe_guard(self.stream)
         self.started = False
         self._last = None
+        if self.registered:
+            unregister_progress(self)
 
     def _do_end(self, message: Optional[str] = None):
         """
@@ -1079,6 +1098,8 @@ class NullThrobber(ThrobberBase):
         """Silent end for NullThrobber."""
         self._check_started("end")
         self.started = False
+        if self.registered:
+            unregister_progress(self)
 
 
 class ProgressFactory:
@@ -1095,6 +1116,7 @@ class ProgressFactory:
         width: Optional[int] = None,
         width_frac: Optional[float] = None,
         no_clear: bool = False,
+        register: bool = True,
     ) -> ProgressBase:
         """
         Return an appropriate ProgressBase implementation.
@@ -1126,29 +1148,36 @@ class ProgressFactory:
                          by ``ProgressBase`` child classes that do not use
                          ``TerminalControl``.
         :type no_clear: ``bool``
+        :param register: Register the new object with the log system for
+                         notification callbacks.
+        :type register: ``bool``
         :returns: An appropriate progress implementation.
         :rtype: ``ProgressBase``
         """
-        if quiet:
-            return NullProgress()
-
         if term_control:
             term_stream = term_control.term_stream
 
         term_stream = term_stream or sys.stdout
-        if not hasattr(term_stream, "isatty") or not term_stream.isatty():
-            return SimpleProgress(
+        if quiet:
+            progress = NullProgress()
+        elif not hasattr(term_stream, "isatty") or not term_stream.isatty():
+            progress = SimpleProgress(
                 header, term_stream, width=width, width_frac=width_frac
             )
+        else:
+            progress = Progress(
+                header,
+                term_stream,
+                width=width,
+                width_frac=width_frac,
+                no_clear=no_clear,
+                tc=term_control,
+            )
 
-        return Progress(
-            header,
-            term_stream,
-            width=width,
-            width_frac=width_frac,
-            no_clear=no_clear,
-            tc=term_control,
-        )
+        if register:
+            register_progress(progress)
+            progress.registered = True
+        return progress
 
     @staticmethod
     def get_throbber_styles() -> List[str]:
@@ -1168,6 +1197,7 @@ class ProgressFactory:
         term_stream: Optional[TextIO] = None,
         term_control: Optional[TermControl] = None,
         no_clear: bool = False,
+        register: bool = True,
     ) -> ThrobberBase:
         """
         Return an appropriate ThrobberBase implementation.
@@ -1192,29 +1222,35 @@ class ProgressFactory:
                          by ``ThrobberBase`` child classes that do not use
                          ``TerminalControl``.
         :type no_clear: ``bool``
+        :param register: Register the new object with the log system for
+                         notification callbacks.
+        :type register: ``bool``:
         :returns: An appropriate throbber implementation.
         :rtype: ``ThrobberBase``
         """
-        if quiet:
-            return NullThrobber(header)
-
         if term_control:
             term_stream = term_control.term_stream
 
         term_stream = term_stream or sys.stdout
-        if not hasattr(term_stream, "isatty") or not term_stream.isatty():
-            return SimpleThrobber(
+        if quiet:
+            throbber = NullThrobber(header)
+        elif not hasattr(term_stream, "isatty") or not term_stream.isatty():
+            throbber = SimpleThrobber(
                 header,
                 term_stream,
             )
-
-        return Throbber(
-            header,
-            style=style,
-            term_stream=term_stream,
-            no_clear=no_clear,
-            tc=term_control,
-        )
+        else:
+            throbber = Throbber(
+                header,
+                style=style,
+                term_stream=term_stream,
+                no_clear=no_clear,
+                tc=term_control,
+            )
+        if register:
+            register_progress(throbber)
+            throbber.registered = True
+        return throbber
 
 
 __all__ = [
