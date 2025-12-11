@@ -834,8 +834,8 @@ class ThrobberBase(ABC):
 
         :param step: The throbber step (method name) that is active.
         :type step: ``str``
-        :raises ``ValueError``: If throbber has not started, if done is
-                                negative, or if done exceeds total.
+        :raises ``ValueError``: If throbber has not started, or if the throbber
+                                has started but ``self._last`` is ``None``.
         """
         theclass = self.__class__.__name__
         if not self.started:
