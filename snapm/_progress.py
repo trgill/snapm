@@ -854,7 +854,6 @@ class ThrobberBase(ABC):
         """
         Perform final end-of-throbber handling.
 
-
         Subclasses that implement fancy throbbers with ``TermControl``
         should override this method to perform clearing/redrawing the
         throbber frame.
