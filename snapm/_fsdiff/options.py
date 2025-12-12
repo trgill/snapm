@@ -8,9 +8,18 @@
 """
 File system diff options and categories.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import List, Optional
+from argparse import Namespace
 from enum import Enum
+import logging
+
+_log = logging.getLogger(__name__)
+
+_log_debug = _log.debug
+_log_info = _log.info
+_log_warn = _log.warning
+_log_error = _log.error
 
 
 @dataclass
@@ -32,7 +41,7 @@ class DiffOptions:
     #: Generate content diffs for detected file modifications
     include_content_diffs: bool = True
     #: Generate file type information using magic
-    include_file_type: bool = True
+    include_file_type: bool = False
     #: Follow symlinks when walking file system trees
     follow_symlinks: bool = False
     #: Maximum file size for diff comparisons
@@ -74,6 +83,29 @@ class DiffOptions:
             for key, val in self.__dict__.items()
         ]
         return "\n".join(f"{key}={val}" for key, val in items)
+
+    @classmethod
+    def from_cmd_args(cls, cmd_args: Namespace) -> "DiffOptions":
+        """
+        Initialise DiffOptions from command line arguments.
+
+        Construct a new ``DiffOptions`` object from the command line
+        arguments in ``cmd_args``.
+
+        :param cmd_args: The command line selection arguments.
+        :type cmd_args: ``Namespace``
+        :returns: A new ``DiffOptions`` instance
+        :rtype: ``DiffOptions``
+        """
+        field_names = {f.name for f in fields(cls)}
+        kwargs = {
+            name: getattr(cmd_args, name)
+            for name in field_names
+            if hasattr(cmd_args, name)
+        }
+        options = cls(**kwargs)
+        _log_debug("Initialised DiffOptions from arguments:\n%s", options)
+        return options
 
 
 class DiffCategories(Enum):
