@@ -12,10 +12,12 @@ Provides snapshot-set comparison facilities including tree walking, change
 detection, content diffing, and move detection. The main entry points are
 ``FsDiffer`` and ``DiffOptions``.
 """
+from .engine import FsDiffRecord
 from .fsdiffer import FsDiffer
 from .options import DiffOptions
 
 __all__ = [
     "DiffOptions",
     "FsDiffer",
+    "FsDiffRecord",
 ]
