@@ -133,7 +133,7 @@ class ChangeDetector:
                             ChangeType.CONTENT,
                             old_entry.content_hash,
                             new_entry.content_hash,
-                            "Content hash changed",
+                            "content hash changed",
                         )
                     )
             return changes
@@ -151,7 +151,7 @@ class ChangeDetector:
                         ChangeType.CONTENT,
                         old_entry.content_hash,
                         new_entry.content_hash,
-                        "Content hash changed",
+                        "content hash changed",
                     )
                 )
 
@@ -170,7 +170,7 @@ class ChangeDetector:
                         ChangeType.PERMISSIONS,
                         oct(old_perms),
                         oct(new_perms),
-                        f"Mode changed from {oct(old_perms)} to {oct(new_perms)}",
+                        f"mode changed from {oct(old_perms)} to {oct(new_perms)}",
                     )
                 )
 
@@ -189,7 +189,7 @@ class ChangeDetector:
                         ChangeType.OWNERSHIP,
                         f"{old_entry.uid}:{old_entry.gid}",
                         f"{new_entry.uid}:{new_entry.gid}",
-                        "Owner changed",
+                        "owner changed",
                     )
                 )
 
@@ -206,7 +206,7 @@ class ChangeDetector:
                         ChangeType.SYMLINK_TARGET,
                         old_entry.symlink_target,
                         new_entry.symlink_target,
-                        "Symlink target changed",
+                        "symlink target changed",
                     )
                 )
 
@@ -223,7 +223,7 @@ class ChangeDetector:
                         ChangeType.TIMESTAMPS,
                         str(old_entry.mtime),
                         str(new_entry.mtime),
-                        "Modification time changed",
+                        "modification time changed",
                     )
                 )
 
@@ -239,7 +239,7 @@ class ChangeDetector:
                     ChangeType.XATTRS,
                     str(old_entry.xattrs),
                     str(new_entry.xattrs),
-                    "Extended attributes changed",
+                    "extended attributes changed",
                 )
             )
 
