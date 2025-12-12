@@ -56,6 +56,8 @@ class DiffOptions:
     exclude_patterns: List[str] = field(default_factory=list)
     #: Start path for file system comparison
     from_path: Optional[str] = None
+    #: Do not output progress or status updates
+    quiet: bool = False
 
     def __str__(self):
         """
