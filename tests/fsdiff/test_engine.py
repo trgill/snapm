@@ -27,7 +27,8 @@ class TestDiffEngine(unittest.TestCase):
         rec.set_content_diff(ContentDiff("unified"))
         s = str(rec)
         self.assertIn("diff_type: modified", s)
-        self.assertIn("content_diff_summary:", s)
+        self.assertIn("metadata_changed:", s)
+        self.assertNotIn("content_diff_summary:", s)
 
     def test_simple_add_remove(self):
         # Tree A: /file1

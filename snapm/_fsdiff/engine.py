@@ -111,31 +111,53 @@ class FsDiffRecord:
         :returns: A human readable representation of this ``FsDiffRecord``.
         :rtype: ``str``
         """
+        # Possibly empty/missing fields
+        changes = (
+            f"changes: {', '.join(str(chg) for chg in self.changes)}\n"
+            if self.changes
+            else ""
+        )
+
+        moved_from = f"moved_from: {self.moved_from}\n" if self.moved_from else ""
+        moved_to = f"moved_to: {self.moved_to}\n" if self.moved_to else ""
+
+        content_diff = (
+            f"content_diff: {self.content_diff}\n"
+            if self.content_diff is not None
+            else ""
+        )
+
+        content_diff_summary = (
+            f"\ncontent_diff_summary: {self.content_diff_summary}"
+            if self.content_diff_summary
+            else ""
+        )
+
         fsd_str = (
             f"Path: {self.path}\n"
             f"diff_type: {self.diff_type.value}\n"
-            f"old_entry: {self.old_entry}\n"
-            f"new_entry: {self.new_entry}\n"
-            f"changes: {', '.join(str(chg) for chg in self.changes)}\n"
-            f"content_diff: {self.content_diff}\n"
-            f"moved_from: {self.moved_from}\n"
-            f"moved_to: {self.moved_to}\n"
+            f"old_entry: {self.old_entry if self.old_entry else ''}\n"
+            f"new_entry: {self.new_entry if self.new_entry else ''}\n"
+            f"{changes}"  # no newline (embedded if set)
+            f"{content_diff}"  # no newline (embedded if set)
+            f"{moved_from}"  # no newline (embedded if set)
+            f"{moved_to}"  # no newline (embedded if set)
             f"file_path: {self.file_path}\n"
             f"file_type: {self.file_type}\n"
             f"file_category: {self.file_category}\n"
             f"size_old: {self.size_old}\n"
             f"size_new: {self.size_new}\n"
             f"size_delta: {self.size_delta}\n"
-            f"mode_old: {self.mode_old}\n"
-            f"mode_new: {self.mode_new}\n"
-            f"owner_old: {self.owner_old}\n"
-            f"owner_new: {self.owner_new}\n"
-            f"mtime_old: {self.mtime_old}\n"
-            f"mtime_new: {self.mtime_new}\n"
+            f"mode_old: {self.mode_old if self.mode_old else ''}\n"
+            f"mode_new: {self.mode_new if self.mode_new else ''}\n"
+            f"owner_old: {self.owner_old if self.owner_old else ''}\n"
+            f"owner_new: {self.owner_new if self.owner_new else ''}\n"
+            f"mtime_old: {self.mtime_old if self.mtime_old else ""}\n"
+            f"mtime_new: {self.mtime_new if self.mtime_new else ""}\n"
             f"content_changed: {self.content_changed}\n"
             f"metadata_changed: {self.metadata_changed}\n"
-            f"has_content_diff: {self.has_content_diff}\n"
-            f"content_diff_summary: {self.content_diff_summary}"
+            f"has_content_diff: {self.has_content_diff}"  # no newline: end
+            f"{content_diff_summary}"  # no newline (prefixed if set)
         )
         return fsd_str
 
