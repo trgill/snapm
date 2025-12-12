@@ -112,6 +112,18 @@ class FsDiffRecord:
         :returns: A human readable representation of this ``FsDiffRecord``.
         :rtype: ``str``
         """
+
+        def _format_mtime(mtime: Optional[float]) -> str:
+            """
+            Format a (possibly ``None``) mtime value.
+
+            :param mtime: The mtime to format.
+            :type mtime: ``Optional[float]``
+            :returns: The formatted value or the empty string.
+            :rtype: ``str``
+            """
+            return f"{'(' + str(mtime) + ')' if mtime is not None else ''}"
+
         # Possibly empty/missing fields
         changes = (
             f"changes: {', '.join(str(chg) for chg in self.changes)}\n"
@@ -149,29 +161,29 @@ class FsDiffRecord:
 
         fsd_str = (
             f"Path: {self.path}\n"
-            f"diff_type: {self.diff_type.value}\n"
-            f"old_entry: {self.old_entry if self.old_entry else ''}\n"
-            f"new_entry: {self.new_entry if self.new_entry else ''}\n"
-            f"{changes}"  # no newline (embedded if set)
-            f"{content_diff}"  # no newline (embedded if set)
-            f"{moved_from}"  # no newline (embedded if set)
-            f"{moved_to}"  # no newline (embedded if set)
-            f"file_path: {self.file_path}\n"
-            f"file_type: {self.file_type}\n"
-            f"file_category: {self.file_category}\n"
-            f"size_old: {self.size_old}\n"
-            f"size_new: {self.size_new}\n"
-            f"size_delta: {self.size_delta}\n"
-            f"mode_old: {self.mode_old if self.mode_old else ''}\n"
-            f"mode_new: {self.mode_new if self.mode_new else ''}\n"
-            f"owner_old: {self.owner_old if self.owner_old else ''}\n"
-            f"owner_new: {self.owner_new if self.owner_new else ''}\n"
-            f"mtime_old: {mtime_old}{'(' + str(self.mtime_old) + ')' if self.mtime_old else ''}\n"
-            f"mtime_new: {mtime_new}{'(' + str(self.mtime_new) + ')' if self.mtime_new else ''}\n"
-            f"content_changed: {self.content_changed}\n"
-            f"metadata_changed: {self.metadata_changed}\n"
-            f"has_content_diff: {self.has_content_diff}"  # no newline: end
-            f"{content_diff_summary}"  # no newline (prefixed if set)
+            f"  diff_type: {self.diff_type.value}\n"
+            f"  old_entry: {self.old_entry if self.old_entry else ''}\n"
+            f"  new_entry: {self.new_entry if self.new_entry else ''}\n"
+            f"  {changes}"  # no newline (embedded if set)
+            f"  {content_diff}"  # no newline (embedded if set)
+            f"  {moved_from}"  # no newline (embedded if set)
+            f"  {moved_to}"  # no newline (embedded if set)
+            f"  file_path: {self.file_path}\n"
+            f"  file_type: {self.file_type}\n"
+            f"  file_category: {self.file_category}\n"
+            f"  size_old: {self.size_old}\n"
+            f"  size_new: {self.size_new}\n"
+            f"  size_delta: {self.size_delta}\n"
+            f"  mode_old: {self.mode_old if self.mode_old else ''}\n"
+            f"  mode_new: {self.mode_new if self.mode_new else ''}\n"
+            f"  owner_old: {self.owner_old if self.owner_old else ''}\n"
+            f"  owner_new: {self.owner_new if self.owner_new else ''}\n"
+            f"  mtime_old: {mtime_old}{_format_mtime(self.mtime_old)}\n"
+            f"  mtime_new: {mtime_new}{_format_mtime(self.mtime_new)}\n"
+            f"  content_changed: {self.content_changed}\n"
+            f"  metadata_changed: {self.metadata_changed}\n"
+            f"  has_content_diff: {self.has_content_diff}"  # no newline: end
+            f"  {content_diff_summary}"  # no newline (prefixed if set)
         )
         return fsd_str
 
