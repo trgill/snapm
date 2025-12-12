@@ -10,6 +10,7 @@ File system diff engine
 """
 from typing import Dict, List, Optional
 from collections import defaultdict
+from datetime import datetime
 from enum import Enum
 import logging
 
@@ -133,6 +134,19 @@ class FsDiffRecord:
             else ""
         )
 
+        # Pre-formatted fields
+        mtime_old = (
+            str(datetime.fromtimestamp(self.mtime_old)) + " "
+            if self.mtime_old is not None
+            else ""
+        )
+
+        mtime_new = (
+            str(datetime.fromtimestamp(self.mtime_new)) + " "
+            if self.mtime_new is not None
+            else ""
+        )
+
         fsd_str = (
             f"Path: {self.path}\n"
             f"diff_type: {self.diff_type.value}\n"
@@ -152,8 +166,8 @@ class FsDiffRecord:
             f"mode_new: {self.mode_new if self.mode_new else ''}\n"
             f"owner_old: {self.owner_old if self.owner_old else ''}\n"
             f"owner_new: {self.owner_new if self.owner_new else ''}\n"
-            f"mtime_old: {self.mtime_old if self.mtime_old else ""}\n"
-            f"mtime_new: {self.mtime_new if self.mtime_new else ""}\n"
+            f"mtime_old: {mtime_old}{'(' + str(self.mtime_old) + ')' if self.mtime_old else ''}\n"
+            f"mtime_new: {mtime_new}{'(' + str(self.mtime_new) + ')' if self.mtime_new else ''}\n"
             f"content_changed: {self.content_changed}\n"
             f"metadata_changed: {self.metadata_changed}\n"
             f"has_content_diff: {self.has_content_diff}"  # no newline: end
