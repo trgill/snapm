@@ -37,7 +37,7 @@ class DiffOptions:
     #: Only consider content changes
     content_only: bool = False
     #: Include system directories in diff comparisons (unimplemented)
-    include_system_dirs: bool = True
+    include_system_dirs: bool = False
     #: Generate content diffs for detected file modifications
     include_content_diffs: bool = True
     #: Generate file type information using magic
