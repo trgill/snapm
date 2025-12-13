@@ -143,6 +143,23 @@ class TermControl:
     )
     _ANSI_COLORS: List[str] = "BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE".split()
 
+    def _force_ansi(self):
+        ansi_codes = {
+            "BLACK": "\033[0;30m",
+            "RED": "\033[0;31m",
+            "GREEN": "\033[0;32m",
+            "YELLOW": "\033[0;33m",
+            "BLUE": "\033[0;34m",
+            "MAGENTA": "\033[0;35m",
+            "CYAN": "\033[0;36m",
+            "WHITE": "\033[0;37m",
+        }
+        for color, code in ansi_codes.items():
+            setattr(self, color, code)
+
+        # Work around `less -R` not liking "\033[0m" (ANSI reset)
+        setattr(self, "NORMAL", ansi_codes["WHITE"])
+
     def _init_colors(self):
         """
         Initialize terminal color codes.
@@ -174,7 +191,7 @@ class TermControl:
                     curses.tparm(set_bg_ansi, i).decode("utf8") or "",
                 )
 
-    def __init__(self, term_stream: Optional[TextIO] = None):
+    def __init__(self, term_stream: Optional[TextIO] = None, color: str = "auto"):
         """
         Initialize terminal capabilities and size information.
 
@@ -184,6 +201,9 @@ class TermControl:
 
         :param term_stream: Output stream to probe for capabilities.
         :type term_stream: ``Optional[TextIO]``
+        :param color: A string to control color rendering: "auto", "always", or
+                      "never".
+        :type color: ``str``
         """
         # Default to stdout
         if term_stream is None:
@@ -192,8 +212,9 @@ class TermControl:
         self.term_stream = term_stream
 
         # If the stream isn't a tty, then assume it has no capabilities.
-        if not hasattr(term_stream, "isatty") or not term_stream.isatty():
-            return
+        if color != "always":
+            if not hasattr(term_stream, "isatty") or not term_stream.isatty():
+                return
 
         # Check the terminal type.  If we fail, then assume that the
         # terminal has no capabilities.
@@ -209,6 +230,8 @@ class TermControl:
             # Preserve normal interruption/termination semantics.
             if isinstance(err, (KeyboardInterrupt, SystemExit)):  # pragma: no cover
                 raise
+            if color == "always":
+                self._force_ansi()
             return  # pragma: no cover
 
         # Look up numeric capabilities.
@@ -220,8 +243,9 @@ class TermControl:
             (attr, cap_name) = capability.split(":")
             setattr(self, attr, self._tigetstr(cap_name) or "")
 
-        # Colors
-        self._init_colors()
+        if color != "never":
+            # Colors
+            self._init_colors()
 
     def _tigetstr(self, cap_name):
         # String capabilities can include "delays" of the form "$<2>".
