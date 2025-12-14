@@ -946,6 +946,7 @@ def print_schedules(
     output_fields: Union[None, str] = None,
     opts: Union[None, ReportOpts] = None,
     sort_keys: [None, str] = None,
+    data: object = None,  # pylint: disable=unused-argument
 ):
     """
     Print schedules matching selection criteria.
@@ -963,6 +964,9 @@ def print_schedules(
     :type opts: ``ReportOpts``
     :param sort_keys: A comma-separated list of sort keys.
     :type sort_keys: ``str``
+    :param data: Optional precomputed data for reporting (currently unused for
+                 this report type).
+    :type data: ``NoneType``
     """
     output_fields = _expand_fields(_DEFAULT_SCHEDULE_FIELDS, output_fields)
 
@@ -980,7 +984,12 @@ def print_schedules(
 
 
 def print_plugins(
-    manager, selection=None, output_fields=None, opts=None, sort_keys=None
+    manager,
+    selection=None,
+    output_fields=None,
+    opts=None,
+    sort_keys=None,
+    data: object = None,  # pylint: disable=unused-argument
 ):
     """
     Print plugins matching selection criteria.
@@ -996,6 +1005,9 @@ def print_plugins(
     :param output_fields: a comma-separated list of output fields
     :param opts: output formatting and control options
     :param sort_keys: a comma-separated list of sort keys
+    :param data: Optional precomputed data for reporting (currently unused for
+                 this report type).
+    :type data: ``NoneType``
     """
     del selection
     output_fields = _expand_fields(_DEFAULT_PLUGIN_FIELDS, output_fields)
@@ -1014,7 +1026,12 @@ def print_plugins(
 
 
 def print_snapshots(
-    manager, selection=None, output_fields=None, opts=None, sort_keys=None
+    manager,
+    selection=None,
+    output_fields=None,
+    opts=None,
+    sort_keys=None,
+    data: object = None,  # pylint: disable=unused-argument
 ):
     """
     Print snapshots matching selection criteria.
@@ -1031,6 +1048,9 @@ def print_snapshots(
     :param output_fields: a comma-separated list of output fields
     :param opts: output formatting and control options
     :param sort_keys: a comma-separated list of sort keys
+    :param data: Optional precomputed data for reporting (currently unused for
+                 this report type).
+    :type data: ``NoneType``
     """
     output_fields = _expand_fields(_DEFAULT_SNAPSHOT_FIELDS, output_fields)
 
@@ -1048,7 +1068,12 @@ def print_snapshots(
 
 
 def print_snapsets(
-    manager, selection=None, output_fields=None, opts=None, sort_keys=None
+    manager,
+    selection=None,
+    output_fields=None,
+    opts=None,
+    sort_keys=None,
+    data: object = None,  # pylint: disable=unused-argument
 ):
     """
     Print snapshot sets matching selection criteria.
@@ -1065,6 +1090,9 @@ def print_snapsets(
     :param output_fields: a comma-separated list of output fields
     :param opts: output formatting and control options
     :param sort_keys: a comma-separated list of sort keys
+    :param data: Optional precomputed data for reporting (currently unused for
+                 this report type).
+    :type data: ``NoneType``
     """
     output_fields = _expand_fields(_DEFAULT_SNAPSET_FIELDS, output_fields)
 
@@ -1081,7 +1109,7 @@ def print_snapsets(
     )
 
 
-def _generic_list_cmd(cmd_args, select, opts, manager, print_fn):
+def _generic_list_cmd(cmd_args, select, opts, manager, print_fn, data: object = None):
     """
     Generic list command implementation.
 
@@ -1097,7 +1125,10 @@ def _generic_list_cmd(cmd_args, select, opts, manager, print_fn):
     :param print_fn: the API call to display results. The function
                      must accept the selection, output_fields,
                      opts, and sort_keys keyword arguments
-    :returns: None
+    :param data: Optional precomputed data for reporting.
+    :type data: ``object``
+    :returns: Integer status code.
+    :rtype: ``int``
     """
     if cmd_args.options:
         fields = cmd_args.options
@@ -1111,6 +1142,7 @@ def _generic_list_cmd(cmd_args, select, opts, manager, print_fn):
             output_fields=fields,
             opts=opts,
             sort_keys=cmd_args.sort,
+            data=data,
         )
     else:
         try:
@@ -1120,6 +1152,7 @@ def _generic_list_cmd(cmd_args, select, opts, manager, print_fn):
                 output_fields=fields,
                 opts=opts,
                 sort_keys=cmd_args.sort,
+                data=data,
             )
         except ValueError as err:
             print(err)
