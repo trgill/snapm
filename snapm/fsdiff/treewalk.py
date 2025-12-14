@@ -478,14 +478,16 @@ class TreeWalker:
             from_path = self.options.from_path.lstrip(os.sep)
             start = os.path.join(mount.root, from_path)
         else:
-            from_path = "/"
+            from_path = ""
             start = mount.root
+
+        target_path = os.sep + from_path if from_path else os.sep
+        target = f"{mount.name} {target_path}"
 
         _log_info(
             "Gathering paths to scan from %s (%s)", mount.name, self.options.from_path
         )
 
-        target = f"{mount.name} {self.options.from_path}"
         throbber = throbber or ProgressFactory.get_throbber(
             f"Gathering paths from {target}",
             style="bouncingball",
