@@ -641,7 +641,7 @@ class Progress(ProgressBase):
                 )
             )
             + self.term.CLEAR_EOL
-            + message.center(self.width)
+            + message
             + "\n",
             file=self.stream,
             end="",
