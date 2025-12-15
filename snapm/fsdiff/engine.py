@@ -11,7 +11,6 @@ File system diff engine
 from typing import Any, ClassVar, Dict, Iterator, List, Optional
 from collections import defaultdict
 from datetime import datetime
-from enum import Enum
 import logging
 import json
 
@@ -20,6 +19,7 @@ from snapm.progress import TermControl
 
 from .changes import ChangeDetector, ChangeType, FileChange
 from .contentdiff import ContentDiff, ContentDifferManager
+from .difftypes import DiffType
 from .options import DiffOptions
 from .treewalk import FsEntry
 
@@ -42,18 +42,6 @@ def _log_debug_fsdiff_extra(msg, *args, **kwargs):
     """A wrapper for fsdiff subsystem debug logs."""
     if ENGINE_LOG_ME_HARDER:  # pragma: no cover
         _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_FSDIFF}, **kwargs)
-
-
-class DiffType(Enum):
-    """
-    Enum for different difference types.
-    """
-
-    ADDED = "added"
-    REMOVED = "removed"
-    MODIFIED = "modified"
-    MOVED = "moved"
-    TYPE_CHANGED = "type_changed"
 
 
 class FsDiffRecord:
