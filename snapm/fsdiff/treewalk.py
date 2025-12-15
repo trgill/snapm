@@ -21,10 +21,8 @@ import os
 from snapm import SNAPM_SUBSYSTEM_FSDIFF
 
 from snapm.progress import (
-    ProgressBase,
     ProgressFactory,
     TermControl,
-    ThrobberBase,
 )
 
 from .filetypes import FileTypeDetector, FileTypeInfo
@@ -463,8 +461,6 @@ class TreeWalker:
         mount: "Mount",
         strip_prefix: str = "",
         quiet: bool = False,
-        throbber: Optional[ThrobberBase] = None,
-        progress: Optional[ProgressBase] = None,
         term_control: Optional[TermControl] = None,
     ) -> Dict[str, FsEntry]:
         """
@@ -479,8 +475,6 @@ class TreeWalker:
         :type strip_prefix: ``str``
         :param quiet: Suppress progress output.
         :type quiet: ``bool``
-        :param progress: Optional pre-initialized progress object.
-        :type progress: ``Optional[ProgressBase]``
         :param term_control: Optional pre-initialised terminal control object.
         :type term_control: ``Optional[TermControl]``
         :returns: A dictionary mapping path strings to ``FsEntry`` objects.
@@ -500,7 +494,7 @@ class TreeWalker:
             "Gathering paths to scan from %s (%s)", mount.name, self.options.from_path
         )
 
-        throbber = throbber or ProgressFactory.get_throbber(
+        throbber = ProgressFactory.get_throbber(
             f"Gathering paths from {target}",
             style="bouncingball",
             quiet=quiet,
@@ -526,19 +520,17 @@ class TreeWalker:
             throbber.end("Quit!")
             raise
 
-        throbber.end(message="Done!")
         total = len(to_visit)
+        throbber.end(message=f"found {total} paths")
 
         # map of path: FsEntry objects
         tree = {}
 
-        if not progress:
-            progress = ProgressFactory.get_progress(
-                f"Walking {target}",
-                quiet=quiet,
-                term_control=term_control,
-                no_clear=True,
-            )
+        progress = ProgressFactory.get_progress(
+            f"Walking {target}",
+            quiet=quiet,
+            term_control=term_control,
+        )
 
         start_time = datetime.now()
         progress.start(total)
@@ -614,7 +606,7 @@ class TreeWalker:
 
         end_time = datetime.now()
         progress.end(
-            f"Scanned {total} paths in {end_time - start_time} (excluded {excluded})"
+            f"Scanned {total - excluded} paths in {end_time - start_time} (excluded {excluded})"
         )
         return tree
 

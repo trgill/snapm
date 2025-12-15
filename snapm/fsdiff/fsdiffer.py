@@ -10,7 +10,7 @@ Top-level fsdiff interface.
 """
 from typing import Optional, TYPE_CHECKING
 
-from snapm.progress import ProgressBase, TermControl
+from snapm.progress import TermControl
 
 from .engine import DiffEngine, FsDiffResults
 from .options import DiffOptions
@@ -30,15 +30,25 @@ class FsDiffer:
         self,
         manager: "Manager",
         options: Optional[DiffOptions] = None,
-        progress: Optional[ProgressBase] = None,
         term_control: Optional[TermControl] = None,
     ):
+        """
+        Initialise a new ``FsDiffer`` to compute file system differences.
+
+        :param manager: The manager context for snapshot operations (used
+                        by future methods).
+        :type manager: ``Manager``
+        :param options: Options to control this ``FsDiffer`` instance.
+        :type options: ``DiffOptions``
+        :param term_control: Optional pre-initialised terminal control object.
+        :type term_control: ``Optional[TermControl]``
+        """
         options = options or DiffOptions()
+        #: Manager context for snapshot operations (used by future methods)
         self.manager: "Manager" = manager
         self.options: DiffOptions = options
         self.tree_walker: TreeWalker = TreeWalker(options)
         self.diff_engine: DiffEngine = DiffEngine()
-        self._progress: Optional[ProgressBase] = progress
         self._term_control: Optional[TermControl] = term_control
 
     def compare_roots(self, mount_a: "Mount", mount_b: "Mount") -> FsDiffResults:
@@ -57,7 +67,6 @@ class FsDiffer:
             mount_a,
             strip_prefix=strip_prefix_a,
             quiet=self.options.quiet,
-            progress=self._progress,
             term_control=self._term_control,
         )
 
@@ -66,7 +75,6 @@ class FsDiffer:
             mount_b,
             strip_prefix=strip_prefix_b,
             quiet=self.options.quiet,
-            progress=self._progress,
             term_control=self._term_control,
         )
 
