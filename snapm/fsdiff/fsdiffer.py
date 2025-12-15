@@ -30,6 +30,7 @@ class FsDiffer:
         self,
         manager: "Manager",
         options: Optional[DiffOptions] = None,
+        color: str = "auto",
         term_control: Optional[TermControl] = None,
     ):
         """
@@ -40,7 +41,13 @@ class FsDiffer:
         :type manager: ``Manager``
         :param options: Options to control this ``FsDiffer`` instance.
         :type options: ``DiffOptions``
-        :param term_control: Optional pre-initialised terminal control object.
+        :param color: A string to control color tree rendering: "auto",
+                      "always", or "never".
+        :type color: ``str``
+        :param term_control: An optional ``TermControl`` instance to use for
+                             formatting. The supplied instance overrides any
+                             ``color`` argument if set.
+
         :type term_control: ``Optional[TermControl]``
         """
         options = options or DiffOptions()
@@ -49,7 +56,9 @@ class FsDiffer:
         self.options: DiffOptions = options
         self.tree_walker: TreeWalker = TreeWalker(options)
         self.diff_engine: DiffEngine = DiffEngine()
-        self._term_control: Optional[TermControl] = term_control
+        self._term_control: Optional[TermControl] = term_control or TermControl(
+            color=color
+        )
 
     def compare_roots(self, mount_a: "Mount", mount_b: "Mount") -> FsDiffResults:
         """
