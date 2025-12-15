@@ -22,6 +22,7 @@ from .contentdiff import ContentDiff, ContentDifferManager
 from .difftypes import DiffType
 from .options import DiffOptions
 from .treewalk import FsEntry
+from .tree import DiffTree
 
 _log = logging.getLogger(__name__)
 
@@ -406,8 +407,9 @@ class FsDiffResults:
         "tree",
     ]
 
-    def __init__(self, records: List[FsDiffRecord]):
+    def __init__(self, records: List[FsDiffRecord], options: DiffOptions):
         self._records = records
+        self.options = options
 
     # List-like interface
     def __iter__(self) -> Iterator[FsDiffRecord]:
@@ -573,7 +575,32 @@ class FsDiffResults:
         ]
         return "\n".join(diffs)
 
-    # def tree(self) -> str:  # Coming later!
+    def tree(
+        self,
+        color: str = "auto",
+        desc: str = "none",
+        term_control: Optional[TermControl] = None,
+    ) -> str:
+        """
+        Render a ``DiffTree`` of this ``FsDiffResults`` instance.
+
+        :param color: A string to control color tree rendering: "auto",
+                      "always", or "never".
+        :type color: ``str``
+        :param desc: Include descriptions: "short" for brief description, "full"
+                     for complete change descriptions or "none" to omit.
+        :type desc: ``Optional[str]``
+        :param term_control: An optional ``TermControl`` instance to use for
+                             formatting. The supplied instance overrides any
+                             ``color`` argument if set.
+        :type term_control: ``Optional[TermControl]``
+        :returns: A string representation of a difference tree
+        :rtype: ``str``
+        """
+        tree = DiffTree.build_tree(
+            self, color=color, quiet=self.options.quiet, term_control=term_control
+        )
+        return tree.render(desc=desc)
 
 
 class DiffEngine:
