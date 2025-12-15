@@ -36,7 +36,8 @@
 .
 .de ARG_SNAPSET_COMMANDS
 .  RI create | create-scheduled | delete | rename | revert | resize " "\c
-.  RI | split | prune | activate | deactivate | autoactivate | list | show " "\c
+.  RI | split | prune | activate | deactivate | diff | diffreport 
+.  RI | autoactivate | list | show " "\c
 .  RI | mount | umount | exec | shell
 ..
 .
@@ -175,6 +176,76 @@ snapm \- Linux Snapshot Manager
 ..
 .CMD_SNAPSET_DELETE
 .br
+.B snapm
+.de CMD_SNAPSET_DIFF
+.  B snapset
+.  B diff
+.  RB [ -o | --output-format\ \c
+.  IR format ] " "\c
+.  RB [ -P | --pretty ] " "\c
+.  RB [ -D | --desc\ \c
+.  IR mode ] " "\c
+.  RB [ -t | --ignore-timestamps ] " "\c
+.  RB [ -p | --ignore-permissions ] " "\c
+.  RB [ -w | --ignore-ownership ] " "\c
+.  RB [ -c | --content-only ] " "\c
+.  RB [ --include-system-dirs ] " "\c
+.  RB [ -C | --no-content-diff ] " "\c
+.  RB [ -f | --file-types ] " "\c
+.  RB [ -F | --follow-symlinks ] " "\c
+.  RB [ -m | --max-file-size\ \c
+.  IR size ] " "\c
+.  RB [ -z | --max-diff-size\ \c
+.  IR size ] " "\c
+.  RB [ -H | --max-hash-size\ \c
+.  IR size ] " "\c
+.  RB [ -i | --include-pattern\ \c
+.  IR pattern ] " "\c
+.  RB [ -x | --exclude-pattern\ \c
+.  IR pattern ] " "\c
+.  RB [ -s | --start-path\ \c
+.  IR path ] " "\c
+.  RB [ -q | --quiet ] " "\c
+.  RB [ --color\ \c
+.  IR mode ] " "\c
+.  IR from " "\c
+.  IR to " "\c
+..
+.CMD_SNAPSET_DIFF
+.br
+.
+.B snapm
+.de CMD_SNAPSET_DIFFREPORT
+.  B snapset
+.  B diffreport
+.  ARGS_REPORT_OPTS
+.  RB [ -t | --ignore-timestamps ] " "\c
+.  RB [ -p | --ignore-permissions ] " "\c
+.  RB [ -w | --ignore-ownership ] " "\c
+.  RB [ -c | --content-only ] " "\c
+.  RB [ --include-system-dirs ] " "\c
+.  RB [ -C | --no-content-diff ] " "\c
+.  RB [ -f | --file-types ] " "\c
+.  RB [ -F | --follow-symlinks ] " "\c
+.  RB [ -m | --max-file-size\ \c
+.  IR size ] " "\c
+.  RB [ -z | --max-diff-size\ \c
+.  IR size ] " "\c
+.  RB [ -H | --max-hash-size\ \c
+.  IR size ] " "\c
+.  RB [ -i | --include-pattern\ \c
+.  IR pattern ] " "\c
+.  RB [ -x | --exclude-pattern\ \c
+.  IR pattern ] " "\c
+.  RB [ -s | --start-path\ \c
+.  IR path ] " "\c
+.  RB [ -q | --quiet ] " "\c
+.  RB [ --color\ \c
+.  IR mode ] " "\c
+.  IR from " "\c
+.  IR to " "\c
+..
+.CMD_SNAPSET_DIFFREPORT
 .
 .B snapm
 .de CMD_SNAPSET_RENAME
@@ -538,8 +609,21 @@ Calendar event expression used to trigger scheduled creation of snapshot sets.
 See \fBsystemd.time(7)\fP for the expression syntax.
 .
 .TP 8
+\fB--color\fP \fImode\fP
+(Diff) Enable colored output. Valid modes are \fBauto\fP, \fBnever\fP, and
+\fBalways\fP.
+.
+.TP 8
 \fB-c | --config\fP \fIschedule_name\fP
 The name of a configured schedule.
+.
+.TP 8
+.B -c | --content-only
+(Diff) Only consider content changes when comparing file systems.
+.
+.TP 8
+.B -C | --no-content-diff
+(Diff) Do not generate content diffs for detected file modifications.
 .
 .TP 8
 \fB-d | --debug\fP \fIdebug_flags\fP
@@ -548,8 +632,29 @@ for, or 'all' to enable all debugging. The available debug classes
 are: manager, command, report, schedule, mounts.
 .
 .TP 8
+\fB-D | --desc\fP \fImode\fP
+(Diff) Include change description in tree output. Valid modes are \fBnone\fP,
+\fBshort\fP, and \fBfull\fP.
+.
+.TP 8
+.B -f | --file-types
+(Diff) Generate file type information using libmagic.
+.
+.TP 8
+.B -F | --follow-symlinks
+(Diff) Follow symbolic links when walking file system trees.
+.
+.TP 8
 .B -h | --help
 Display usage information and exit.
+.
+.TP 8
+\fB-i | --include-pattern\fP \fIpattern\fP
+(Diff) File patterns to include in comparison (glob notation).
+.
+.TP 8
+.B --include-system-dirs
+(Diff) Include system directories in diff comparisons.
 .
 .TP 8
 .B --json
@@ -611,6 +716,14 @@ Retain \fBhourly\fP hourly snapshot sets when applying the
 TIMELINE garbage collection policy.
 .
 .TP 8
+\fB-H | --max-hash-size\fP \fIsize\fP
+(Diff) Maximum file size for generating content hashes (default: 1MiB).
+.
+.TP 8
+\fB-m | --max-file-size\fP \fIsize\fP
+(Diff) Maximum file size for comparisons (0=unlimited).
+.
+.TP 8
 .B --members
 Include individual snapshots in the output of \fBsnapset show\fP commands.
 .
@@ -633,14 +746,36 @@ Suppress output of report headings.
 Specify which fields to display.
 .
 .TP 8
+\fB-o | --output-format\fP \fIformat\fP
+(Diff) Output format for diff data. Valid formats are \fBpaths\fP, \fBfull\fP,
+\fBshort\fP, \fBjson\fP, \fBdiff\fP, and \fBtree\fP. This option may be
+specified multiple times to print different output formats for the same run.
+.
+.TP 8
 \fB-O | --sort\fP \fIsort_fields\fP
 Specify which fields to sort by.
+.
+.TP 8
+\fB-s | --start-path\fP \fIpath\fP
+(Diff) Start traversal from the specified path.
+.
+.TP 8
+.B -p | --ignore-permissions
+(Diff) Ignore permissions when computing diffs.
 .
 .TP
 \fB-p | --policy-type\fP \fIpolicy_type\fP
 Select the garbage collection policy applied to snapshot sets created by a
 schedule. Valid values are \fBALL\fP, \fBCOUNT\fP, \fBAGE\fP, and
 \fBTIMELINE\fP.
+.
+.TP 8
+.B -P | --pretty
+(Diff) Pretty print output if supported by output format (e.g. JSON).
+.
+.TP 8
+.B -q | --quiet
+(Diff) Do not output progress or status information.
 .
 .TP 8
 .B -r | --revert
@@ -673,6 +808,10 @@ Start the specified schedule immediately when enabling it with
 \fBsnapm schedule enable\fP.
 .
 .TP 8
+.B -t | --ignore-timestamps
+(Diff) Ignore timestamps when computing diffs.
+.
+.TP 8
 \fB-u | --uuid\fP \fIUUID\fP
 Specify a snapshot set UUID to operate on.
 .
@@ -684,6 +823,18 @@ debug classes with \fB--debug\fP to enable more verbose messages.
 .TP 8
 .B -V | --version
 Display the version of \fBsnapm\fP and exit.
+.TP 8
+.B -w | --ignore-ownership
+(Diff) Ignore ownership when computing diffs.
+.
+.TP 8
+\fB-x | --exclude-pattern\fP \fIpattern\fP
+(Diff) File patterns to exclude from comparison (glob notation).
+.
+.TP 8
+\fB-z | --max-diff-size\fP \fIsize\fP
+(Diff) Maximum file size for generating content diffs (default: 1MiB).
+.
 .SS Identifier arguments
 Commands that accept an identifier may use either a positional
 .I name
@@ -890,6 +1041,82 @@ sets not specified by the schedule parameters.
 Delete the specified snapshot set. The snapshot set to delete may be specified
 either by its \fBname\fP or \fBUUID\fP.
 .
+.TP
+.B snapm
+.CMD_SNAPSET_DIFF
+.br
+Compare two snapshot sets, or a snapshot set and the running system.
+.IP
+Calculates the differences between the \fBfrom\fP and \fBto\fP targets. Targets
+may be specified as a snapshot set name, or the special character \fB.\fP to
+represent the currently running system (root file system).
+.IP
+The output format is controlled by \fB--output-format\fP. The \fBtree\fP
+format provides a hierarchical view of changes, while \fBdiff\fP provides
+standard unified diff output for modified content. Multiple output formats
+may be specified by repeating the \fB--output-format\fP argument with the
+required formats.
+.IP
+File comparisons can be tuned to ignore specific attributes (timestamps,
+permissions, ownership) or to filter based on file patterns and sizes.
+.IP
+.B Output Formats
+.IP
+The \fB--output-format\fP option accepts the following values:
+.IP
+.B tree
+(Default) A hierarchical tree view of changes, using prefixes to indicate
+status.
+.IP
+.B diff
+Standard unified diff output of file content changes.
+.IP
+.B paths
+A simple list of changed paths, one per line.
+.IP
+.B full
+Detailed change information including file attributes (mode, user, group, size,
+time).
+.IP
+.B short
+Abbreviated change summary (status and path).
+.IP
+.B json
+Change data formatted as a JSON object.
+.IP
+.B Tree Output Legend
+.IP
+The \fBtree\fP output format uses the following prefixes to indicate file status:
+.IP
+.B [+]
+Path added (green)
+.IP
+.B [-]
+Path removed (red)
+.IP
+.B [*]
+Path modified (yellow)
+.IP
+.B [<]
+Path moved from (cyan)
+.IP
+.B [>]
+Path moved to (cyan)
+.IP
+.B [!]
+Path file type changed (blue)
+.
+.TP
+.B snapm
+.CMD_SNAPSET_DIFFREPORT
+.br
+Compare snapshot sets and output results in a tabular report.
+.IP
+Performs the same comparison logic as \fBsnapm snapset diff\fP but formats
+the output as a report using the standard reporting columns.
+.IP
+This command supports standard reporting arguments including \fB--options\fP,
+\fB--sort\fP, \fB--noheadings\fP, and \fB--json\fP.
 .TP
 .B snapm
 .CMD_SNAPSET_RENAME
@@ -1826,6 +2053,25 @@ Autoactivate:   yes
 DevicePath:     /dev/fedora/home-snapset_before-upgrade_1755915019_-home
 VolumeGroup:    fedora
 LogicalVolume:  home-snapset_before-upgrade_1755915019_-home
+.EE
+.P
+.P
+Compare the snapshot set 'backup' to the running system, displaying a tree view
+.br
+.EX
+# snapm snapset diff --output-format tree backup .
+.EE
+.P
+Show content differences between two snapshot sets, ignoring timestamps
+.br
+.EX
+# snapm snapset diff --output-format diff --ignore-timestamps weekly.1 weekly.2
+.EE
+.P
+Generate a JSON diff report between 'backup' and 'restore_point'
+.br
+.EX
+# snapm snapset diffreport --json backup restore_point
 .EE
 .P
 .SH EXIT STATUS

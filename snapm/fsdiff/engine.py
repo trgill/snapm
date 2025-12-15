@@ -437,7 +437,7 @@ class FsDiffResults:
     @property
     def total_changes(self) -> int:
         """
-        Return the total number of changes in this ``FsDiffResults` instance:
+        Return the total number of changes in this ``FsDiffResults`` instance:
         equivalent to ``len(self)``.
 
         :returns: Count of changes.
@@ -448,7 +448,7 @@ class FsDiffResults:
     @property
     def content_changes(self) -> int:
         """
-        Return the number of content changes in this ``FsDiffResults` instance.
+        Return the number of content changes in this ``FsDiffResults`` instance.
 
         :returns: Count of changes with content diff.
         :rtype: ``int``
@@ -458,7 +458,7 @@ class FsDiffResults:
     @property
     def added(self) -> List[FsDiffRecord]:
         """
-        Return added changes in this ``FsDiffResults` instance.
+        Return added changes in this ``FsDiffResults`` instance.
 
         :returns: Changes with ``DiffType.ADDED`` type.
         :rtype: ``List[FsDiffRecord]``
@@ -468,7 +468,7 @@ class FsDiffResults:
     @property
     def removed(self) -> List[FsDiffRecord]:
         """
-        Return removed changes in this ``FsDiffResults` instance.
+        Return removed changes in this ``FsDiffResults`` instance.
 
         :returns: Changes with ``DiffType.REMOVED`` type.
         :rtype: ``List[FsDiffRecord]``
@@ -478,7 +478,7 @@ class FsDiffResults:
     @property
     def modified(self) -> List[FsDiffRecord]:
         """
-        Return modified changes in this ``FsDiffResults` instance.
+        Return modified changes in this ``FsDiffResults`` instance.
 
         :returns: Changes with ``DiffType.MODIFIED`` type.
         :rtype: ``List[FsDiffRecord]``
@@ -488,7 +488,7 @@ class FsDiffResults:
     @property
     def moved(self) -> List[FsDiffRecord]:
         """
-        Return moved changes in this ``FsDiffResults` instance.
+        Return moved changes in this ``FsDiffResults`` instance.
 
         :returns: Changes with ``DiffType.MOVED`` type.
         :rtype: ``List[FsDiffRecord]``

@@ -188,6 +188,118 @@ Delete an existing snapset by name or uuid.
 
    snapm snapset delete <name|uuid>
 
+snapset diff
+------------
+
+Compare two snapshot sets, or a snapshot set and the running system.
+
+.. code-block:: bash
+
+   snapm snapset diff [options] <from> <to>
+
+The ``from`` and ``to`` arguments specify the snapshot sets to compare.
+The special value ``.`` may be used to refer to the running system (the
+root file system).
+
+The command detects added, removed, and modified files. File content
+comparisons can be performed to generate standard unified diffs.
+
+Supported output formats (``-o``/``--output-format``) include:
+
+* **tree** - A hierarchical tree view of changes (default)
+* **diff** - Standard unified diff of file content
+* **paths** - A simple list of changed paths
+* **full** - Detailed change information
+* **short** - Abbreviated change summary
+* **json** - JSON formatted change data
+
+The ``-o``/``--output-format`` option may be given multiple times to request
+different output formats for the same run.
+
+Compare the snapshot set "backup" to the running system using a tree view:
+
+.. code-block:: bash
+
+   snapm snapset diff --output-format tree backup .
+
+Generate a unified diff of content changes between two snapshot sets,
+ignoring file modification times to focus only on content:
+
+.. code-block:: bash
+
+   snapm snapset diff --output-format diff --ignore-timestamps weekly.0 weekly.1
+
+Options are available to control the comparison:
+
+* ``--content-only`` / ``-c``: Only check for file content changes
+* ``--ignore-timestamps`` / ``-t``: Ignore modification times
+* ``--ignore-permissions`` / ``-p``: Ignore permission changes
+* ``--ignore-ownership`` / ``-w``: Ignore ownership changes
+* ``--include-pattern`` / ``--exclude-pattern``: Filter paths using glob patterns
+
+Output Formats
+~~~~~~~~~~~~~~
+
+The ``--output-format`` argument controls the presentation of differences.
+Available formats are:
+
+* **tree**: (Default) Displays changes in a hierarchical tree structure,
+  similar to the standard ``tree`` command but annotated with change status.
+* **diff**: Generates a standard unified diff of content changes for modified
+  files. This format is useful for generating patches or detailed content
+  review.
+* **paths**: Lists modified paths, one per line. Useful for piping to other
+  tools or scripts.
+* **full**: Provides a detailed report including old and new file attributes
+  (permissions, ownership, size, modification time) for every change.
+* **short**: A concise summary listing the change status code and path for
+  each modified file.
+* **json**: Outputs the complete difference data as a JSON object, suitable
+  for parsing by external tools and automation scripts.
+
+Tree Output Legend
+~~~~~~~~~~~~~~~~~~
+
+The **tree** output format uses specific prefixes and colors (if enabled)
+to indicate the type of change:
+
+* ``[+]`` **Path added** (green): The file or directory is present in the
+  target but not the source.
+* ``[-]`` **Path removed** (red): The file or directory is present in the
+  source but not the target.
+* ``[*]`` **Path modified** (yellow): The file content or attributes have
+  changed.
+* ``[<]`` **Path moved from** (cyan): The source path of a renamed or moved
+  file.
+* ``[>]`` **Path moved to** (cyan): The destination path of a renamed or
+  moved file.
+* ``[!]`` **Path file type changed**: The file type (regular file, symlink,
+  directory, etc.) has changed between source and target.
+
+snapset diffreport
+------------------
+
+Generate a tabular report of differences between snapshot sets.
+
+.. code-block:: bash
+
+   snapm snapset diffreport [options] <from> <to>
+
+This command performs the same comparison logic as ``snapset diff`` but
+formats the output as a column-based report. It accepts standard
+reporting arguments including ``--options``, ``--sort``, ``--noheadings``,
+and ``--json``.
+
+.. code-block:: bash
+
+   snapm snapset diffreport --json backup current
+
+To list specific fields describing the changes:
+
+.. code-block:: bash
+
+   snapm snapset diffreport -opath,state,size_diff old_snap new_snap
+
 snapset rename
 --------------
 

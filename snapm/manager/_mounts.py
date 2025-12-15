@@ -671,6 +671,7 @@ class SysMount(MountBase):
     def __init__(self):
         """
         Initialize a new SysMount instance for the root file system.
+
         :raises SnapmPathError: If root is not a directory, or not a mount
                                 point. This should never happen for the root
                                 file system.
