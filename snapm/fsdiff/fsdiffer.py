@@ -70,7 +70,9 @@ class FsDiffer:
             term_control=self._term_control,
         )
 
-        return self.diff_engine.compute_diff(tree_a, tree_b, self.options)
+        return self.diff_engine.compute_diff(
+            tree_a, tree_b, self.options, self._term_control
+        )
 
     def compare_snapshots(self, snapshot_a: str, snapshot_b: str) -> FsDiffResults:
         """Compare two snapshots by name/timestamp"""

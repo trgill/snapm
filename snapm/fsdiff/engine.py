@@ -15,7 +15,7 @@ import logging
 import json
 
 from snapm import SNAPM_SUBSYSTEM_FSDIFF
-from snapm.progress import TermControl
+from snapm.progress import ProgressFactory, TermControl
 
 from .changes import ChangeDetector, ChangeType, FileChange
 from .contentdiff import ContentDiff, ContentDifferManager
@@ -613,6 +613,7 @@ class DiffEngine:
         tree_a: Dict[str, FsEntry],
         tree_b: Dict[str, FsEntry],
         options: "DiffOptions" = None,
+        term_control: Optional[TermControl] = None,
     ) -> FsDiffResults:
         """
         Main diff computation logic.
@@ -632,9 +633,13 @@ class DiffEngine:
         if options is None:
             options = DiffOptions()
 
-        diffs = []
+        diffs: List[FsDiffRecord] = []
         all_paths = set(tree_a.keys()) | set(tree_b.keys())
         _log_debug("Starting compute_diff with %d paths", len(all_paths))
+
+        if not all_paths:
+            _log_info("No paths to diff; returning empty FsDiffResults")
+            return FsDiffResults(diffs, options)
 
         if options.ignore_timestamps:
             _log_debug("Ignoring timestamp changes")
@@ -645,13 +650,24 @@ class DiffEngine:
         if options.content_only:
             _log_debug("Checking content changes only")
 
+        term_control = term_control or TermControl()
+        progress = ProgressFactory.get_progress(
+            "Computing diffs",
+            quiet=options.quiet,
+            term_control=term_control,
+        )
+
+        start_time = datetime.now()
+        progress.start(len(all_paths))
         # pylint: disable=too-many-nested-blocks
-        for path in sorted(all_paths):
+        for i, path in enumerate(sorted(all_paths)):
             entry_a = tree_a.get(path)
             entry_b = tree_b.get(path)
             _log_debug_fsdiff(
                 "Comparing path '%s' (A:%s // B:%s)", path, entry_a, entry_b
             )
+            progress.progress(i, f"Comparing trees for '{path}'")
+
             if entry_a is None:
                 # File added in tree_b
                 diff_record = FsDiffRecord(path, DiffType.ADDED, new_entry=entry_b)
@@ -775,7 +791,11 @@ class DiffEngine:
         # Detect moves/renames
         diffs = self._detect_moves(diffs, tree_a, tree_b, options)
 
-        return FsDiffResults(diffs)
+        end_time = datetime.now()
+
+        progress.end(f"Found {len(diffs)} differences in {end_time - start_time}")
+
+        return FsDiffResults(diffs, options)
 
     @staticmethod
     def _is_move_diff(diff, src_path, dest_path):
