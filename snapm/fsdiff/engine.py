@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime
 import logging
 import json
+import os
 
 from snapm import SNAPM_SUBSYSTEM_FSDIFF
 from snapm.progress import ProgressFactory, TermControl
@@ -413,6 +414,69 @@ def render_unified_diff(record: FsDiffRecord, tc: Optional[TermControl]) -> str:
     return "\n".join(lines)
 
 
+def render_diff_stat(records: List[FsDiffRecord], term_control: TermControl) -> str:
+    """
+    Render a diffstat-style summary for the given records.
+
+    :param records: Diff records with content diffs.
+    :type records: ``FsDiffRecord``
+    :param term_control: A ``TermControl`` instance to use for rendering color
+               output.
+    :type term_control: ``TermControl``
+    :returns: Diffstat-style summary string.
+    :rtype: ``str``
+    """
+    # Filter to only records with line-based diff data
+    records = [r for r in records if r.content_diff and r.content_diff.diff_data]
+
+    if not records:
+        return ""
+
+    adds = 0
+    dels = 0
+
+    def _render_one(record: FsDiffRecord):
+        """
+        :param record: The diff record to render.
+        :type record: ``FsDiffRecord``
+        :returns: A diffstat for ``record``.
+        :rtype: ``str``
+        """
+        nonlocal adds, dels
+
+        this_path = record.path.lstrip(os.sep)
+        pad = path_width - len(this_path)
+        header = f" {this_path}{pad * ' '} | "
+        added = len(
+            [
+                data
+                for data in record.content_diff.diff_data
+                if (data.startswith("+") and not data.startswith("+++"))
+            ]
+        )
+        removed = len(
+            [
+                data
+                for data in record.content_diff.diff_data
+                if (data.startswith("-") and not data.startswith("---"))
+            ]
+        )
+        adds += added
+        dels += removed
+        plus = f"{term_control.GREEN}+{term_control.NORMAL}"
+        minus = f"{term_control.RED}-{term_control.NORMAL}"
+        return header + f"{added + removed:4} {plus * added}{minus * removed}"
+
+    path_width = max(len(record.path) for record in records) - 1
+    count = len(records)
+    diffstat = "\n".join(_render_one(record) for record in records)
+    trailer = (
+        f"\n {count} file{'s' if count > 1 else ''} changed, "
+        f"{adds} insertions(+), {dels} deletions(-)"
+    )
+    return diffstat + trailer
+
+
 class FsDiffResults:
     """Container for filesystem diff results with formatting methods."""
 
@@ -583,12 +647,17 @@ class FsDiffResults:
         return json.dumps(dicts, indent=4 if pretty else None)
 
     def diff(
-        self, color: str = "auto", term_control: Optional[TermControl] = None
+        self,
+        diffstat: bool = False,
+        color: str = "auto",
+        term_control: Optional[TermControl] = None,
     ) -> str:
         """
         Return unified diff representation of content changes for this
         instance.
 
+        :param diffstat: Include "diffstat"-like change summary.
+        :type diffstat: ``bool``
         :param color: A string to control color diff rendering: "auto",
                       "always", or "never".
         :type color: ``str``
@@ -602,7 +671,11 @@ class FsDiffResults:
             for r in content_diffs
             if (rendered := render_unified_diff(r, term_control))
         ]
-        return "\n".join(diffs)
+        stat_str = ""
+        if diffstat and content_diffs:
+            stat_str = render_diff_stat(content_diffs, term_control) + "\n\n"
+
+        return stat_str + "\n".join(diffs)
 
     def tree(
         self,

@@ -134,6 +134,65 @@ class TestFsDiffResults(unittest.TestCase):
         self.assertIn("<GREEN>", diff)
         self.assertIn("<WHITE>", diff)
 
+    def test_diff_stat_logic(self):
+        """Test the render_diff_stat function directly for formatting/counting."""
+        from snapm.fsdiff.engine import render_diff_stat
+
+        # Create records with specific content diff data
+        # Record 1: Short path, 1 insertion, 1 deletion
+        rec1 = FsDiffRecord("/short", DiffType.MODIFIED)
+        rec1.set_content_diff(ContentDiff("unified"))
+        rec1.content_diff.diff_data = ["---", "+++", "-old", "+new"]
+
+        # Record 2: Long path, 2 insertions
+        rec2 = FsDiffRecord("/longer/path/file", DiffType.MODIFIED)
+        rec2.set_content_diff(ContentDiff("unified"))
+        rec2.content_diff.diff_data = ["---", "+++", "+line1", "+line2"]
+
+        # Mock TermControl for predictable plain text output
+        tc = MagicMock(spec=TermControl)
+        tc.GREEN = ""
+        tc.RED = ""
+        tc.NORMAL = ""
+
+        # Render
+        diffstat = render_diff_stat([rec1, rec2], tc)
+
+        # Check alignment (longest path dictates column width)
+        # /short should be padded to match /longer/path/file
+        # Note: render_diff_stat lstrips os.sep, so "/short" -> "short"
+        self.assertIn(" short            |    2", diffstat)
+        self.assertIn(" longer/path/file |    2", diffstat)
+
+        # Check visual graph characters (plain text versions)
+        self.assertIn("+", diffstat)
+        self.assertIn("-", diffstat)
+
+        # Check trailer summary
+        self.assertIn("2 files changed, 3 insertions(+), 1 deletions(-)", diffstat)
+
+    def test_results_summary_with_diffstat(self):
+        """Test FsDiffResults.summary() including diffstat."""
+        summary = self.results.summary(diffstat=True, color="never")
+
+        self.assertIn("Total changes:     3", summary)
+        # Check for diffstat presence (rec_mod path is /a)
+        self.assertIn(" a |    2", summary)
+        self.assertIn("1 file changed", summary)
+
+    def test_diff_with_diffstat(self):
+        """Test FsDiffResults.diff() with diffstat enabled."""
+        diff_output = self.results.diff(diffstat=True, color="never")
+
+        # Should contain the stat header
+        self.assertIn(" a |    2", diff_output)
+        self.assertIn("1 file changed", diff_output)
+
+        # Should also contain the actual diff content
+        self.assertIn("diff a/a b/a", diff_output)
+        self.assertIn("-foo", diff_output)
+        self.assertIn("+bar", diff_output)
+
 
 class TestDiffEngine(unittest.TestCase):
     def setUp(self):
