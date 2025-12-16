@@ -794,27 +794,29 @@ class NullProgress(ProgressBase):
         """
         return  # pragma: no cover
 
-    def _do_progress(self, _done: int, _message: Optional[str] = None):
+    # pylint: disable=unused-argument
+    def _do_progress(self, done: int, message: Optional[str] = None):
         """
         Report progress on this ``NullProgress`` instance.
 
         No-op for ``NullProgress`` instances.
 
-        :param _done: The number of completed progress items.
-        :type _done: ``int``
-        :param _message: An optional progress message (unused).
-        :type _message: ``Optional[str]``
+        :param done: The number of completed progress items.
+        :type done: ``int``
+        :param message: An optional progress message (unused).
+        :type message: ``Optional[str]``
         """
         return  # pragma: no cover
 
-    def _do_end(self, _message: Optional[str] = None):
+    # pylint: disable=unused-argument
+    def _do_end(self, message: Optional[str] = None):
         """
         End progress reporting on this ``NullProgress`` instance.
 
         No-op for ``NullProgress`` instances.
 
-        :param _message: An optional completion message (unused).
-        :type _message: ``Optional[str]``
+        :param message: An optional completion message (unused).
+        :type message: ``Optional[str]``
         """
         return  # pragma: no cover
 
