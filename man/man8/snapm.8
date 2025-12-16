@@ -205,6 +205,7 @@ snapm \- Linux Snapshot Manager
 .  IR pattern ] " "\c
 .  RB [ -s | --start-path\ \c
 .  IR path ] " "\c
+.  RB [ --stat ] " "\c
 .  RB [ -q | --quiet ] " "\c
 .  RB [ --color\ \c
 .  IR mode ] " "\c
@@ -748,8 +749,9 @@ Specify which fields to display.
 .TP 8
 \fB-o | --output-format\fP \fIformat\fP
 (Diff) Output format for diff data. Valid formats are \fBpaths\fP, \fBfull\fP,
-\fBshort\fP, \fBjson\fP, \fBdiff\fP, and \fBtree\fP. This option may be
-specified multiple times to print different output formats for the same run.
+\fBshort\fP, \fBjson\fP, \fBdiff\fP, \fBsummary\fP, and \fBtree\fP. This option
+may be specified multiple times to print different output formats for the same
+run.
 .
 .TP 8
 \fB-O | --sort\fP \fIsort_fields\fP
@@ -758,6 +760,10 @@ Specify which fields to sort by.
 .TP 8
 \fB-s | --start-path\fP \fIpath\fP
 (Diff) Start traversal from the specified path.
+.
+.TP 8
+.B --stat
+(Diff) Include diffstat output in \fBdiff\fP and \fBsummary\fP output.
 .
 .TP 8
 .B -p | --ignore-permissions
@@ -1079,7 +1085,10 @@ Detailed change information including file attributes (mode, user, group, size,
 time).
 .IP
 .B short
-Abbreviated change summary (status and path).
+Abbreviated change description (path, difference type and summary).
+.IP
+.B summary
+A brief summary of the count of different change types.
 .IP
 .B json
 Change data formatted as a JSON object.

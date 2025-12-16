@@ -1876,6 +1876,7 @@ def _diff_cmd(cmd_args):
     pretty = cmd_args.pretty
     color = cmd_args.color
     desc = cmd_args.desc
+    diffstat = cmd_args.stat
 
     if not cmd_args.diff_from or not cmd_args.diff_to:
         _log_error(
@@ -1903,6 +1904,14 @@ def _diff_cmd(cmd_args):
         )
         return 1
 
+    if diffstat:
+        if "diff" not in output_formats and "summary" not in output_formats:
+            _log_error(
+                "Option --stat only supported with --output-format=diff or "
+                "--output-format=summary"
+            )
+            return 1
+
     if not set(output_formats).issubset(DIFF_FORMATS):
         # Belts and braces: should be unreachable since ArgumentParser validates
         # that `output_format` is a member of DIFF_FORMATS.
@@ -1928,7 +1937,9 @@ def _diff_cmd(cmd_args):
         elif output_format == "diff":
             if not options.quiet:
                 print(f"Found {results.content_changes} content differences")
-            print(results.diff(color=color))
+            print(results.diff(diffstat=diffstat, color=color))
+        elif output_format == "summary":
+            print(results.summary(diffstat=diffstat, color=color))
         elif output_format == "tree":
             print(results.tree(color=color, desc=desc))
         spacer = "\n"
@@ -3037,6 +3048,11 @@ def _add_snapset_subparser(type_subparser):
         choices=desc,
         default=desc[0],
         help=f"Include change description in tree output ({', '.join(desc)})",
+    )
+    snapset_diff_parser.add_argument(
+        "--stat",
+        action="store_true",
+        help="Include diffstat in diff and summary output",
     )
     _add_diff_args(snapset_diff_parser)
     snapset_diff_parser.set_defaults(func=_diff_cmd)
