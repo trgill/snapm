@@ -15,7 +15,7 @@ from pathlib import Path
 from snapm.fsdiff.filetypes import FileTypeInfo, FileTypeCategory
 from snapm.fsdiff.fsdiffer import FsDiffer
 from snapm.fsdiff.options import DiffOptions
-from snapm.fsdiff.treewalk import FsEntry, TreeWalker
+from snapm.fsdiff.treewalk import FsEntry, TreeWalker, _stat_to_dict
 # Mock Mount for typing/usage
 from snapm.manager._mounts import Mount
 
@@ -46,6 +46,64 @@ class TestTreeWalker(unittest.TestCase):
         opts = DiffOptions()
         walker = TreeWalker(opts)
         self.assertIn("/proc/*", walker.exclude_patterns)
+
+    def test_stat_to_dict(self):
+        # Mock a stat result
+        st = os.stat_result((0o644, 1, 2, 1, 1000, 1000, 100, 0, 0, 0))
+        d = _stat_to_dict(st)
+        self.assertEqual(d["st_mode"], 0o644)
+        self.assertEqual(d["st_size"], 100)
+
+    def test_TreeWalker_race_vanished(self):
+        walker = TreeWalker(DiffOptions())
+        mount = MagicMock(spec=Mount)
+        mount.root = "/tmp"  # noqa: S108
+        mount.name = "tmp"
+        with patch("os.walk", return_value=[("/tmp", [], ["vanished"])]), \
+             patch("os.path.exists", return_value=False), \
+             patch("os.lstat", side_effect=FileNotFoundError):
+            tree = walker.walk_tree(mount)
+            self.assertNotIn("/tmp/vanished", tree)
+            self.assertNotIn("vanished", tree)
+
+    def test_get_xattrs_oserror(self):
+        """Cover OSError handling in _get_xattrs."""
+        # This requires patching os.listxattr to raise OSError
+        # We can't easily access the inner function, but we can trigger it via FsEntry init
+        with patch("os.path.exists", return_value=True), \
+             patch("os.stat"), \
+             patch("os.listxattr", side_effect=OSError("Mock error")):
+
+            entry = FsEntry("/file", "", os.stat_result((0o644,)*10))
+            self.assertEqual(entry.xattrs, {})
+
+    def test_walk_tree_throbber_callback(self):
+        """Verify the throbber callback mechanism."""
+        mount = MagicMock(spec=Mount)
+        mount.root = "/root"
+        mount.name = "TestRoot"
+
+        # We want to verify the internal _throb function is called.
+        # It's passed to os.walk list comprehension.
+        # We can detect this if we mock ProgressFactory to return a mock throbber
+        # and verify the throbber's .throb() method is called.
+
+        walker = TreeWalker(DiffOptions())
+        with patch("snapm.fsdiff.treewalk.ProgressFactory.get_throbber") as mock_get_throb:
+            mock_throbber = MagicMock()
+            mock_get_throb.return_value = mock_throbber
+
+            # Make os.walk return at least one item to trigger the loop
+            with patch("os.walk", return_value=[("/root", [], ["file"])]), \
+                 patch("os.lstat") as mock_lstat:
+                mock_lstat.return_value.st_mode = 0o0
+                walker.walk_tree(mount)
+
+            # Verify start/end called
+            mock_throbber.start.assert_called()
+            mock_throbber.end.assert_called()
+            # Verify throb called (for the root item + walk items)
+            self.assertTrue(mock_throbber.throb.called)
 
 
 class TestFsEntry(unittest.TestCase):

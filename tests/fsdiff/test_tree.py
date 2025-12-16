@@ -1,6 +1,6 @@
 # Copyright Red Hat
 #
-# tests/fsdiff/test_engine.py - Difference engine core tests.
+# tests/fsdiff/test_tree.py - Difference engine DiffTree tests
 #
 # This file is part of the snapm project.
 #
@@ -240,3 +240,11 @@ class TestDiffTree(unittest.TestCase):
         results = FsDiffResults([rec], DiffOptions())
         with self.assertRaises(ValueError):
             DiffTree.build_tree(results)
+
+    def test_interrupt_build_tree(self):
+        rec = FsDiffRecord("/a", DiffType.MODIFIED)
+        results = FsDiffResults([rec], DiffOptions())
+        with patch("snapm.fsdiff.tree.ProgressFactory.get_progress") as mock_prog:
+            mock_prog.return_value.start.side_effect = KeyboardInterrupt
+            with self.assertRaises(KeyboardInterrupt):
+                DiffTree.build_tree(results)

@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 from typing import TextIO
 import json
@@ -128,7 +128,7 @@ class TestFsDiffResults(unittest.TestCase):
         term_control.NORMAL = "<NORMAL>"  #: Reset all properties
 
         diff = self.results.diff(term_control=term_control)
-        print(repr(diff))
+
         # Check for ANSI escape code (ESC[)
         self.assertIn("<RED>", diff)
         self.assertIn("<GREEN>", diff)
@@ -333,6 +333,41 @@ class TestDiffEngine(unittest.TestCase):
 
         self.assertEqual(len(diffs), 1)
         self.assertEqual(diffs[0].diff_type, DiffType.TYPE_CHANGED)
+
+    def test_compute_diff_limits_added_removed(self):
+        self.opts.include_content_diffs = True
+        self.opts.max_content_diff_size = 10
+        entry_lg = make_entry("/large", size=100)
+        tree_a = {}
+        tree_b = {"/large": entry_lg}
+        diffs = self.engine.compute_diff(tree_a, tree_b, self.opts)
+        self.assertFalse(diffs[0].has_content_diff)
+
+    def test_detect_moves_collision(self):
+        entry_src = make_entry("/src", content_hash="h1")
+        entry_dst1 = make_entry("/dst1", content_hash="h1")
+        entry_dst2 = make_entry("/dst2", content_hash="h1")
+        tree_a = {"/src": entry_src}
+        tree_b = {"/dst1": entry_dst1, "/dst2": entry_dst2}
+        diffs = self.engine.compute_diff(tree_a, tree_b, self.opts)
+        moves = [d for d in diffs if d.diff_type == DiffType.MOVED]
+        self.assertEqual(len(moves), 1)
+
+    def test_include_content_diffs_false(self):
+        self.opts.include_content_diffs = False
+        entry_a = make_entry("/a", content_hash="h1")
+        entry_b = make_entry("/a", content_hash="h2")
+        diffs = self.engine.compute_diff({"/a": entry_a}, {"/a": entry_b}, self.opts)
+        self.assertEqual(diffs[0].diff_type, DiffType.MODIFIED)
+        self.assertFalse(diffs[0].has_content_diff)
+
+    def test_interrupt_compute_diff(self):
+        entry_a = make_entry("/a", content_hash="h1")
+        entry_b = make_entry("/a", content_hash="h2")
+        with patch("snapm.fsdiff.engine.ProgressFactory.get_progress") as mock_prog:
+            mock_prog.return_value.start.side_effect = KeyboardInterrupt
+            with self.assertRaises(KeyboardInterrupt):
+                self.engine.compute_diff({"/a": entry_a}, {"/a": entry_b}, self.opts)
 
     def test_swap_edge_case(self):
         # File A moves to B, File B moves to A. (Hard case for move detectors)

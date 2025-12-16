@@ -16,6 +16,7 @@ from snapm.fsdiff.contentdiff import (
     ContentDiff,
     ContentDifferManager,
     TextContentDiffer,
+    BinaryContentDiffer,
 )
 from snapm.fsdiff.filetypes import FileTypeInfo, FileTypeCategory
 
@@ -116,6 +117,17 @@ class TestContentDiff(unittest.TestCase):
         self.assertTrue(diff.has_changes)
         self.assertIn("changed", diff.summary)
 
+    def test_binary_diff_added_removed(self):
+        new_entry = make_entry("/new", size=10, content_hash="h1", mime_type="application/octet-stream")
+        new_entry.file_type_info = FileTypeInfo("application/octet-stream", "Bin", FileTypeCategory.BINARY)
+        diff_add = self.manager.generate_content_diff(None, Path("/new"), None, new_entry)
+        self.assertIn("size changed by +10", diff_add.summary)
+
+        old_entry = make_entry("/old", size=10, content_hash="h1", mime_type="application/octet-stream")
+        old_entry.file_type_info = FileTypeInfo("application/octet-stream", "Bin", FileTypeCategory.BINARY)
+        diff_rm = self.manager.generate_content_diff(Path("/old"), None, old_entry, None)
+        self.assertIn("size changed by -10", diff_rm.summary)
+
     def test_text_diff_read_error(self):
         old_entry = make_entry("/old.txt")
         new_entry = make_entry("/new.txt")
@@ -192,6 +204,10 @@ class TestContentDiff(unittest.TestCase):
         self.assertEqual(data["diff_type"], "unified")
         self.assertEqual(data["old_content"], "a")
         self.assertEqual(data["diff_data"], ["-a", "+b"])
+
+    def test_differ_priority(self):
+        self.assertEqual(TextContentDiffer().priority, 10)
+        self.assertEqual(BinaryContentDiffer().priority, 5)
 
     def test_manager_generate_error(self):
         """Test error handling in generate_content_diff."""

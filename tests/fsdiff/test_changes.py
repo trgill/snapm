@@ -163,6 +163,13 @@ class TestChangeDetector(unittest.TestCase):
         self.assertEqual(sym_change.old_value, "/target")
         self.assertEqual(sym_change.new_value, "")
 
+    def test_detect_removed_with_xattrs(self):
+        """Test detecting removal of a file with extended attributes."""
+        entry = make_entry("/old")
+        entry.xattrs = {"user.comment": b"important"}
+        changes = self.detector.detect_removed(entry, self.opts)
+        self.assertTrue(any(c.change_type == ChangeType.XATTRS for c in changes))
+
     def test_detect_added_content_only(self):
         """Test detect_added with content_only option."""
         self.opts.content_only = True
