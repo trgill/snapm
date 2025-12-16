@@ -514,6 +514,16 @@ class FsDiffResults:
         """
         return [r for r in self._records if r.diff_type == DiffType.MOVED]
 
+    @property
+    def type_changed(self) -> List[FsDiffRecord]:
+        """
+        Return type_changed changes in this ``FsDiffResults`` instance.
+
+        :returns: Changes with ``DiffType.TYPE_CHANGED`` type.
+        :rtype: ``List[FsDiffRecord]``
+        """
+        return [r for r in self._records if r.diff_type == DiffType.TYPE_CHANGED]
+
     # Output formats
     def paths(self) -> List[str]:
         """
