@@ -129,3 +129,53 @@ class TestChangeDetector(unittest.TestCase):
         # Should catch content, ignore permissions
         self.assertEqual(len(changes), 1)
         self.assertEqual(changes[0].change_type, ChangeType.CONTENT)
+
+    def test_detect_added(self):
+        """Test changes detected for added files."""
+        entry = make_entry("/new", content_hash="h1", mode=0o755, uid=1000)
+        # Add symlink and xattrs to cover all branches
+        entry.xattrs = {"user.test": b"val"}
+
+        changes = self.detector.detect_added(entry, self.opts)
+
+        types = {c.change_type for c in changes}
+        self.assertIn(ChangeType.CONTENT, types)
+        self.assertIn(ChangeType.PERMISSIONS, types)
+        self.assertIn(ChangeType.OWNERSHIP, types)
+        self.assertIn(ChangeType.TIMESTAMPS, types)
+        self.assertIn(ChangeType.XATTRS, types)
+
+        # Verify specific logic
+        perm_change = next(c for c in changes if c.change_type == ChangeType.PERMISSIONS)
+        self.assertEqual(perm_change.old_value, "0o0")
+
+    def test_detect_removed(self):
+        """Test changes detected for removed files."""
+        entry = make_entry("/old", content_hash="h1", is_symlink=True)
+        entry.symlink_target = "/target"
+
+        changes = self.detector.detect_removed(entry, self.opts)
+
+        types = {c.change_type for c in changes}
+        self.assertIn(ChangeType.SYMLINK_TARGET, types)
+
+        sym_change = next(c for c in changes if c.change_type == ChangeType.SYMLINK_TARGET)
+        self.assertEqual(sym_change.old_value, "/target")
+        self.assertEqual(sym_change.new_value, "")
+
+    def test_detect_added_content_only(self):
+        """Test detect_added with content_only option."""
+        self.opts.content_only = True
+        entry = make_entry("/new", content_hash="h1", mode=0o755)
+
+        changes = self.detector.detect_added(entry, self.opts)
+
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0].change_type, ChangeType.CONTENT)
+
+    def test_file_change_serialization(self):
+        """Test FileChange.to_dict."""
+        change = FileChange(ChangeType.CONTENT, "old", "new", "desc")
+        data = change.to_dict()
+        self.assertEqual(data["change_type"], "content")
+        self.assertEqual(data["old_value"], "old")

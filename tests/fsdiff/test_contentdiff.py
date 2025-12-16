@@ -183,3 +183,24 @@ class TestContentDiff(unittest.TestCase):
 
         # Verify the diff result
         self.assertFalse(diff2.has_changes)  # Same content
+
+    def test_ContentDiff_serialization(self):
+        """Test to_dict method."""
+        cd = ContentDiff("unified", old_content="a", new_content="b")
+        cd.diff_data = ["-a", "+b"]
+        data = cd.to_dict()
+        self.assertEqual(data["diff_type"], "unified")
+        self.assertEqual(data["old_content"], "a")
+        self.assertEqual(data["diff_data"], ["-a", "+b"])
+
+    def test_manager_generate_error(self):
+        """Test error handling in generate_content_diff."""
+        # Patch get_differ_for_file to raise a specific error caught by the except block
+        old_entry = make_entry("/a.txt")
+        new_entry = make_entry("/b.txt")
+        new_entry.file_type_info = FileTypeInfo("text/plain", "desc", FileTypeCategory.TEXT)
+
+        with patch.object(self.manager, "get_differ_for_file", side_effect=TypeError("test error")):
+            result = self.manager.generate_content_diff(Path("/a"), Path("/b"), old_entry, new_entry)
+
+        self.assertIsNone(result)

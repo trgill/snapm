@@ -7,13 +7,133 @@
 # SPDX-License-Identifier: Apache-2.0
 import unittest
 from unittest.mock import MagicMock
+from datetime import datetime
+from typing import TextIO
+import json
 
 from snapm.fsdiff.changes import ChangeType, FileChange
 from snapm.fsdiff.contentdiff import ContentDiff
-from snapm.fsdiff.engine import DiffEngine, DiffType, FsDiffRecord
+from snapm.fsdiff.engine import FsDiffResults, DiffEngine, DiffType, FsDiffRecord
 from snapm.fsdiff.options import DiffOptions
+from snapm.progress import TermControl
 
 from ._util import make_entry
+
+
+# Add this new class to snapm/tests/fsdiff/test_engine.py
+class TestFsDiffResults(unittest.TestCase):
+    def setUp(self):
+        self.entry_a = make_entry("/a", content_hash="h1", size=100)
+        self.entry_b = make_entry("/a", content_hash="h2", size=200)
+
+        # Modified record with content diff
+        self.rec_mod = FsDiffRecord("/a", DiffType.MODIFIED, self.entry_a, self.entry_b)
+        self.rec_mod.set_content_diff(ContentDiff("unified", summary="diff", old_content="foo", new_content="bar"))
+        self.rec_mod.content_diff.diff_data = ["header", "header", "-foo", "+bar"]
+
+        # Added record
+        self.rec_add = FsDiffRecord("/b", DiffType.ADDED, new_entry=self.entry_b)
+
+        # Removed record
+        self.rec_rm = FsDiffRecord("/c", DiffType.REMOVED, old_entry=self.entry_a)
+
+        self.results = FsDiffResults([self.rec_mod, self.rec_add, self.rec_rm], DiffOptions())
+
+    def test_list_interface(self):
+        """Test iteration, len, and getitem."""
+        self.assertEqual(len(self.results), 3)
+        self.assertEqual(self.results[0], self.rec_mod)
+        self.assertEqual(list(self.results), [self.rec_mod, self.rec_add, self.rec_rm])
+
+    def test_summary_properties(self):
+        """Test aggregation properties."""
+        self.assertEqual(self.results.total_changes, 3)
+        # Only rec_mod has a content diff set in setUp
+        self.assertEqual(self.results.content_changes, 1)
+
+        self.assertEqual(len(self.results.added), 1)
+        self.assertEqual(self.results.added[0].path, "/b")
+
+        self.assertEqual(len(self.results.removed), 1)
+        self.assertEqual(self.results.removed[0].path, "/c")
+
+        self.assertEqual(len(self.results.modified), 1)
+        self.assertEqual(self.results.modified[0].path, "/a")
+
+        self.assertEqual(len(self.results.moved), 0)
+
+    def test_output_formats(self):
+        """Test short, full, paths, and json output formats."""
+        # Paths
+        self.assertEqual(self.results.paths(), ["/a", "/b", "/c"])
+
+        # Short
+        short = self.results.short()
+        self.assertIn("Path: /a", short)
+        self.assertIn("DiffType: modified", short)
+        self.assertIn("Summary: diff", short)
+
+        # Full
+        full = self.results.full()
+        self.assertIn("content_diff_summary: diff", full)
+
+        # JSON
+        json_out = self.results.json()
+        data = json.loads(json_out)
+        self.assertEqual(len(data), 3)
+        self.assertEqual(data[0]["path"], "/a")
+        self.assertEqual(data[0]["diff_type"], "modified")
+
+    def test_diff_rendering(self):
+        """Test unified diff generation."""
+        # Standard diff
+        diff = self.results.diff(color="never")
+        self.assertIn("diff a/a b/a", diff)
+        self.assertIn("--- a/a", diff)
+        self.assertIn("+++ b/a", diff)
+        self.assertIn("-foo", diff)
+        self.assertIn("+bar", diff)
+
+        # Added file diff (simulated content diff on added record)
+        self.rec_add.set_content_diff(ContentDiff("unified"))
+        self.rec_add.content_diff.diff_data = ["h", "h", "+new"]
+
+        diff_add = self.results.diff(color="never")
+        self.assertIn("new file mode", diff_add)
+        self.assertIn("--- /dev/null", diff_add)
+
+        # Deleted file diff
+        self.rec_rm.set_content_diff(ContentDiff("unified"))
+        self.rec_rm.content_diff.diff_data = ["h", "h", "-old"]
+
+        diff_rm = self.results.diff(color="never")
+        self.assertIn("deleted file mode", diff_rm)
+        self.assertIn("+++ /dev/null", diff_rm)
+
+    def test_diff_rendering_color(self):
+        """Test color codes in diff output."""
+        term_control = MagicMock(spec=TermControl)
+        term_control.term_stream = MagicMock(spec=TextIO)
+        term_control.term_stream.encoding = "utf8"
+        term_control.columns = 80
+
+        term_control.BLACK: str = "<BLACK>"  #: Black foreground color
+        term_control.BLUE: str = "<BLUE>"  #: Blue foreground color
+        term_control.GREEN: str = "<GREEN>"  #: Green foreground color
+        term_control.CYAN: str = "<CYAN>"  #: Cyan foreground color
+        term_control.RED: str = "<RED>"  #: Red foreground color
+        term_control.MAGENTA: str = "<MAGENTA>"  #: Magenta foreground color
+        term_control.YELLOW: str = "<YELLOW>"  #: Yellow foreground color
+        term_control.WHITE: str = "<WHITE>"  #: White foreground color
+        term_control.NORMAL: str = "<NORMAL>"  #: Reset all properties
+
+        diff = self.results.diff(term_control=term_control)
+        print(repr(diff))
+        # Check for ANSI escape code (ESC[)
+        self.assertIn("<RED>", diff)
+        self.assertIn("<GREEN>", diff)
+        self.assertIn("<WHITE>", diff)
+
 
 class TestDiffEngine(unittest.TestCase):
     def setUp(self):
@@ -228,8 +348,8 @@ class TestDiffEngine(unittest.TestCase):
         self.assertIn("Added text/plain", rec.get_change_summary())
 
         # 2. Type Changed
-        rec = FsDiffRecord("/change", DiffType.TYPE_CHANGED, 
-                          make_entry("/change", is_dir=True), 
+        rec = FsDiffRecord("/change", DiffType.TYPE_CHANGED,
+                          make_entry("/change", is_dir=True),
                           make_entry("/change", is_dir=False))
         self.assertIn("directory to file", rec.get_change_summary())
 
@@ -243,3 +363,36 @@ class TestDiffEngine(unittest.TestCase):
         rec.moved_from = "/a"
         rec.moved_to = "/b"
         self.assertIn("Moved from /a to /b", rec.get_change_summary())
+
+    def test_FsDiffRecord_serialization(self):
+        """Test to_dict and json methods of FsDiffRecord."""
+        entry_a = make_entry("/a")
+        entry_b = make_entry("/b")
+        rec = FsDiffRecord("/a", DiffType.MODIFIED, entry_a, entry_b)
+        rec.add_change(FileChange(ChangeType.CONTENT, "h1", "h2"))
+        rec.moved_from = "/old_a"
+
+        data = rec.to_dict()
+        self.assertEqual(data["path"], "/a")
+        self.assertEqual(data["diff_type"], "modified")
+        self.assertEqual(data["changes"][0]["change_type"], "content")
+        self.assertEqual(data["moved_from"], "/old_a")
+
+        json_str = rec.json()
+        self.assertIn('"diff_type": "modified"', json_str)
+
+    def test_compute_diff_added_removed_details(self):
+        """Verify that detect_added/removed logic populates changes correctly."""
+        # Tree B has new file
+        tree_a = {}
+        tree_b = {"/new": make_entry("/new", content_hash="h1", mode=0o755)}
+
+        diffs = self.engine.compute_diff(tree_a, tree_b, self.opts)
+        rec = diffs[0]
+
+        self.assertEqual(rec.diff_type, DiffType.ADDED)
+        # Should have changes from detect_added (content, permissions, etc)
+        change_types = [c.change_type for c in rec.changes]
+        self.assertIn(ChangeType.CONTENT, change_types)
+        self.assertIn(ChangeType.PERMISSIONS, change_types)
+

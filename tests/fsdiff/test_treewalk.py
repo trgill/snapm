@@ -29,6 +29,24 @@ class TestTreeWalker(unittest.TestCase):
         self.assertEqual(walker.hash_algorithm, "sha256")
         self.assertIn("/proc/*", walker.exclude_patterns)
 
+    def test_TreeWalker_excludes_logic(self):
+        """Test exclude pattern logic in constructor."""
+        # Case 1: Default system dirs included
+        opts = DiffOptions(include_system_dirs=True)
+        walker = TreeWalker(opts)
+        self.assertEqual(walker.exclude_patterns, [])
+
+        # Case 2: Custom excludes + system dirs default (implicit)
+        opts = DiffOptions(exclude_patterns=["/custom/*"])
+        walker = TreeWalker(opts)
+        self.assertIn("/custom/*", walker.exclude_patterns)
+        self.assertIn("/proc/*", walker.exclude_patterns)
+
+        # Case 3: Only system dirs (default)
+        opts = DiffOptions()
+        walker = TreeWalker(opts)
+        self.assertIn("/proc/*", walker.exclude_patterns)
+
 
 class TestFsEntry(unittest.TestCase):
     def test_FsEntry__str__(self):
@@ -108,6 +126,24 @@ class TestFsEntry(unittest.TestCase):
         # Symlink
         entry_link = make_entry("/link", is_symlink=True)
         self.assertEqual(entry_link.type_desc, "symbolic link")
+
+    def test_FsEntry_to_dict(self):
+        """Test serialization of FsEntry, including xattr decoding."""
+        entry = make_entry("/file", content_hash="hash")
+        # Add xattrs: one utf-8, one binary
+        entry.xattrs = {
+            "user.utf8": b"value",
+            "user.bin": b"\xFF\xFF"
+        }
+
+        data = entry.to_dict()
+
+        self.assertEqual(data["path"], "/file")
+        self.assertEqual(data["content_hash"], "hash")
+        # Verify UTF-8 decoding
+        self.assertEqual(data["xattrs"]["user.utf8"], "value")
+        # Verify hex fallback
+        self.assertEqual(data["xattrs"]["user.bin"], "ffff")
 
 
 class TestTreeWalkFull(unittest.TestCase):
