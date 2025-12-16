@@ -684,6 +684,7 @@ class Progress(ProgressBase):
                 file=self.stream,
                 end="",
             )
+        print(self.term.NORMAL, end="", file=self.stream)
         if message:
             print(message, file=self.stream)
         _flush_with_broken_pipe_guard(self.stream)
