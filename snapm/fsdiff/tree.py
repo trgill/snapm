@@ -286,10 +286,10 @@ class DiffTree:
             Add orphaned move nodes to matching parent path.
             """
             _log_debug_fsdiff(
-                "Checking adoption for %s (orphan_moves[%s]={%s}",
+                "Checking adoption for %s (orphan_moves[%s]=%s)",
                 path,
                 path,
-                orphan_moves[path],
+                orphan_moves.get(path, []),
             )
             # Re-parent orphaned moves if path matches
             if orphan_moves.get(path):
@@ -346,7 +346,10 @@ class DiffTree:
                     node = node.children[part]
 
                 # Optimistic pass
-                _adopt_orphans(node, os.path.join(os.sep, path))
+                parent_path = (
+                    os.path.join(os.sep, *parts[:-1]) if parts[:-1] else os.sep
+                )
+                _adopt_orphans(node, parent_path)
 
                 # Leaf node with actual record
                 if record.diff_type != DiffType.MOVED:
