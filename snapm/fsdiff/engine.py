@@ -116,8 +116,9 @@ class FsDiffRecord:
             return f"{'(' + str(mtime) + ')' if mtime is not None else ''}"
 
         # Possibly empty/missing fields
+        nl = "\n"
         changes = (
-            f"  changes: {', '.join(str(chg) for chg in self.changes)}\n"
+            ("  changes:\n" + f"{nl.join(str(chg) for chg in self.changes)}\n")
             if self.changes
             else ""
         )
@@ -126,7 +127,7 @@ class FsDiffRecord:
         moved_to = f"moved_to: {self.moved_to}\n" if self.moved_to else ""
 
         content_diff = (
-            f"  content_diff: {self.content_diff}\n"
+            ("  content_diff:\n" + f"{self.content_diff}\n")
             if self.content_diff is not None
             else ""
         )
@@ -153,8 +154,8 @@ class FsDiffRecord:
         fsd_str = (
             f"Path: {self.path}\n"
             f"  diff_type: {self.diff_type.value}\n"
-            f"  old_entry:\n{self.old_entry if self.old_entry else ''}\n"
-            f"  new_entry:\n{self.new_entry if self.new_entry else ''}\n"
+            f"  old_entry:{nl + str(self.old_entry) if self.old_entry else ''}\n"
+            f"  new_entry:{nl + str(self.new_entry) if self.new_entry else ''}\n"
             f"{changes}"  # no newline (embedded if set)
             f"{content_diff}"  # no newline (embedded if set)
             f"{'  ' + moved_from if moved_from else ''}"  # no newline (embedded if set)

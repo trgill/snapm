@@ -81,10 +81,10 @@ class FileChange:
         :rtype: str
         """
         return (
-            f"change_type: {self.change_type.value}, "
-            f"old_value: {self.old_value}, "
-            f"new_value: {self.new_value}, "
-            f"description: {self.description}"
+            f"    change_type: {self.change_type.value}\n"
+            f"      old_value: {self.old_value}\n"
+            f"      new_value: {self.new_value}\n"
+            f"      description: {self.description}"
         )
 
     def to_dict(self) -> Dict[str, Optional[str]]:

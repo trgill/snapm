@@ -8,7 +8,7 @@
 """
 Content-aware diff support.
 """
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 from abc import ABC, abstractmethod
 from pathlib import Path
 import logging
@@ -85,25 +85,42 @@ class ContentDiff:
             :rtype: ``str``
             """
             return repr(
-                f'"{content[0:16] if content else ""}'
-                f'{"..." if content and len(content) > 16 else ""}"'
+                f'{content[0:16] if content else ""}'
+                f'{"..." if content and len(content) > 16 else ""}'
+            )
+
+        def diff_items(diff_data: Union[List, Tuple]):
+            """
+            Count +/- items in a unified diff.
+
+            :param diff_data: Data to produce count for
+            :returns: Count of added/removed items.
+            :rtype: ``int``
+            """
+            return len(
+                [
+                    data
+                    for data in diff_data
+                    if (data.startswith("+") or data.startswith("-"))
+                    and not (data.startswith("+++") or data.startswith("---"))
+                ]
             )
 
         if isinstance(self.diff_data, (list, tuple)):
-            diff_repr = f"<{len(self.diff_data)} items>"
+            diff_repr = f"<{diff_items(self.diff_data)} items>"
         elif self.diff_data is None:
             diff_repr = "<none>"
         else:
             diff_repr = "<non-sequence diff data>"
 
         return (
-            f"diff_type: {self.diff_type}, "
-            f"old_content: {content_str(self.old_content)}, "
-            f"new_content: {content_str(self.new_content)}, "
-            f"diff_data: {diff_repr}, "
-            f"summary: {self.summary}, "
-            f"has_changes: {self.has_changes}, "
-            f"error_message: {self.error_message if self.error_message else ''}"
+            f"    diff_type: {self.diff_type}" + "\n"
+            f"      old_content: {content_str(self.old_content)}" + "\n"
+            f"      new_content: {content_str(self.new_content)}" + "\n"
+            f"      diff_data: {diff_repr}" + "\n"
+            f"      summary: {self.summary}" + "\n"
+            f"      has_changes: {self.has_changes}" + "\n"
+            f"      error_message: {self.error_message if self.error_message else ''}"
         )
 
     def to_dict(self) -> Dict[str, Any]:
