@@ -338,6 +338,20 @@ def render_unified_diff(record: FsDiffRecord, tc: Optional[TermControl]) -> str:
         """
         return str(datetime.fromtimestamp(timestamp)) if timestamp is not None else ""
 
+    def _hunk_header(header: str) -> str:
+        """
+        Format a chunk header with colored output.
+
+        :param header: The header to format.
+        :type header: ``str``
+        :returns: Colorized header string.
+        :rtype: ``str``
+        """
+        before, sep, after = header.partition(" @@")
+        if not sep:  # No closing @@
+            return header
+        return tc.CYAN + before + " @@" + tc.NORMAL + after.strip()
+
     if not record.has_content_diff:
         return ""
 
@@ -380,7 +394,11 @@ def render_unified_diff(record: FsDiffRecord, tc: Optional[TermControl]) -> str:
                 else (
                     (tc.GREEN + _rstrip_nl(line) + tc.WHITE)
                     if line.startswith("+")
-                    else _rstrip_nl(line)
+                    else (
+                        _hunk_header(line)
+                        if line.startswith("@@")
+                        else _rstrip_nl(line)
+                    )
                 )
             )
             for line in record.content_diff.diff_data[2:]
