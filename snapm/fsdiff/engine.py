@@ -634,7 +634,10 @@ class DiffEngine:
             else changes
         )
 
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-nested-blocks
     def compute_diff(
         self,
         tree_a: Dict[str, FsEntry],
@@ -686,139 +689,153 @@ class DiffEngine:
 
         start_time = datetime.now()
         progress.start(len(all_paths))
-        # pylint: disable=too-many-nested-blocks
-        for i, path in enumerate(sorted(all_paths)):
-            entry_a = tree_a.get(path)
-            entry_b = tree_b.get(path)
-            _log_debug_fsdiff(
-                "Comparing path '%s' (A:%s // B:%s)", path, entry_a, entry_b
-            )
-            progress.progress(i, f"Comparing trees for '{path}'")
-
-            if entry_a is None:
-                # File added in tree_b
-                diff_record = FsDiffRecord(path, DiffType.ADDED, new_entry=entry_b)
-                changes = self.change_detector.detect_added(entry_b, options)
-
-                # Optionally restrict to content-only changes.
-                effective_changes = self._effective_changes(changes, options)
-
-                for change in effective_changes:
-                    diff_record.add_change(change)
-
-                # Generate content diff if requested, appropriate, and within size limits
-                if options.include_content_diffs and entry_b.is_file:
-                    within_limit = (
-                        options.max_content_diff_size <= 0
-                        or entry_b.size <= options.max_content_diff_size
-                    )
-                    if within_limit:
-                        content_diff = self.content_differ.generate_content_diff(
-                            None,
-                            entry_b.full_path,
-                            None,
-                            entry_b,
-                        )
-                        if content_diff:
-                            diff_record.set_content_diff(content_diff)
-
-                diffs.append(diff_record)
-
-            elif entry_b is None:
-                # File removed from tree_a
-                diff_record = FsDiffRecord(path, DiffType.REMOVED, old_entry=entry_a)
-
-                changes = self.change_detector.detect_removed(entry_a, options)
-
-                # Optionally restrict to content-only changes.
-                effective_changes = self._effective_changes(changes, options)
-
-                for change in effective_changes:
-                    diff_record.add_change(change)
-
-                # Generate content diff if requested, appropriate, and within size limits
-                if options.include_content_diffs and entry_a.is_file:
-                    within_limit = (
-                        options.max_content_diff_size <= 0
-                        or entry_a.size <= options.max_content_diff_size
-                    )
-                    if within_limit:
-                        content_diff = self.content_differ.generate_content_diff(
-                            entry_a.full_path,
-                            None,
-                            entry_a,
-                            None,
-                        )
-                        if content_diff:
-                            diff_record.set_content_diff(content_diff)
-
-                diffs.append(diff_record)
-
-            else:
-                # File exists in both; first, detect any type changes.
-                if (
-                    # pylint: disable=too-many-boolean-expressions
-                    entry_a.is_file != entry_b.is_file
-                    or entry_a.is_dir != entry_b.is_dir
-                    or entry_a.is_symlink != entry_b.is_symlink
-                    or entry_a.is_block != entry_b.is_block
-                    or entry_a.is_char != entry_b.is_char
-                    or entry_a.is_sock != entry_b.is_sock
-                    or entry_a.is_fifo != entry_b.is_fifo
-                ):
-                    diffs.append(
-                        FsDiffRecord(path, DiffType.TYPE_CHANGED, entry_a, entry_b)
-                    )
-                    continue
-
-                # Otherwise, check for metadata/content changes.
-                changes = self.change_detector.detect_changes(entry_a, entry_b, options)
-
-                # Optionally restrict to content-only changes.
-                effective_changes = self._effective_changes(changes, options)
-
-                # If there are no effective changes (e.g. only metadata changes in
-                # content-only mode), skip this path entirely.
-                if not effective_changes:
-                    continue
-
-                diff_record = FsDiffRecord(path, DiffType.MODIFIED, entry_a, entry_b)
-                for change in effective_changes:
-                    diff_record.add_change(change)
-
-                has_content_change = any(
-                    change.change_type == ChangeType.CONTENT
-                    for change in effective_changes
+        try:
+            # pylint: disable=too-many-nested-blocks
+            for i, path in enumerate(sorted(all_paths)):
+                entry_a = tree_a.get(path)
+                entry_b = tree_b.get(path)
+                _log_debug_fsdiff(
+                    "Comparing path '%s' (A:%s // B:%s)", path, entry_a, entry_b
                 )
+                progress.progress(i, f"Comparing trees for '{path}'")
 
-                # Generate content diff if requested, appropriate, and within size limits
-                if (
-                    has_content_change
-                    and options.include_content_diffs
-                    and entry_a.is_file
-                    and entry_b.is_file
-                ):
-                    within_limit = (
-                        options.max_content_diff_size <= 0
-                        or max(entry_a.size, entry_b.size)
-                        <= options.max_content_diff_size
-                    )
-                    if within_limit:
-                        content_diff = self.content_differ.generate_content_diff(
-                            entry_a.full_path,
-                            entry_b.full_path,
-                            entry_a,
-                            entry_b,
+                if entry_a is None:
+                    # File added in tree_b
+                    diff_record = FsDiffRecord(path, DiffType.ADDED, new_entry=entry_b)
+                    changes = self.change_detector.detect_added(entry_b, options)
+
+                    # Optionally restrict to content-only changes.
+                    effective_changes = self._effective_changes(changes, options)
+
+                    for change in effective_changes:
+                        diff_record.add_change(change)
+
+                    # Generate content diff if requested, appropriate, and within size limits
+                    if options.include_content_diffs and entry_b.is_file:
+                        within_limit = (
+                            options.max_content_diff_size <= 0
+                            or entry_b.size <= options.max_content_diff_size
                         )
-                        if content_diff:
-                            diff_record.set_content_diff(content_diff)
+                        if within_limit:
+                            content_diff = self.content_differ.generate_content_diff(
+                                None,
+                                entry_b.full_path,
+                                None,
+                                entry_b,
+                            )
+                            if content_diff:
+                                diff_record.set_content_diff(content_diff)
 
-                diffs.append(diff_record)
+                    diffs.append(diff_record)
 
-        # Detect moves/renames
-        diffs = self._detect_moves(diffs, tree_a, tree_b, options)
+                elif entry_b is None:
+                    # File removed from tree_a
+                    diff_record = FsDiffRecord(
+                        path, DiffType.REMOVED, old_entry=entry_a
+                    )
 
-        end_time = datetime.now()
+                    changes = self.change_detector.detect_removed(entry_a, options)
+
+                    # Optionally restrict to content-only changes.
+                    effective_changes = self._effective_changes(changes, options)
+
+                    for change in effective_changes:
+                        diff_record.add_change(change)
+
+                    # Generate content diff if requested, appropriate, and within size limits
+                    if options.include_content_diffs and entry_a.is_file:
+                        within_limit = (
+                            options.max_content_diff_size <= 0
+                            or entry_a.size <= options.max_content_diff_size
+                        )
+                        if within_limit:
+                            content_diff = self.content_differ.generate_content_diff(
+                                entry_a.full_path,
+                                None,
+                                entry_a,
+                                None,
+                            )
+                            if content_diff:
+                                diff_record.set_content_diff(content_diff)
+
+                    diffs.append(diff_record)
+
+                else:
+                    # File exists in both; first, detect any type changes.
+                    if (
+                        # pylint: disable=too-many-boolean-expressions
+                        entry_a.is_file != entry_b.is_file
+                        or entry_a.is_dir != entry_b.is_dir
+                        or entry_a.is_symlink != entry_b.is_symlink
+                        or entry_a.is_block != entry_b.is_block
+                        or entry_a.is_char != entry_b.is_char
+                        or entry_a.is_sock != entry_b.is_sock
+                        or entry_a.is_fifo != entry_b.is_fifo
+                    ):
+                        diffs.append(
+                            FsDiffRecord(path, DiffType.TYPE_CHANGED, entry_a, entry_b)
+                        )
+                        continue
+
+                    # Otherwise, check for metadata/content changes.
+                    changes = self.change_detector.detect_changes(
+                        entry_a, entry_b, options
+                    )
+
+                    # Optionally restrict to content-only changes.
+                    effective_changes = self._effective_changes(changes, options)
+
+                    # If there are no effective changes (e.g. only metadata changes in
+                    # content-only mode), skip this path entirely.
+                    if not effective_changes:
+                        continue
+
+                    diff_record = FsDiffRecord(
+                        path, DiffType.MODIFIED, entry_a, entry_b
+                    )
+                    for change in effective_changes:
+                        diff_record.add_change(change)
+
+                    has_content_change = any(
+                        change.change_type == ChangeType.CONTENT
+                        for change in effective_changes
+                    )
+
+                    # Generate content diff if requested, appropriate, and within size limits
+                    if (
+                        has_content_change
+                        and options.include_content_diffs
+                        and entry_a.is_file
+                        and entry_b.is_file
+                    ):
+                        within_limit = (
+                            options.max_content_diff_size <= 0
+                            or max(entry_a.size, entry_b.size)
+                            <= options.max_content_diff_size
+                        )
+                        if within_limit:
+                            content_diff = self.content_differ.generate_content_diff(
+                                entry_a.full_path,
+                                entry_b.full_path,
+                                entry_a,
+                                entry_b,
+                            )
+                            if content_diff:
+                                diff_record.set_content_diff(content_diff)
+
+                    diffs.append(diff_record)
+
+            # Detect moves/renames
+            diffs = self._detect_moves(diffs, tree_a, tree_b, options)
+
+            end_time = datetime.now()
+
+        except KeyboardInterrupt:
+            progress.cancel("Quit!")
+            raise
+        except SystemExit:
+            progress.cancel("Exiting.")
+            raise
 
         progress.end(f"Found {len(diffs)} differences in {end_time - start_time}")
 

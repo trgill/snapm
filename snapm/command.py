@@ -3355,7 +3355,7 @@ def main(args):
             status = cmd_args.func(cmd_args)
         # pylint: disable=broad-except
         except KeyboardInterrupt:  # pragma: no cover
-            _log_error("Exiting on user cancel")
+            _log_info("Exiting on user cancel")
         except Exception as err:
             _log_error("Command failed: %s", err)
 

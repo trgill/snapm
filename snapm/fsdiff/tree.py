@@ -310,88 +310,100 @@ class DiffTree:
             for child_path, child in parent.children.items():
                 _reparent_all_orphans(child, os.path.join(path, child_path))
 
-        progress.start(total_records)
-        for i, record in enumerate(results):
-            # Treat a root-path record as belonging to the root node itself
-            if record.path == os.sep:
-                _log_debug_fsdiff("Attaching root-path record to tree root: %s", record)
-                root.record = record
-                continue
-
-            path = record.path.strip(os.sep)
-            parts = path.split(os.sep)
-
-            _log_debug_fsdiff(
-                "Processing record with path: %s (parts=%s)",
-                record.path,
-                parts,
-            )
-
-            progress.progress(i, f"Processing {record.path}")
-
-            node = root
-            for part in parts[:-1]:
-                _log_debug_fsdiff("Processing path part: %s", part)
-                if part not in node.children:
+        try:
+            progress.start(total_records)
+            for i, record in enumerate(results):
+                # Treat a root-path record as belonging to the root node itself
+                if record.path == os.sep:
                     _log_debug_fsdiff(
-                        "Adding child to %s[%s] = TreeNode(%s)",
-                        node.name,
-                        part,
-                        part,
+                        "Attaching root-path record to tree root: %s", record
                     )
-                    node.children[part] = TreeNode(part)
-                node = node.children[part]
+                    root.record = record
+                    continue
 
-            # Optimistic pass
-            _adopt_orphans(node, os.path.join(os.sep, path))
-
-            # Leaf node with actual record
-            if record.diff_type != DiffType.MOVED:
-                _log_debug_fsdiff(
-                    "Adding leaf node: %s, %s", parts[-1], record.diff_type.value
-                )
-                node.children[parts[-1]] = TreeNode(parts[-1], record)
-                node_count += 1
-            else:
-                if not record.moved_from or not record.moved_to:
-                    raise ValueError("MOVED record requires moved_from and moved_to")
-                # Create two nodes for a move
-                moved_from_parts = record.moved_from.strip(os.sep).split(os.sep)
-                moved_to_parts = record.moved_to.strip(os.sep).split(os.sep)
-                moved_from = moved_from_parts[-1]
-                moved_to = moved_to_parts[-1]
+                path = record.path.strip(os.sep)
+                parts = path.split(os.sep)
 
                 _log_debug_fsdiff(
-                    "Adding leaf move nodes: %s (from=%s, to=%s)",
-                    parts[-1],
-                    moved_from,
-                    moved_to,
+                    "Processing record with path: %s (parts=%s)",
+                    record.path,
+                    parts,
                 )
 
-                node.children[moved_from] = TreeNode(
-                    moved_from, record, to_or_from="from"
-                )
-                node_count += 1
+                progress.progress(i, f"Processing {record.path}")
 
-                # Rename within directory?
-                if moved_from_parts[:-1] == moved_to_parts[:-1]:
-                    node.children[moved_to] = TreeNode(
-                        moved_to, record, to_or_from="to"
+                node = root
+                for part in parts[:-1]:
+                    _log_debug_fsdiff("Processing path part: %s", part)
+                    if part not in node.children:
+                        _log_debug_fsdiff(
+                            "Adding child to %s[%s] = TreeNode(%s)",
+                            node.name,
+                            part,
+                            part,
+                        )
+                        node.children[part] = TreeNode(part)
+                    node = node.children[part]
+
+                # Optimistic pass
+                _adopt_orphans(node, os.path.join(os.sep, path))
+
+                # Leaf node with actual record
+                if record.diff_type != DiffType.MOVED:
+                    _log_debug_fsdiff(
+                        "Adding leaf node: %s, %s", parts[-1], record.diff_type.value
                     )
+                    node.children[parts[-1]] = TreeNode(parts[-1], record)
                     node_count += 1
                 else:
-                    orphan_path = os.path.join(os.sep, *moved_to_parts[:-1])
+                    if not record.moved_from or not record.moved_to:
+                        raise ValueError(
+                            "MOVED record requires moved_from and moved_to"
+                        )
+                    # Create two nodes for a move
+                    moved_from_parts = record.moved_from.strip(os.sep).split(os.sep)
+                    moved_to_parts = record.moved_to.strip(os.sep).split(os.sep)
+                    moved_from = moved_from_parts[-1]
+                    moved_to = moved_to_parts[-1]
+
                     _log_debug_fsdiff(
-                        "Adding orphan move: %s (%s)", moved_to, orphan_path
+                        "Adding leaf move nodes: %s (from=%s, to=%s)",
+                        parts[-1],
+                        moved_from,
+                        moved_to,
                     )
-                    orphan_moves[orphan_path].append(
-                        TreeNode(moved_to, record, to_or_from="to")
+
+                    node.children[moved_from] = TreeNode(
+                        moved_from, record, to_or_from="from"
                     )
                     node_count += 1
 
-        if orphan_moves:
-            _log_debug_fsdiff("Processing orphan_moves=%s", orphan_moves)
-            _reparent_all_orphans(root, "/")
+                    # Rename within directory?
+                    if moved_from_parts[:-1] == moved_to_parts[:-1]:
+                        node.children[moved_to] = TreeNode(
+                            moved_to, record, to_or_from="to"
+                        )
+                        node_count += 1
+                    else:
+                        orphan_path = os.path.join(os.sep, *moved_to_parts[:-1])
+                        _log_debug_fsdiff(
+                            "Adding orphan move: %s (%s)", moved_to, orphan_path
+                        )
+                        orphan_moves[orphan_path].append(
+                            TreeNode(moved_to, record, to_or_from="to")
+                        )
+                        node_count += 1
+
+            if orphan_moves:
+                _log_debug_fsdiff("Processing orphan_moves=%s", orphan_moves)
+                _reparent_all_orphans(root, "/")
+
+        except KeyboardInterrupt:
+            progress.cancel("Quit!")
+            raise
+        except SystemExit:
+            progress.cancel("Exiting.")
+            raise
 
         progress.end(f"Built tree with {node_count} nodes")
 
