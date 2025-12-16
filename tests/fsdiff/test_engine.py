@@ -117,15 +117,15 @@ class TestFsDiffResults(unittest.TestCase):
         term_control.term_stream.encoding = "utf8"
         term_control.columns = 80
 
-        term_control.BLACK: str = "<BLACK>"  #: Black foreground color
-        term_control.BLUE: str = "<BLUE>"  #: Blue foreground color
-        term_control.GREEN: str = "<GREEN>"  #: Green foreground color
-        term_control.CYAN: str = "<CYAN>"  #: Cyan foreground color
-        term_control.RED: str = "<RED>"  #: Red foreground color
-        term_control.MAGENTA: str = "<MAGENTA>"  #: Magenta foreground color
-        term_control.YELLOW: str = "<YELLOW>"  #: Yellow foreground color
-        term_control.WHITE: str = "<WHITE>"  #: White foreground color
-        term_control.NORMAL: str = "<NORMAL>"  #: Reset all properties
+        term_control.BLACK = "<BLACK>"  #: Black foreground color
+        term_control.BLUE = "<BLUE>"  #: Blue foreground color
+        term_control.GREEN = "<GREEN>"  #: Green foreground color
+        term_control.CYAN = "<CYAN>"  #: Cyan foreground color
+        term_control.RED = "<RED>"  #: Red foreground color
+        term_control.MAGENTA = "<MAGENTA>"  #: Magenta foreground color
+        term_control.YELLOW = "<YELLOW>"  #: Yellow foreground color
+        term_control.WHITE = "<WHITE>"  #: White foreground color
+        term_control.NORMAL = "<NORMAL>"  #: Reset all properties
 
         diff = self.results.diff(term_control=term_control)
         print(repr(diff))
@@ -171,6 +171,23 @@ class TestFsDiffResults(unittest.TestCase):
         # Check trailer summary
         self.assertIn("2 files changed, 3 insertions(+), 1 deletions(-)", diffstat)
 
+    def test_results_summary_basic(self):
+        """Test FsDiffResults.summary() without diffstat."""
+        # Using self.results from setUp (3 records: 1 mod, 1 add, 1 rm)
+        summary = self.results.summary(color="never")
+
+        self.assertIn("Total changes:     3", summary)
+        # Check category counts
+        self.assertIn("added:     1", summary)
+        self.assertIn("removed:   1", summary)
+        self.assertIn("modified:  1", summary)
+        # Only self.rec_mod has a content diff set in setUp
+        self.assertIn("withdiff:  1", summary)
+
+        # Ensure diffstat is NOT present
+        self.assertNotIn("|", summary)
+        self.assertNotIn("insertions(+)", summary)
+
     def test_results_summary_with_diffstat(self):
         """Test FsDiffResults.summary() including diffstat."""
         summary = self.results.summary(diffstat=True, color="never")
@@ -192,6 +209,30 @@ class TestFsDiffResults(unittest.TestCase):
         self.assertIn("diff a/a b/a", diff_output)
         self.assertIn("-foo", diff_output)
         self.assertIn("+bar", diff_output)
+
+    def test_summary_color_codes(self):
+        """Test that summary applies color codes when requested."""
+        term_control = MagicMock(spec=TermControl)
+        term_control.term_stream = MagicMock(spec=TextIO)
+        term_control.term_stream.encoding = "utf8"
+        term_control.columns = 80
+
+        term_control.BLACK = "<BLACK>"  #: Black foreground color
+        term_control.BLUE = "<BLUE>"  #: Blue foreground color
+        term_control.GREEN = "<GREEN>"  #: Green foreground color
+        term_control.CYAN = "<CYAN>"  #: Cyan foreground color
+        term_control.RED = "<RED>"  #: Red foreground color
+        term_control.MAGENTA = "<MAGENTA>"  #: Magenta foreground color
+        term_control.YELLOW = "<YELLOW>"  #: Yellow foreground color
+        term_control.WHITE = "<WHITE>"  #: White foreground color
+        term_control.NORMAL = "<NORMAL>"  #: Reset all properties
+
+        summary = self.results.summary(term_control=term_control)
+
+        # Check for ANSI Escape (Start of color)
+        self.assertIn("<GREEN>", summary)
+        self.assertIn("<RED>", summary)
+        self.assertIn("<NORMAL>", summary)
 
 
 class TestDiffEngine(unittest.TestCase):

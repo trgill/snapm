@@ -487,6 +487,7 @@ class FsDiffResults:
         "short",
         "json",
         "diff",
+        "summary",
         "tree",
     ]
 
@@ -676,6 +677,44 @@ class FsDiffResults:
             stat_str = render_diff_stat(content_diffs, term_control) + "\n\n"
 
         return stat_str + "\n".join(diffs)
+
+    def summary(
+        self,
+        diffstat: bool = False,
+        color: str = "auto",
+        term_control: Optional[TermControl] = None,
+    ) -> str:
+        """
+        Return a summary of this ``FsDiffResults`` instance.
+
+        :param diffstat: Include "diffstat"-like change summary.
+        :type diffstat: ``bool``
+        :param color: A string to control color rendering: "auto", "always", or
+                      "never".
+        :type color: ``str``
+        :param term_control: An optional ``TermControl`` instance to use for
+                             formatting. The supplied instance overrides any
+                             ``color`` argument if set.
+        :type term_control: ``Optional[TermControl]``
+        :returns: A string summarizing this instance.
+        :rtype: ``str``
+        """
+
+        tc = term_control or TermControl(color=color)
+        content_diffs = [r for r in self._records if r.has_content_diff]
+        summary = (
+            f"Total changes:     {len(self)}\n"
+            f"  Paths {tc.GREEN + 'added:    ' + tc.NORMAL} {len(self.added)}\n"
+            f"  Paths {tc.RED + 'removed:  ' + tc.NORMAL} {len(self.removed)}\n"
+            f"  Paths {tc.YELLOW + 'modified: ' + tc.NORMAL} {len(self.modified)}\n"
+            f"  Paths {tc.MAGENTA + 'withdiff: ' + tc.NORMAL} {len(content_diffs)}\n"
+            f"  Paths {tc.CYAN + 'moved:    ' + tc.NORMAL} {len(self.moved)}\n"
+            f"  Paths {tc.BLUE + 'different:' + tc.NORMAL} {len(self.type_changed)}"
+        )
+        stat_str = ""
+        if diffstat and content_diffs:
+            stat_str = "\n\n" + render_diff_stat(content_diffs, tc)
+        return summary + stat_str
 
     def tree(
         self,
