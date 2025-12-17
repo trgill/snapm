@@ -11,6 +11,7 @@ File system diff engine
 from typing import Any, ClassVar, Dict, Iterator, List, Optional
 from collections import defaultdict
 from datetime import datetime
+from math import floor
 import logging
 import json
 import os
@@ -491,9 +492,21 @@ class FsDiffResults:
         "tree",
     ]
 
-    def __init__(self, records: List[FsDiffRecord], options: DiffOptions):
+    def __init__(
+        self, records: List[FsDiffRecord], options: DiffOptions, timestamp: int
+    ):
         self._records = records
         self.options = options
+        self.timestamp = timestamp
+
+    def __repr__(self) -> str:
+        """
+        Return a machine-readable representation of this instance.
+
+        :returns: ``FsDiffResults`` constructor style string.
+        :rtype: ``str``
+        """
+        return f"FsDiffResults([...], {self.options!r}, {self.timestamp})"
 
     # List-like interface
     def __iter__(self) -> Iterator[FsDiffRecord]:
@@ -808,9 +821,11 @@ class DiffEngine:
         all_paths = set(tree_a.keys()) | set(tree_b.keys())
         _log_debug("Starting compute_diff with %d paths", len(all_paths))
 
+        start_time = datetime.now()
+
         if not all_paths:
             _log_info("No paths to diff; returning empty FsDiffResults")
-            return FsDiffResults(diffs, options)
+            return FsDiffResults(diffs, options, floor(start_time.timestamp()))
 
         if options.ignore_timestamps:
             _log_debug("Ignoring timestamp changes")
@@ -828,7 +843,6 @@ class DiffEngine:
             term_control=term_control,
         )
 
-        start_time = datetime.now()
         progress.start(len(all_paths))
         try:
             # pylint: disable=too-many-nested-blocks
@@ -980,7 +994,7 @@ class DiffEngine:
 
         progress.end(f"Found {len(diffs)} differences in {end_time - start_time}")
 
-        return FsDiffResults(diffs, options)
+        return FsDiffResults(diffs, options, floor(start_time.timestamp()))
 
     @staticmethod
     def _is_move_diff(diff, src_path, dest_path):

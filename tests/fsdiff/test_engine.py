@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 from datetime import datetime
 from typing import TextIO
+from math import floor
 import json
 
 from snapm.fsdiff.changes import ChangeType, FileChange
@@ -19,8 +20,9 @@ from snapm.progress import TermControl
 
 from ._util import make_entry
 
+timestamp = floor(datetime.now().timestamp())
 
-# Add this new class to snapm/tests/fsdiff/test_engine.py
+
 class TestFsDiffResults(unittest.TestCase):
     def setUp(self):
         self.entry_a = make_entry("/a", content_hash="h1", size=100)
@@ -37,7 +39,7 @@ class TestFsDiffResults(unittest.TestCase):
         # Removed record
         self.rec_rm = FsDiffRecord("/c", DiffType.REMOVED, old_entry=self.entry_a)
 
-        self.results = FsDiffResults([self.rec_mod, self.rec_add, self.rec_rm], DiffOptions())
+        self.results = FsDiffResults([self.rec_mod, self.rec_add, self.rec_rm], DiffOptions(), timestamp)
 
     def test_list_interface(self):
         """Test iteration, len, and getitem."""

@@ -7,7 +7,9 @@
 # SPDX-License-Identifier: Apache-2.0
 import unittest
 from unittest.mock import MagicMock, patch
+from datetime import datetime
 from typing import TextIO
+from math import floor
 import os
 
 from snapm.fsdiff.tree import DiffTree, TreeNode
@@ -16,6 +18,9 @@ from snapm.fsdiff.difftypes import DiffType
 from snapm.fsdiff.options import DiffOptions
 from snapm.fsdiff.changes import FileChange, ChangeType
 from snapm.progress import TermControl
+
+timestamp = floor(datetime.now().timestamp())
+
 
 class TestTreeNode(unittest.TestCase):
     def test_init_valid(self):
@@ -106,7 +111,7 @@ class TestDiffTree(unittest.TestCase):
             self.tree.get_change_marker(rec, node)
 
     def test_build_tree_empty(self):
-        results = FsDiffResults([], DiffOptions())
+        results = FsDiffResults([], DiffOptions(), timestamp)
         tree = DiffTree.build_tree(results)
         self.assertEqual(tree.node_count, 0)
         self.assertEqual(tree.render(), "/")
@@ -117,7 +122,7 @@ class TestDiffTree(unittest.TestCase):
         rec1 = FsDiffRecord("/dir", DiffType.MODIFIED)
         rec2 = FsDiffRecord("/dir/file", DiffType.ADDED)
         rec3 = FsDiffRecord("/dir2", DiffType.MODIFIED)
-        results = FsDiffResults([rec1, rec2, rec3], DiffOptions())
+        results = FsDiffResults([rec1, rec2, rec3], DiffOptions(), timestamp)
 
         term_control = MagicMock(spec=TermControl)
         term_control.term_stream = MagicMock(spec=TextIO)
@@ -143,7 +148,7 @@ class TestDiffTree(unittest.TestCase):
     def test_build_tree_root_record(self):
         # Record for "/"
         rec = FsDiffRecord("/", DiffType.MODIFIED)
-        results = FsDiffResults([rec], DiffOptions())
+        results = FsDiffResults([rec], DiffOptions(), timestamp)
         tree = DiffTree.build_tree(results, color="never")
         output = tree.render()
         self.assertIn("[*] /", output)
@@ -171,7 +176,7 @@ class TestDiffTree(unittest.TestCase):
         term_control.WHITE: str = ""  #: White foreground color
         term_control.NORMAL: str = ""  #: Reset all properties
 
-        results = FsDiffResults([rec1, rec2, rec3], DiffOptions())
+        results = FsDiffResults([rec1, rec2, rec3], DiffOptions(), timestamp)
         tree = DiffTree.build_tree(results, term_control=term_control)
         output = tree.render()
         print(output)
@@ -190,7 +195,7 @@ class TestDiffTree(unittest.TestCase):
         rec2.moved_from = "/a"
         rec2.moved_to = "/b"
 
-        results = FsDiffResults([rec1, rec2], DiffOptions())
+        results = FsDiffResults([rec1, rec2], DiffOptions(), timestamp)
         tree = DiffTree.build_tree(results, color="never")
         output = tree.render()
 
@@ -200,7 +205,7 @@ class TestDiffTree(unittest.TestCase):
     def test_render_full_desc(self):
         rec = FsDiffRecord("/file", DiffType.MODIFIED)
         rec.add_change(FileChange(ChangeType.CONTENT, description="content changed"))
-        results = FsDiffResults([rec], DiffOptions())
+        results = FsDiffResults([rec], DiffOptions(), timestamp)
 
         tree = DiffTree.build_tree(results, color="never")
         output = tree.render(desc="full")
@@ -209,7 +214,7 @@ class TestDiffTree(unittest.TestCase):
     def test_render_short_desc(self):
         rec = FsDiffRecord("/file", DiffType.MODIFIED)
         rec.add_change(FileChange(ChangeType.CONTENT, description="content changed"))
-        results = FsDiffResults([rec], DiffOptions())
+        results = FsDiffResults([rec], DiffOptions(), timestamp)
 
         tree = DiffTree.build_tree(results, color="never")
         output = tree.render(desc="short")
@@ -237,13 +242,13 @@ class TestDiffTree(unittest.TestCase):
     def test_build_tree_moved_validation(self):
         rec = FsDiffRecord("/a", DiffType.MOVED)
         # Missing moved_from/to
-        results = FsDiffResults([rec], DiffOptions())
+        results = FsDiffResults([rec], DiffOptions(), timestamp)
         with self.assertRaises(ValueError):
             DiffTree.build_tree(results)
 
     def test_interrupt_build_tree(self):
         rec = FsDiffRecord("/a", DiffType.MODIFIED)
-        results = FsDiffResults([rec], DiffOptions())
+        results = FsDiffResults([rec], DiffOptions(), timestamp)
         with patch("snapm.fsdiff.tree.ProgressFactory.get_progress") as mock_prog:
             mock_prog.return_value.start.side_effect = KeyboardInterrupt
             with self.assertRaises(KeyboardInterrupt):
