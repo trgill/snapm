@@ -496,7 +496,7 @@ class TreeWalker:
 
         throbber = ProgressFactory.get_throbber(
             f"Gathering paths from {target}",
-            style="bouncingball",
+            style="braillecircle",
             quiet=quiet,
             term_control=term_control,
             no_clear=False,
