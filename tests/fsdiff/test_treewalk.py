@@ -366,7 +366,7 @@ class TestTreeWalkFull(unittest.TestCase):
 
     def test_fsdiffer_compare_roots(self):
         """Test high-level FsDiffer.compare_roots."""
-        differ = FsDiffer(MagicMock(), self.opts)
+        differ = FsDiffer(MagicMock(), options=self.opts, cache=False)
 
         mount_a = MagicMock()
         mount_a.root = str(self.root)

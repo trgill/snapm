@@ -2293,6 +2293,7 @@ __all__ = [
     "SNAPM_DEBUG_ALL",
     # Path to runtime directory
     "SNAPM_RUNTIME_DIR",
+    "NAMESPACE_SNAPSHOT_SET",
     # Debug logging - subsystem name interface
     "SubsystemFilter",
     "SNAPM_SUBSYSTEM_MANAGER",
