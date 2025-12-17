@@ -59,6 +59,96 @@ EiB and ZiB. Units may be abbreviated to the first character.
 
 The USED size policy can only be applied to mounted file systems.
 
+Difference Engine
+=================
+
+The Difference Engine is a core facility in ``snapm`` that allows for detailed
+comparisons between two snapshot sets, or between a snapshot set and the
+currently running system.
+
+How it Works
+------------
+
+The engine operates by recursively walking the file system trees of both the
+source and target. It performs a multi-stage analysis to identify
+changes:
+
+* **Entry Detection**: Identifies files, directories, and symlinks that have
+  been added, removed, or modified.
+* **Move Detection**: By matching content hashes, the engine can identify
+  files that have been renamed or moved between directories rather than
+  simply being deleted and recreated.
+* **Metadata Analysis**: Detects changes in file permissions (mode),
+  ownership (UID/GID), and extended attributes (xattrs).
+* **Content Comparison**: Performs deep content comparisons for regular
+  files, including generating standard unified diffs for text files.
+
+Output Formats and Use Cases
+----------------------------
+
+The Difference Engine supports several output formats via the ``snapset diff``
+``--output-format`` argument, each suited to different tasks:
+
+* **tree** (Default): Best for a quick visual overview of which parts of the
+  file system hierarchy have changed.
+* **diff**: Ideal for developers and sysadmins who need to review actual
+  line-by-line configuration or code changes.
+* **paths**: Useful for scripting, allowing you to pipe a list of changed
+  files to other tools like ``tar`` or ``rsync``.
+* **full**: Provides a complete audit trail, including metadata changes like
+  permission and ownership shifts.
+* **json**: Designed for automation and integration with third-party
+  monitoring or reporting tools.
+
+In addition differences can be reported in a tabular format using the standard
+``snapm`` reporting mechanism using the ``snapset diffreport`` command. The
+available ``diffreport`` report output fields are:
+
+* **path**: Difference path (string)
+* **type**:  Difference type (string)
+* **size_delta**: Diff size change (size)
+* **content**: Content changed (string)
+* **metadata**: Metadata changed (string)
+* **mode_old**: Old path mode (string)
+* **mode_new**: New path mode (string)
+* **category**: File category (string)
+* **movedfrom**: Move source (string)
+* **movedto**: Move destination (string)
+* **diffsummary**: Summary of content differences (string)
+* **hash_old**: Old file content hash (string)
+* **hash_new**: New file content hash (string)
+* **filetype**: File type (string)
+* **mtime_old**: Old modification time (time)
+* **mtime_new**: New modification time (time)
+
+Comparison Modes
+----------------
+
+You can fine-tune the comparison using various flags:
+
+* **Content-Only** (``-c``): Ignores all metadata changes and only reports
+  files where the actual data has changed.
+* **Ignore Options**: Use ``--ignore-timestamps``, ``--ignore-permissions``,
+  or ``--ignore-ownership`` to filter out "noise" during comparisons.
+
+Performance and the Diff Cache
+------------------------------
+
+Walking large file systems and computing content hashes can be
+resource-intensive. To improve performance, ``snapm`` implements a
+**diffcache**.
+
+* **How it works**: When a comparison is performed, the results are
+  compressed and stored in ``/var/cache/snapm/diffcache``.
+* **Cache Reuse**: Subsequent ``diff`` or ``diffreport`` commands between
+  the same two sets will load the results from the cache instead of
+  re-scanning the file systems.
+* **Expiry**: By default, cache entries expire after **15 minutes**.
+  This ensures that results remain fresh if the running system (``.``) is
+  one of the comparison targets.
+* **Manual Control**: You can override the expiry or disable the cache
+  entirely using the ``--cache-mode`` and ``--cache-expires`` options.
+
 Command Reference
 =================
 
@@ -273,8 +363,8 @@ to indicate the type of change:
   file.
 * ``[>]`` **Path moved to** (cyan): The destination path of a renamed or
   moved file.
-* ``[!]`` **Path file type changed**: The file type (regular file, symlink,
-  directory, etc.) has changed between source and target.
+* ``[!]`` **Path file type changed** (blue): The file type (regular file,
+  symlink, directory, etc.) has changed between source and target.
 
 snapset diffreport
 ------------------
