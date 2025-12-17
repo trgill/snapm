@@ -9,9 +9,13 @@
 Top-level fsdiff interface.
 """
 from typing import Optional, TYPE_CHECKING
+import logging
+import lzma
 
+from snapm import SnapmError, SnapmNotFoundError
 from snapm.progress import TermControl
 
+from .cache import load_cache, save_cache
 from .engine import DiffEngine, FsDiffResults
 from .options import DiffOptions
 from .treewalk import TreeWalker
@@ -19,6 +23,14 @@ from .treewalk import TreeWalker
 if TYPE_CHECKING:
     from snapm.manager import Manager
     from snapm.manager._mounts import Mount
+
+
+_log = logging.getLogger(__name__)
+
+_log_debug = _log.debug
+_log_info = _log.info
+_log_warn = _log.warning
+_log_error = _log.error
 
 
 class FsDiffer:
@@ -30,6 +42,8 @@ class FsDiffer:
         self,
         manager: "Manager",
         options: Optional[DiffOptions] = None,
+        cache: bool = True,
+        cache_expires: int = -1,
         color: str = "auto",
         term_control: Optional[TermControl] = None,
     ):
@@ -41,6 +55,11 @@ class FsDiffer:
         :type manager: ``Manager``
         :param options: Options to control this ``FsDiffer`` instance.
         :type options: ``DiffOptions``
+        :param cache: Use diff cache if available.
+        :type cache: ``bool``
+        :param cache_expires: Cache expiry in seconds. Use 0 to disable cache
+                        expiry or -1 to use the cache default (15m).
+        :type cache_expires: ``int``
         :param color: A string to control color tree rendering: "auto",
                       "always", or "never".
         :type color: ``str``
@@ -54,6 +73,8 @@ class FsDiffer:
         #: Manager context for snapshot operations (used by future methods)
         self.manager: "Manager" = manager
         self.options: DiffOptions = options
+        self.cache = cache
+        self.cache_expires = cache_expires
         self.tree_walker: TreeWalker = TreeWalker(options)
         self.diff_engine: DiffEngine = DiffEngine()
         self._term_control: Optional[TermControl] = term_control or TermControl(
@@ -71,6 +92,37 @@ class FsDiffer:
         :returns: The diff results for the comparison.
         :rtype: ``FsDiffResults``
         """
+        try:
+            _log_debug(
+                "Attempting to load diff cache for %s/%s (cache=%s, expiry=%d)",
+                mount_a.name,
+                mount_b.name,
+                self.cache,
+                self.cache_expires,
+            )
+            cached_results = (
+                load_cache(mount_a, mount_b, self.options, expires=self.cache_expires)
+                if self.cache
+                else None
+            )
+            if cached_results is not None:
+                _log_debug(
+                    "Loaded diff cache for %s/%s: %s",
+                    mount_a.name,
+                    mount_b.name,
+                    cached_results,
+                )
+                return cached_results
+        except SnapmNotFoundError:
+            _log_debug("No diff cache found for %s/%s", mount_a.name, mount_b.name)
+        except SnapmError as err:
+            _log_info(
+                "Failed to load diff cache for %s/%s: %s",
+                mount_a.name,
+                mount_b.name,
+                err,
+            )
+
         strip_prefix_a = "" if mount_a.root == "/" else mount_a.root
         tree_a = self.tree_walker.walk_tree(
             mount_a,
@@ -87,9 +139,20 @@ class FsDiffer:
             term_control=self._term_control,
         )
 
-        return self.diff_engine.compute_diff(
+        results = self.diff_engine.compute_diff(
             tree_a, tree_b, self.options, self._term_control
         )
+        if self.cache:
+            try:
+                save_cache(mount_a, mount_b, results)
+            except (OSError, lzma.LZMAError) as err:
+                _log_info(
+                    "Failed to save diff cache for %s/%s: %s",
+                    mount_a.name,
+                    mount_b.name,
+                    err,
+                )
+        return results
 
     def compare_snapshots(self, snapshot_a: str, snapshot_b: str) -> FsDiffResults:
         """Compare two snapshots by name/timestamp"""
