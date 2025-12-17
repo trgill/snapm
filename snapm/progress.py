@@ -675,10 +675,8 @@ class Progress(ProgressBase):
             print(
                 (
                     self.term.UP
-                    + self.term.CLEAR_BOL
                     + self.term.BOL
-                    + self.term.CLEAR_BOL
-                    + self.term.BOL
+                    + self.term.CLEAR_EOL
                     + self.term.SHOW_CURSOR
                 ),
                 file=self.stream,
