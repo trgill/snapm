@@ -335,12 +335,11 @@ class TestDiffEngine(unittest.TestCase):
         self.assertEqual(diffs[0].diff_type, DiffType.TYPE_CHANGED)
 
     def test_compute_diff_limits_added_removed(self):
-        self.opts.include_content_diffs = True
-        self.opts.max_content_diff_size = 10
+        opts = DiffOptions(include_content_diffs=True, max_content_diff_size=10)
         entry_lg = make_entry("/large", size=100)
         tree_a = {}
         tree_b = {"/large": entry_lg}
-        diffs = self.engine.compute_diff(tree_a, tree_b, self.opts)
+        diffs = self.engine.compute_diff(tree_a, tree_b, opts)
         self.assertFalse(diffs[0].has_content_diff)
 
     def test_detect_moves_collision(self):
@@ -354,10 +353,10 @@ class TestDiffEngine(unittest.TestCase):
         self.assertEqual(len(moves), 1)
 
     def test_include_content_diffs_false(self):
-        self.opts.include_content_diffs = False
+        opts = DiffOptions(include_content_diffs=False)
         entry_a = make_entry("/a", content_hash="h1")
         entry_b = make_entry("/a", content_hash="h2")
-        diffs = self.engine.compute_diff({"/a": entry_a}, {"/a": entry_b}, self.opts)
+        diffs = self.engine.compute_diff({"/a": entry_a}, {"/a": entry_b}, opts)
         self.assertEqual(diffs[0].diff_type, DiffType.MODIFIED)
         self.assertFalse(diffs[0].has_content_diff)
 
@@ -438,14 +437,14 @@ class TestDiffEngine(unittest.TestCase):
         self.assertEqual(diffs2[0].diff_type, DiffType.REMOVED)
 
     def test_max_content_diff_size_limit(self):
-        self.opts.max_content_diff_size = 100
+        opts = DiffOptions(max_content_diff_size=100)
         # Create entries larger than limit
         entry_a = make_entry("/a", size=200, content_hash="h1")
         entry_b = make_entry("/a", size=200, content_hash="h2")
         tree_a = {"/a": entry_a}
         tree_b = {"/a": entry_b}
 
-        diffs = self.engine.compute_diff(tree_a, tree_b, self.opts)
+        diffs = self.engine.compute_diff(tree_a, tree_b, opts)
 
         self.assertEqual(len(diffs), 1)
         # Should have detected modification

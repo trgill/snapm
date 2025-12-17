@@ -13,7 +13,7 @@ from snapm.fsdiff.options import DiffOptions
 
 class TestDiffOptions(unittest.TestCase):
     def test_DiffOptions__str__(self):
-        opts = DiffOptions(ignore_timestamps=True, file_patterns=["*.txt"])
+        opts = DiffOptions(ignore_timestamps=True, file_patterns=("*.txt",))
         s = str(opts)
         self.assertIn("ignore_timestamps=True", s)
         self.assertIn("file_patterns=*.txt", s)

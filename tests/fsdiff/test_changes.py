@@ -87,8 +87,8 @@ class TestChangeDetector(unittest.TestCase):
         self.assertEqual(changes[0].change_type, ChangeType.TIMESTAMPS)
 
         # Should NOT detect with ignore flag
-        self.opts.ignore_timestamps = True
-        changes = self.detector.detect_changes(entry_a, entry_b, self.opts)
+        opts = DiffOptions(ignore_timestamps=True)
+        changes = self.detector.detect_changes(entry_a, entry_b, opts)
         self.assertEqual(len(changes), 0)
 
     def test_options_ignore_permissions(self):
@@ -101,8 +101,8 @@ class TestChangeDetector(unittest.TestCase):
         self.assertEqual(changes[0].change_type, ChangeType.PERMISSIONS)
 
         # Should NOT detect with ignore flag
-        self.opts.ignore_permissions = True
-        changes = self.detector.detect_changes(entry_a, entry_b, self.opts)
+        opts = DiffOptions(ignore_permissions=True)
+        changes = self.detector.detect_changes(entry_a, entry_b, opts)
         self.assertEqual(len(changes), 0)
 
     def test_options_ignore_ownership(self):
@@ -115,16 +115,16 @@ class TestChangeDetector(unittest.TestCase):
         self.assertEqual(changes[0].change_type, ChangeType.OWNERSHIP)
 
         # Should NOT detect with ignore flag
-        self.opts.ignore_ownership = True
-        changes = self.detector.detect_changes(entry_a, entry_b, self.opts)
+        opts = DiffOptions(ignore_ownership=True)
+        changes = self.detector.detect_changes(entry_a, entry_b, opts)
         self.assertEqual(len(changes), 0)
 
     def test_options_content_only(self):
-        self.opts.content_only = True
+        opts = DiffOptions(content_only=True)
         # Create entries diff permissions AND diff content
         entry_a = make_entry("/a", mode=0o644, content_hash="h1")
         entry_b = make_entry("/a", mode=0o777, content_hash="h2")
-        changes = self.detector.detect_changes(entry_a, entry_b, self.opts)
+        changes = self.detector.detect_changes(entry_a, entry_b, opts)
 
         # Should catch content, ignore permissions
         self.assertEqual(len(changes), 1)
@@ -172,10 +172,10 @@ class TestChangeDetector(unittest.TestCase):
 
     def test_detect_added_content_only(self):
         """Test detect_added with content_only option."""
-        self.opts.content_only = True
+        opts = DiffOptions(content_only=True)
         entry = make_entry("/new", content_hash="h1", mode=0o755)
 
-        changes = self.detector.detect_added(entry, self.opts)
+        changes = self.detector.detect_added(entry, opts)
 
         self.assertEqual(len(changes), 1)
         self.assertEqual(changes[0].change_type, ChangeType.CONTENT)

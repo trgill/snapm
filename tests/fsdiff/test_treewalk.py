@@ -34,10 +34,10 @@ class TestTreeWalker(unittest.TestCase):
         # Case 1: Default system dirs included
         opts = DiffOptions(include_system_dirs=True)
         walker = TreeWalker(opts)
-        self.assertEqual(walker.exclude_patterns, [])
+        self.assertEqual(walker.exclude_patterns, ())
 
         # Case 2: Custom excludes + system dirs default (implicit)
-        opts = DiffOptions(exclude_patterns=["/custom/*"])
+        opts = DiffOptions(exclude_patterns=("/custom/*",))
         walker = TreeWalker(opts)
         self.assertIn("/custom/*", walker.exclude_patterns)
         self.assertIn("/proc/*", walker.exclude_patterns)
@@ -229,9 +229,8 @@ class TestTreeWalkFull(unittest.TestCase):
         (self.root / "exclude_me").mkdir()
         (self.root / "exclude_me" / "file_f").write_text("ignored")
 
-        self.opts = DiffOptions()
         # Ensure we capture content hash by default
-        self.opts.include_content_hash = True
+        self.opts = DiffOptions(include_content_diffs=True)
 
     def tearDown(self):
         self.tmp_dir.cleanup()
@@ -281,8 +280,8 @@ class TestTreeWalkFull(unittest.TestCase):
 
     def test_treewalk_exclusions(self):
         """Test exclude_patterns functionality."""
-        self.opts.exclude_patterns = ["/exclude_me*"]
-        walker = TreeWalker(self.opts)
+        opts = DiffOptions(include_content_diffs=True, exclude_patterns=("/exclude_me*",))
+        walker = TreeWalker(opts)
         mount = MagicMock(spec=Mount)
         mount.root = str(self.root)
         mount.name = "test_mount"
@@ -295,8 +294,8 @@ class TestTreeWalkFull(unittest.TestCase):
 
     def test_treewalk_file_patterns(self):
         """Test file_patterns (inclusion filter)."""
-        self.opts.file_patterns = ["/file_a"]
-        walker = TreeWalker(self.opts)
+        opts = DiffOptions(file_patterns=("/file_a",))
+        walker = TreeWalker(opts)
         mount = MagicMock(spec=Mount)
         mount.root = str(self.root)
         mount.name = "test_mount"
@@ -308,8 +307,8 @@ class TestTreeWalkFull(unittest.TestCase):
 
     def test_treewalk_follow_symlinks(self):
         """Test behavior when follow_symlinks is True."""
-        self.opts.follow_symlinks = True
-        walker = TreeWalker(self.opts)
+        opts = DiffOptions(follow_symlinks=True)
+        walker = TreeWalker(opts)
         mount = MagicMock(spec=Mount)
         mount.root = str(self.root)
         mount.name = "test_mount"
@@ -410,8 +409,8 @@ class TestTreeWalkFull(unittest.TestCase):
     def test_max_content_hash_size(self):
         """Test skipping hash calculation for large files."""
         # file_a is 6 bytes. Set limit to 1 byte.
-        self.opts.max_content_hash_size = 1
-        walker = TreeWalker(self.opts)
+        opts = DiffOptions(max_content_hash_size=1)
+        walker = TreeWalker(opts)
         mount = MagicMock(spec=Mount)
         mount.root = str(self.root)
         mount.name = "test_mount"

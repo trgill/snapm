@@ -8,7 +8,7 @@
 """
 Tree walking support for fsdiff.
 """
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 from hashlib import md5, sha1, sha256, sha512
 from fnmatch import fnmatch
 from pathlib import Path
@@ -52,7 +52,7 @@ _HASH_TYPES = {
 }
 
 
-_EXCLUDE_SYSTEM_DIRS = [
+_EXCLUDE_SYSTEM_DIRS = (
     "/proc/*",
     "/sys/*",
     "/dev/*",
@@ -60,7 +60,7 @@ _EXCLUDE_SYSTEM_DIRS = [
     "/run/*",
     "/var/run/*",
     "/var/lock/*",
-]
+)
 
 
 def _stat_to_dict(st: os.stat_result) -> Dict[str, Any]:
@@ -393,15 +393,15 @@ class TreeWalker:
         self.file_type_detector: FileTypeDetector = FileTypeDetector()
 
         if options.exclude_patterns and not options.include_system_dirs:
-            self.exclude_patterns: List[str] = (
+            self.exclude_patterns: Tuple[str, ...] = (
                 options.exclude_patterns + _EXCLUDE_SYSTEM_DIRS
             )
         elif not options.include_system_dirs:
-            self.exclude_patterns: List[str] = _EXCLUDE_SYSTEM_DIRS
+            self.exclude_patterns: Tuple[str, ...] = _EXCLUDE_SYSTEM_DIRS
         else:
-            self.exclude_patterns: List[str] = options.exclude_patterns or []
+            self.exclude_patterns: Tuple[str, ...] = options.exclude_patterns or ()
 
-        self.file_patterns: Optional[List[str]] = options.file_patterns
+        self.file_patterns: Optional[Tuple[str, ...]] = options.file_patterns
 
         self.hasher = _HASH_TYPES[hash_algorithm]
 

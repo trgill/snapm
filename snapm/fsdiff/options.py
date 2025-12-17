@@ -9,7 +9,7 @@
 File system diff options and categories.
 """
 from dataclasses import dataclass, field, fields
-from typing import List, Optional
+from typing import Optional, Tuple, Union
 from argparse import Namespace
 from enum import Enum
 import logging
@@ -22,7 +22,7 @@ _log_warn = _log.warning
 _log_error = _log.error
 
 
-@dataclass
+@dataclass(frozen=True)
 class DiffOptions:
     """
     File system comparison options.
@@ -51,9 +51,9 @@ class DiffOptions:
     #: Maximum file size for generating content hashes
     max_content_hash_size: int = 2**20
     #: File patterns to include (glob notation)
-    file_patterns: List[str] = field(default_factory=list)
+    file_patterns: Tuple[str, ...] = field(default_factory=tuple)
     #: File patterns to exclude (glob notation)
-    exclude_patterns: List[str] = field(default_factory=list)
+    exclude_patterns: Tuple[str, ...] = field(default_factory=tuple)
     #: Start path for file system comparison
     from_path: Optional[str] = None
     #: Do not output progress or status updates
@@ -68,20 +68,20 @@ class DiffOptions:
         :rtype: ``str``
         """
 
-        def _join_list(val: List[str]) -> str:
+        def _join_tuple(val: Tuple[str, ...]) -> str:
             """
-            Convert string lists into space separated strings.
+            Convert string tuples into space separated strings.
 
             :param val: The value to join.
-            :type val: ``List[str]``
-            :returns: The string list value converted to a space separated
+            :type val: ``Tuple[str, ...]``
+            :returns: The string tuple value converted to a space separated
                       string.
             :rtype: ``str``
             """
             return " ".join(val)
 
         items = [
-            (key, val) if not isinstance(val, list) else (key, _join_list(val))
+            (key, val) if not isinstance(val, tuple) else (key, _join_tuple(val))
             for key, val in self.__dict__.items()
         ]
         return "\n".join(f"{key}={val}" for key, val in items)
@@ -99,14 +99,29 @@ class DiffOptions:
         :returns: A new ``DiffOptions`` instance
         :rtype: ``DiffOptions``
         """
+
+        def get_value(name: str) -> Union[bool, int, Optional[str], Tuple[str, ...]]:
+            """
+            Get a value from ``cmd_args``, converting lists to tuples.
+
+            :param name: The name of the argument.
+            :type name: ``str``
+            :returns: The argument converted to a tuple if appropriate.
+            :rtype: ``Union[bool, int, str, Optional[str], Tuple[str, ...]]``
+            """
+            attr = getattr(cmd_args, name)
+            if isinstance(attr, list):
+                return tuple(attr)
+            if attr is None and name in ("file_patterns", "exclude_patterns"):
+                return ()
+            return attr
+
         field_names = {f.name for f in fields(cls)}
         kwargs = {
-            name: getattr(cmd_args, name)
-            for name in field_names
-            if hasattr(cmd_args, name)
+            name: get_value(name) for name in field_names if hasattr(cmd_args, name)
         }
         options = cls(**kwargs)
-        _log_debug("Initialised DiffOptions from arguments:\n%s", options)
+        _log_debug("Initialised DiffOptions from arguments: %s", repr(options))
         return options
 
 
