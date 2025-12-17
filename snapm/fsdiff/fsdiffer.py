@@ -153,15 +153,3 @@ class FsDiffer:
                     err,
                 )
         return results
-
-    def compare_snapshots(self, snapshot_a: str, snapshot_b: str) -> FsDiffResults:
-        """Compare two snapshots by name/timestamp"""
-        raise NotImplementedError(
-            "compare_snapshots not yet implemented"
-        )  # pragma: no cover
-
-    def diff_against_live(self, snapshot_mount: "Mount") -> FsDiffResults:
-        """Compare snapshot against current live filesystem"""
-        raise NotImplementedError(
-            "diff_against_live not yet implemented"
-        )  # pragma: no cover
