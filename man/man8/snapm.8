@@ -209,6 +209,10 @@ snapm \- Linux Snapshot Manager
 .  RB [ -q | --quiet ] " "\c
 .  RB [ --color\ \c
 .  IR mode ] " "\c
+.  RB [ -M | --cache-mode\ \c
+.  IR cache_mode ] " "\c
+.  RB [ --cache-expires\ \c
+.  IR expire_secs ] " "\c
 .  IR from " "\c
 .  IR to " "\c
 ..
@@ -243,6 +247,10 @@ snapm \- Linux Snapshot Manager
 .  RB [ -q | --quiet ] " "\c
 .  RB [ --color\ \c
 .  IR mode ] " "\c
+.  RB [ -M | --cache-mode\ \c
+.  IR cache_mode ] " "\c
+.  RB [ --cache-expires\ \c
+.  IR expire_secs ] " "\c
 .  IR from " "\c
 .  IR to " "\c
 ..
@@ -605,6 +613,10 @@ When creating snapshot sets automatically create a snapshot boot entry
 for the set.
 .
 .TP 8
+\fB--cache-expires\fP \fIexpire_secs\fP
+Specify diff cache expiry time in seconds (0 to disable expiry). This option
+is mutually exclusive with \fB--cache-mode\fP.
+.TP 8
 \fB-C | --calendarspec\fP \fIcalendarspec\fP
 Calendar event expression used to trigger scheduled creation of snapshot sets.
 See \fBsystemd.time(7)\fP for the expression syntax.
@@ -723,6 +735,13 @@ TIMELINE garbage collection policy.
 .TP 8
 \fB-m | --max-file-size\fP \fIsize\fP
 (Diff) Maximum file size for comparisons (0=unlimited).
+.
+.TP 8
+\fB-M | --cache-mode\fP \fIcache_mode\fP
+Specify diff caching mode (\fIauto\fP, \fInever\fP, \fIalways\fP). The default
+(\fIauto\fP) automatically expires the diff cache after 15 minutes. Using
+\fIalways\fP disables cache expiry. To disable the use of the cache entirely
+use \fInever\fP. This option is mutually exclusive with \fB--cache-expires\fP.
 .
 .TP 8
 .B --members
@@ -1065,6 +1084,10 @@ required formats.
 .IP
 File comparisons can be tuned to ignore specific attributes (timestamps,
 permissions, ownership) or to filter based on file patterns and sizes.
+.IP
+By default the results of diff computations are stored in an on-disk cache.
+The default cache expiry time is 900s (15 minutes). Cache behaviour can be
+controlled with the \fB--cache-mode\fP and \fB--cache-expires\fP options.
 .IP
 .B Output Formats
 .IP

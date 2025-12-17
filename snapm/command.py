@@ -92,6 +92,7 @@ from snapm.report import (
 from .fsdiff import DiffOptions, FsDiffer, FsDiffResults
 
 DIFF_FORMATS = FsDiffResults.DIFF_FORMATS
+DIFF_CACHE_MODES = ["auto", "never", "always"]
 
 _log = logging.getLogger(__name__)
 
@@ -887,12 +888,14 @@ def prune_snapset(manager, name, sources):
     return manager.split_snapshot_set(name, None, sources)
 
 
-# pylint: disable=too-many-branches
+# pylint: disable=too-many-branches,too-many-locals
 def diff_snapsets(
     manager: Manager,
     diff_from: str,
     diff_to: str,
     options: DiffOptions,
+    cache: bool = True,
+    cache_expires: int = -1,
     color: str = "auto",
 ) -> FsDiffResults:
     """
@@ -914,6 +917,11 @@ def diff_snapsets(
     :type diff_to: ``str``
     :param options: Options controlling the comparison.
     :type options: ``DiffOptions``
+    :param cache: Set to ``False`` to disable use of the diffcache.
+    :type cache: ``bool``
+    :param cache_expires: Specify cache expiry time in seconds (0 to disable
+                          expiry, -1 for built-in default).
+    :type cache_expires: ``int``
     :returns: A file system diff results container.
     :rtype: ``FsDiffResults``
     """
@@ -928,7 +936,9 @@ def diff_snapsets(
     from_snapset = None
     to_snapset = None
 
-    fsd = FsDiffer(manager, options=options, color=color)
+    fsd = FsDiffer(
+        manager, options=options, cache=cache, cache_expires=cache_expires, color=color
+    )
 
     try:
         if diff_from == ".":
@@ -1859,7 +1869,37 @@ def _shell_cmd(cmd_args):
     return _exec_cmd(cmd_args)
 
 
-# pylint: disable=too-many-locals,too-many-return-statements
+def _diff_cache_opts(cache: str, expires: Optional[int]):
+    """
+    Helper to set cache options for diff commands.
+
+    :param cache: Cache mode string ("auto", "always", "never")
+    :type cache: ``str``
+    :param expires: Expiry value in seconds (0 to disable, -1 to use
+                    built-in defaults).
+    :type expires: ``Optional[int]``
+    :returns: A 2-tuple of (cache_enabled: bool, expires: int).
+    :rtype: ``(bool, int)``
+    """
+    no_cache = False
+
+    if expires is not None and cache == "never":
+        raise ValueError("'expires' is invalid with cache == 'never'")
+
+    if expires is None and cache == "auto":
+        expires = -1  # Use default expiry
+    elif expires is None and cache == "always":
+        expires = 0
+    elif expires is None and cache == "never":
+        expires = -1
+        no_cache = True
+
+    return (not no_cache, expires)
+
+
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-return-statements
+# pylint: disable=too-many-statements
 def _diff_cmd(cmd_args):
     """
     Diff snapshot set command handler.
@@ -1877,6 +1917,12 @@ def _diff_cmd(cmd_args):
     color = cmd_args.color
     desc = cmd_args.desc
     diffstat = cmd_args.stat
+
+    try:
+        cache, expires = _diff_cache_opts(cmd_args.cache_mode, cmd_args.cache_expires)
+    except ValueError as err:
+        _log_error("Invalid cache options: %s", err)
+        return 1
 
     if not cmd_args.diff_from or not cmd_args.diff_to:
         _log_error(
@@ -1921,7 +1967,15 @@ def _diff_cmd(cmd_args):
     # Initialise Manager context for mounts and snapshot set discover.
     manager = Manager()
 
-    results = diff_snapsets(manager, diff_from, diff_to, options, color=color)
+    results = diff_snapsets(
+        manager,
+        diff_from,
+        diff_to,
+        options,
+        cache=cache,
+        cache_expires=expires,
+        color=color,
+    )
 
     spacer = ""
     for output_format in output_formats:
@@ -1960,6 +2014,12 @@ def _diffreport_cmd(cmd_args):
     diff_to = cmd_args.diff_to
     color = cmd_args.color
 
+    try:
+        cache, expires = _diff_cache_opts(cmd_args.cache_mode, cmd_args.cache_expires)
+    except ValueError as err:
+        _log_error("Invalid cache options: %s", err)
+        return 1
+
     if not cmd_args.options or "help" not in cmd_args.options:
         if not cmd_args.diff_from or not cmd_args.diff_to:
             _log_error(
@@ -1983,7 +2043,15 @@ def _diffreport_cmd(cmd_args):
     if cmd_args.options and "help" in cmd_args.options:
         results = None
     else:
-        results = diff_snapsets(manager, diff_from, diff_to, options, color=color)
+        results = diff_snapsets(
+            manager,
+            diff_from,
+            diff_to,
+            options,
+            cache=cache,
+            cache_expires=expires,
+            color=color,
+        )
 
     return _generic_list_cmd(cmd_args, select, opts, manager, print_diffs, data=results)
 
@@ -2721,6 +2789,22 @@ def _add_diff_args(parser):
         choices=colors,
         default=colors[0],
         help=f"Enable colored output ({', '.join(colors)})",
+    )
+    cache_group = parser.add_mutually_exclusive_group()
+    cache_group.add_argument(
+        "-M",
+        "--cache-mode",
+        type=str,
+        choices=DIFF_CACHE_MODES,
+        default="auto",
+        help=f"Specify diff caching mode ({', '.join(DIFF_CACHE_MODES)})",
+    )
+    cache_group.add_argument(
+        "-e",
+        "--cache-expires",
+        type=int,
+        default=None,
+        help="Specify cache expiry time in seconds (0 to disable expiry)",
     )
     parser.add_argument(
         "diff_from",
