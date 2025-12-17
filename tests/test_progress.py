@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import unittest
 import sys
+from typing import Optional
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 from io import StringIO
@@ -146,13 +147,13 @@ class TestProgressBase(unittest.TestCase):
                 self.header = "Header"
                 self.width = self._calculate_width(width=20)
 
-            def _do_start(self, _total: int):
+            def _do_start(self):
                 pass
 
-            def _do_progress(self, _done: int, _message: str):
+            def _do_progress(self, done: int, message: Optional[str] = None):
                 pass
 
-            def _do_end(self, _message: str):
+            def _do_end(self, message: Optional[str] = None):
                 pass
 
         with self.assertRaisesRegex(ValueError, r"self\.FIXED must be"):
@@ -165,13 +166,13 @@ class TestProgressBase(unittest.TestCase):
             def __init__(self):
                 self.width = self._calculate_width(width=20)
 
-            def _do_start(self, _total: int):
+            def _do_start(self):
                 pass
 
-            def _do_progress(self, _done: int, _message: str):
+            def _do_progress(self, done: int, message: Optional[str] = None):
                 pass
 
-            def _do_end(self, _message: str):
+            def _do_end(self, message: Optional[str] = None):
                 pass
 
         with self.assertRaisesRegex(ValueError, r"self\.header must be"):
