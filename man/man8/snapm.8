@@ -1,4 +1,4 @@
-.TH "SNAPM" "8" "Sep 09 2025" "Linux" "MAINTENANCE COMMANDS"
+.TH "SNAPM" "8" "Dec 18 2025" "Linux" "MAINTENANCE COMMANDS"
 .\" Compatibility for older groff (1.22.x) lacking EX/EE
 .ie d EX \{\
 .\}
@@ -614,8 +614,9 @@ for the set.
 .
 .TP 8
 \fB--cache-expires\fP \fIexpire_secs\fP
-Specify diff cache expiry time in seconds (0 to disable expiry). This option
-is mutually exclusive with \fB--cache-mode\fP.
+Specify diff cache expiry time in seconds (0 to disable expiry). The default
+value is 900 seconds (15 minutes). This option is mutually exclusive with
+\fB--cache-mode\fP.
 .TP 8
 \fB-C | --calendarspec\fP \fIcalendarspec\fP
 Calendar event expression used to trigger scheduled creation of snapshot sets.
@@ -739,9 +740,10 @@ TIMELINE garbage collection policy.
 .TP 8
 \fB-M | --cache-mode\fP \fIcache_mode\fP
 Specify diff caching mode (\fIauto\fP, \fInever\fP, \fIalways\fP). The default
-(\fIauto\fP) automatically expires the diff cache after 15 minutes. Using
-\fIalways\fP disables cache expiry. To disable the use of the cache entirely
-use \fInever\fP. This option is mutually exclusive with \fB--cache-expires\fP.
+(\fIauto\fP) automatically expires the diff cache after 900 seconds (15
+minutes).  Using \fIalways\fP disables cache expiry. To disable the use of the
+cache entirely use \fInever\fP. This option is mutually exclusive with
+\fB--cache-expires\fP.
 .
 .TP 8
 .B --members
@@ -770,7 +772,7 @@ Specify which fields to display.
 (Diff) Output format for diff data. Valid formats are \fBpaths\fP, \fBfull\fP,
 \fBshort\fP, \fBjson\fP, \fBdiff\fP, \fBsummary\fP, and \fBtree\fP. This option
 may be specified multiple times to print different output formats for the same
-run.
+run. The default if \fB--output-format\fP is not specified is \fBtree\fP.
 .
 .TP 8
 \fB-O | --sort\fP \fIsort_fields\fP
@@ -1078,64 +1080,67 @@ represent the currently running system (root file system).
 .IP
 The output format is controlled by \fB--output-format\fP. The \fBtree\fP
 format provides a hierarchical view of changes, while \fBdiff\fP provides
-standard unified diff output for modified content. Multiple output formats
-may be specified by repeating the \fB--output-format\fP argument with the
-required formats.
+standard unified diff output for modified content: see \fBOutput Formats\fP for
+a full description of the available formats. Multiple output formats may be
+specified by repeating the \fB--output-format\fP argument with the required
+formats. The default format if no \fB--output-format\fP is specified is
+\fBtree\fP.
 .IP
 File comparisons can be tuned to ignore specific attributes (timestamps,
 permissions, ownership) or to filter based on file patterns and sizes.
 .IP
 By default the results of diff computations are stored in an on-disk cache.
-The default cache expiry time is 900s (15 minutes). Cache behaviour can be
-controlled with the \fB--cache-mode\fP and \fB--cache-expires\fP options.
+The default cache expiry time is 900 seconds (15 minutes). Cache behaviour can
+be controlled with the \fB--cache-mode\fP and \fB--cache-expires\fP options.
 .IP
 .B Output Formats
+paths, full, short, json, diff, summary, tree
 .IP
 The \fB--output-format\fP option accepts the following values:
 .IP
-.B tree
-(Default) A hierarchical tree view of changes, using prefixes to indicate
-status.
-.IP
-.B diff
-Standard unified diff output of file content changes.
-.IP
-.B paths
+.B \[bu] paths
 A simple list of changed paths, one per line.
 .IP
-.B full
+.B \[bu] full
 Detailed change information including file attributes (mode, user, group, size,
 time).
 .IP
-.B short
+.B \[bu] short
 Abbreviated change description (path, difference type and summary).
 .IP
-.B summary
+.B \[bu] json
+Change data formatted as a JSON object.
+.IP
+.B \[bu] diff
+Standard unified diff output of file content changes.
+.IP
+.B \[bu] summary
 A brief summary of the count of different change types.
 .IP
-.B json
-Change data formatted as a JSON object.
+.B \[bu] tree
+(Default) A hierarchical tree view of changes, using prefixes to indicate
+status.
 .IP
 .B Tree Output Legend
 .IP
 The \fBtree\fP output format uses the following prefixes to indicate file status:
 .IP
-.B [+]
+.B \[bu] [+]
 Path added (green)
 .IP
-.B [-]
+.B \[bu] [-]
 Path removed (red)
 .IP
-.B [*]
+.B \[bu] [*]
 Path modified (yellow)
 .IP
-.B [<]
+.B \[bu] [<]
 Path moved from (cyan)
 .IP
-.B [>]
+.B \[bu] [>]
 Path moved to (cyan)
 .IP
-.B [!]
+.B \[bu] [!]
 Path file type changed (blue)
 .
 .TP
@@ -2163,6 +2168,14 @@ Bryn M. Reeves <bmr@redhat.com>
 .br
 .UR https://\:github.com/snapshotmanager/snapm
 snapm project page
+.UE
+.br
+.UR https://\:snapm.readthedocs.io/en/latest/user_guide.html
+snapm user guide
+.UE
+.br
+.UR https://\:snapm.readthedocs.io/en/latest/snapm.html
+snapm API documentation
 .UE
 .br
 .UR https://\:github.com/snapshotmanager/boom
