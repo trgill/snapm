@@ -1120,6 +1120,9 @@ class DiffEngine:
                 if not (entry_a.is_file and entry_a.content_hash):
                     continue
 
+                if path in tree_b and entry_a.content_hash == tree_b[path].content_hash:
+                    continue
+
                 candidates = dest_hashes.get(entry_a.content_hash)
                 if not candidates:
                     continue
