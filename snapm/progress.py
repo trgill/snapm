@@ -31,7 +31,7 @@ MIN_BUDGET = 10
 DEFAULT_WIDTH_FRAC = 0.5
 
 #: Default frames-per-second for Throbber classes
-DEFAULT_THROBBER_FPS = 10
+DEFAULT_FPS = 10
 
 #: Microseconds per second
 _USECS_PER_SEC = 1000000
@@ -582,6 +582,11 @@ class Progress(ProgressBase):
         self.first_update: bool = False
         columns = self.term.columns or DEFAULT_COLUMNS
         self.budget: int = max(MIN_BUDGET, columns - 10)
+        self.fps: int = DEFAULT_FPS
+        self._interval_us: int = round((1.0 / self.fps) * _USECS_PER_SEC)
+        self._last: Optional[datetime] = None
+        self._last_message: Optional[str] = None
+        self.done = 0
 
         encoding = getattr(self.stream, "encoding", None)
         if not encoding:
@@ -606,6 +611,7 @@ class Progress(ProgressBase):
         """
         self.pbar = self.term.render(self.BAR)
         self.first_update = True
+        self._last = datetime.now() - timedelta(microseconds=self._interval_us)
 
     def _do_progress(self, done: int, message: Optional[str] = None):
         """
@@ -620,6 +626,12 @@ class Progress(ProgressBase):
         percent = float(done) / float(self.total)
         n = int((self.width - 10) * percent)
 
+        # Used by cancel()
+        self.done = done
+
+        # Stash last message in case we need it later.
+        self._last_message = message
+
         if self.first_update:
             prefix = self.term.HIDE_CURSOR + self.term.BOL
             self.first_update = False
@@ -629,24 +641,27 @@ class Progress(ProgressBase):
         if len(message) > self.budget:
             message = message[0 : self.budget - 3] + "..."
 
-        print(
-            prefix
-            + (
-                self.pbar
-                % (
-                    self.header,
-                    percent * 100,
-                    self.did * n,
-                    self.todo * (self.width - 10 - n),
+        now = datetime.now()
+        if (now - self._last).total_seconds() * _USECS_PER_SEC >= self._interval_us:
+            self._last = now
+            print(
+                prefix
+                + (
+                    self.pbar
+                    % (
+                        self.header,
+                        percent * 100,
+                        self.did * n,
+                        self.todo * (self.width - 10 - n),
+                    )
                 )
+                + self.term.CLEAR_EOL
+                + message
+                + "\n",
+                file=self.stream,
+                end="",
             )
-            + self.term.CLEAR_EOL
-            + message
-            + "\n",
-            file=self.stream,
-            end="",
-        )
-        _flush_with_broken_pipe_guard(self.stream)
+            _flush_with_broken_pipe_guard(self.stream)
 
     def _do_end(self, message: Optional[str] = None):
         """
@@ -686,6 +701,22 @@ class Progress(ProgressBase):
         if message:
             print(message, file=self.stream)
         _flush_with_broken_pipe_guard(self.stream)
+
+    def _do_cancel(self, message: Optional[str] = None):
+        """
+        Perform error case final end-of-progress handling.
+
+        :param message: An optional error message.
+        :type message: ``Optional[str]``
+        """
+        # Force an update regardless of FPS limits
+        self._last = datetime.now() - timedelta(microseconds=self._interval_us)
+        self.progress(self.done, message=self._last_message)
+
+        # Print a newline to prevent erasure of last message.
+        print(file=self.stream)
+
+        self._do_end(message=message)
 
 
 class SimpleProgress(ProgressBase):
@@ -843,7 +874,7 @@ class ThrobberBase(ABC):
         self.started: bool = False
         self.first_update: bool = True
         self.nr_frames: int = len(self.frames)
-        self.fps: int = DEFAULT_THROBBER_FPS
+        self.fps: int = DEFAULT_FPS
         self._frame_index: int = 0
         self._interval_us: int = round((1.0 / self.fps) * _USECS_PER_SEC)
         self._last: Optional[datetime] = None
@@ -1312,6 +1343,7 @@ class ProgressFactory:
 
 
 __all__ = [
+    "DEFAULT_FPS",
     "NullProgress",
     "NullThrobber",
     "Progress",

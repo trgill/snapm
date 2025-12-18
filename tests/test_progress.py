@@ -12,8 +12,10 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 from io import StringIO
 import curses
+import time
 
 from snapm.progress import (
+    DEFAULT_FPS,
     NullProgress,
     NullThrobber,
     Progress,
@@ -250,6 +252,9 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Test", output)
         self.assertIn("Halfway", output)
 
+        # 2b. Allow time for FPS limiting
+        time.sleep(1 / DEFAULT_FPS)
+
         # 3. Progress: second update
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
@@ -259,6 +264,9 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Test", output)
         self.assertIn("<UP>", output)
         self.assertIn("Over Halfway", output)
+
+        # 3b. Allow time for FPS limiting
+        time.sleep(1 / DEFAULT_FPS)
 
         # 4. Progress: very long message: test budget truncation
         mock_tc.term_stream.truncate(0)
@@ -271,6 +279,9 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Nearly Done", output)
         self.assertIn("XXX", output)
         self.assertIn("...", output)
+
+        # 4b. Allow time for FPS limiting
+        time.sleep(1 / DEFAULT_FPS)
 
         # 5. End
         mock_tc.term_stream.truncate(0)
@@ -311,6 +322,9 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Test", output)
         self.assertIn("Halfway", output)
 
+        # 2b. Allow time for FPS limiting
+        time.sleep(1 / DEFAULT_FPS)
+
         # 3. Progress: second update
         mock_tc.term_stream.truncate(0)
         mock_tc.term_stream.seek(0)
@@ -320,6 +334,9 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Test", output)
         self.assertIn("<UP>", output)
         self.assertIn("Over Halfway", output)
+
+        # 3b. Allow time for FPS limiting
+        time.sleep(1 / DEFAULT_FPS)
 
         # 4. Progress: very long message: test budget truncation
         mock_tc.term_stream.truncate(0)
@@ -332,6 +349,9 @@ class TestProgress(unittest.TestCase):
         self.assertIn("Nearly Done", output)
         self.assertIn("XXX", output)
         self.assertIn("...", output)
+
+        # 4b. Allow time for FPS limiting
+        time.sleep(1 / DEFAULT_FPS)
 
         # 5. End
         mock_tc.term_stream.truncate(0)
