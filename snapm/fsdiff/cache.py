@@ -245,8 +245,14 @@ def load_cache(
                     # directory is root-owned and has restrictive permissions that
                     # are verified on startup.
                     candidate = pickle.load(fp)
-            except (OSError, lzma.LZMAError, pickle.UnpicklingError) as err:
-                _log_warn("Ignoring unreadable cache file %s: %s", file_name, err)
+            except (OSError, EOFError, lzma.LZMAError, pickle.UnpicklingError) as err:
+                _log_warn("Deleting unreadable cache file %s: %s", file_name, err)
+                try:
+                    os.unlink(cache_path)
+                except OSError as err2:
+                    _log_error(
+                        "Error unlinking unreadable cache file %s: %s", file_name, err2
+                    )
                 continue
 
             _log_debug(
