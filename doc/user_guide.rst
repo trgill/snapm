@@ -89,16 +89,21 @@ Output Formats and Use Cases
 The Difference Engine supports several output formats via the ``snapset diff``
 ``--output-format`` argument, each suited to different tasks:
 
-* **tree** (Default): Best for a quick visual overview of which parts of the
-  file system hierarchy have changed.
-* **diff**: Ideal for developers and sysadmins who need to review actual
-  line-by-line configuration or code changes.
 * **paths**: Useful for scripting, allowing you to pipe a list of changed
   files to other tools like ``tar`` or ``rsync``.
-* **full**: Provides a complete audit trail, including metadata changes like
-  permission and ownership shifts.
-* **json**: Designed for automation and integration with third-party
-  monitoring or reporting tools.
+* **full**: Provides a detailed report including old and new file attributes
+  (permissions, ownership, size, modification time) for every change.
+* **short**: A concise summary listing the change status code and path for
+  each modified file.
+* **json**: Outputs the complete difference data as a JSON object, suitable
+  for parsing by external tools and automation scripts.
+* **diff**: Generates a standard unified diff of content changes for modified
+  files. This format is useful for generating patches or detailed content
+  review.
+* **summary**: Brief summary of the count of different change types. Change
+  types are colorized using the same coding as ``tree`` output.
+* **tree**: (Default) Displays changes in a hierarchical tree structure,
+  similar to the standard ``tree`` command but annotated with change status.
 
 In addition differences can be reported in a tabular format using the standard
 ``snapm`` reporting mechanism using the ``snapset diffreport`` command. The
@@ -145,9 +150,12 @@ resource-intensive. To improve performance, ``snapm`` implements a
   re-scanning the file systems.
 * **Expiry**: By default, cache entries expire after **15 minutes**.
   This ensures that results remain fresh if the running system (``.``) is
-  one of the comparison targets.
+  one of the comparison targets. Use ``--cache-expires=EXPIRES_SECS`` to
+  override the default value (900s).
 * **Manual Control**: You can override the expiry or disable the cache
-  entirely using the ``--cache-mode`` and ``--cache-expires`` options.
+  entirely using the ``--cache-mode={auto,never,always}`` and
+  ``--cache-expires=EXPIRES_SECS`` options. These options are mutually
+  exclusive.
 
 Command Reference
 =================
@@ -296,15 +304,22 @@ comparisons can be performed to generate standard unified diffs.
 
 Supported output formats (``-o``/``--output-format``) include:
 
-* **tree** - A hierarchical tree view of changes (default)
-* **diff** - Standard unified diff of file content
 * **paths** - A simple list of changed paths
 * **full** - Detailed change information
 * **short** - Abbreviated change summary
 * **json** - JSON formatted change data
+* **diff** - Standard unified diff of file content
+* **summary** - Brief summary of the count of different change types
+* **tree** - A hierarchical tree view of changes (default)
 
 The ``-o``/``--output-format`` option may be given multiple times to request
 different output formats for the same run.
+
+The ``diff`` and ``summary`` formats also accept an optional ``--stat``
+option to enable ``diffstat`` style change summaries.
+
+The ``json`` output format supports ``--pretty`` to enable pretty-printing
+the JSON output.
 
 Compare the snapshot set "backup" to the running system using a tree view:
 
@@ -333,11 +348,6 @@ Output Formats
 The ``--output-format`` argument controls the presentation of differences.
 Available formats are:
 
-* **tree**: (Default) Displays changes in a hierarchical tree structure,
-  similar to the standard ``tree`` command but annotated with change status.
-* **diff**: Generates a standard unified diff of content changes for modified
-  files. This format is useful for generating patches or detailed content
-  review.
 * **paths**: Lists modified paths, one per line. Useful for piping to other
   tools or scripts.
 * **full**: Provides a detailed report including old and new file attributes
@@ -346,6 +356,15 @@ Available formats are:
   each modified file.
 * **json**: Outputs the complete difference data as a JSON object, suitable
   for parsing by external tools and automation scripts.
+* **diff**: Generates a standard unified diff of content changes for modified
+  files. This format is useful for generating patches or detailed content
+  review.
+* **summary**: Brief summary of the count of different change types. Change
+  types are colorized using the same coding as ``tree`` output.
+* **tree**: (Default) Displays changes in a hierarchical tree structure,
+  similar to the standard ``tree`` command but annotated with change status.
+
+The default if no ``--output-format`` option is given is ``tree``.
 
 Tree Output Legend
 ~~~~~~~~~~~~~~~~~~
