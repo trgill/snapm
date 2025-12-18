@@ -178,7 +178,7 @@ class DiffTree:
         :param desc: Include descriptions: "short" for brief description, "full"
                      for complete change descriptions or "none" to omit.
         :type desc: ``Optional[str]``
-        :param prefix: The prefix sting for this node.
+        :param prefix: The prefix string for this node.
         :type prefix: ``str``
         :param is_last: ``True`` if this node is the last child of its parent.
         :type is_last: ``bool``
