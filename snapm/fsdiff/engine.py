@@ -810,6 +810,9 @@ class DiffEngine:
         :type tree_b: ``Dict[str, FsEntry]``
         :param options: Options to apply to the diff generation.
         :type options: ``DiffOptions``
+        :param term_control: A ``TermControl`` instance to use for rendering color
+                   output.
+        :type term_control: ``TermControl``
         :returns: An ``FsDiffResults`` instance containing ``FsDiffRecord``
                   objects.
         :rtype: ``FsDiffResults``
@@ -980,9 +983,6 @@ class DiffEngine:
 
                     diffs.append(diff_record)
 
-            # Detect moves/renames
-            diffs = self._detect_moves(diffs, tree_a, tree_b, options)
-
             end_time = datetime.now()
 
         except KeyboardInterrupt:
@@ -993,6 +993,11 @@ class DiffEngine:
             raise
 
         progress.end(f"Found {len(diffs)} differences in {end_time - start_time}")
+
+        # Detect moves/renames
+        diffs = self._detect_moves(
+            diffs, tree_a, tree_b, options, term_control=term_control
+        )
 
         return FsDiffResults(diffs, options, floor(start_time.timestamp()))
 
@@ -1018,6 +1023,7 @@ class DiffEngine:
         tree_a: Dict[str, FsEntry],
         tree_b: Dict[str, FsEntry],
         options: DiffOptions,
+        term_control: Optional[TermControl] = None,
     ) -> List[FsDiffRecord]:
         """
         Detect file moves/renames by matching content hashes
@@ -1032,6 +1038,9 @@ class DiffEngine:
         :type tree_b: ``Dict[str, FsEntry]``
         :param options: Options to apply to the diff generation.
         :type options: ``DiffOptions``
+        :param term_control: A ``TermControl`` instance to use for rendering color
+                   output.
+        :type term_control: ``TermControl``
         :returns: Updated list of diff records with moves detected.
         :rtype: ``List[FsDiffRecord]``
         """
@@ -1089,61 +1098,91 @@ class DiffEngine:
         # Ensure each destination path is used as a move target at most once.
         used_dests = set()
 
-        for path, entry_a in tree_a.items():
-            _log_debug_fsdiff("Detecting moves for tree_a path '%s'", path)
-            # Only consider files with a valid content hash for move detection.
-            if not (entry_a.is_file and entry_a.content_hash):
-                continue
+        # Anything to do?
+        if not tree_a:
+            return diffs
 
-            candidates = dest_hashes.get(entry_a.content_hash)
-            if not candidates:
-                continue
+        term_control = term_control or TermControl()
+        progress = ProgressFactory.get_progress(
+            "Detecting moves",
+            quiet=options.quiet,
+            term_control=term_control,
+        )
 
-            _log_debug_fsdiff_extra(
-                "Checking candidate destinations: %s",
-                ", ".join(cand_path for cand_path, entry in candidates),
-            )
-            # If multiple possible move destination candidates exists (i.e.
-            # content with the hash of entry_a now exists at multiple file
-            # system paths) we arbitrarily choose the first entry to be the
-            # "move destination". This could be enhanced in future with more
-            # complex rules, e.g. preferring a dest that is in the same
-            # directory, mount point, etc.
-            dest_path, entry_b = candidates[0]
+        moves = 0  # Count of move records
+        start_time = datetime.now()
+        progress.start(len(tree_a))
+        try:
+            for i, (path, entry_a) in enumerate(tree_a.items()):
+                _log_debug_fsdiff("Detecting moves for tree_a path '%s'", path)
+                progress.progress(i, f"Checking moves for '{path}'")
+                # Only consider files with a valid content hash for move detection.
+                if not (entry_a.is_file and entry_a.content_hash):
+                    continue
 
-            _log_debug_fsdiff("Selected candidate %s: %s", dest_path, entry_b)
-            # Only treat as a move if we have the corresponding REMOVED/ADDED
-            # records; otherwise this is more likely a copy/duplicate.
-            if path not in (removed_paths | changed_paths):
-                continue
-            if dest_path not in (added_paths | changed_paths):
-                continue
-            if dest_path == path:
-                continue
-            if dest_path in used_dests:
-                continue
+                candidates = dest_hashes.get(entry_a.content_hash)
+                if not candidates:
+                    continue
 
-            used_dests.add(dest_path)
+                _log_debug_fsdiff_extra(
+                    "Checking candidate destinations: %s",
+                    ", ".join(cand_path for cand_path, entry in candidates),
+                )
+                # If multiple possible move destination candidates exists (i.e.
+                # content with the hash of entry_a now exists at multiple file
+                # system paths) we arbitrarily choose the first entry to be the
+                # "move destination". This could be enhanced in future with more
+                # complex rules, e.g. preferring a dest that is in the same
+                # directory, mount point, etc.
+                dest_path, entry_b = candidates[0]
 
-            diff_record = FsDiffRecord(path, DiffType.MOVED, entry_a, entry_b)
-            changes = self.change_detector.detect_changes(entry_a, entry_b, options)
-            effective_changes = self._effective_changes(changes, options)
-            for change in effective_changes:
-                diff_record.add_change(change)
+                _log_debug_fsdiff("Selected candidate %s: %s", dest_path, entry_b)
+                # Only treat as a move if we have the corresponding REMOVED/ADDED
+                # records; otherwise this is more likely a copy/duplicate.
+                if path not in (removed_paths | changed_paths):
+                    continue
+                if dest_path not in (added_paths | changed_paths):
+                    continue
+                if dest_path == path:
+                    continue
+                if dest_path in used_dests:
+                    continue
 
-            prune = [
-                diff
-                for diff in diff_map[path] + diff_map[dest_path]
-                if self._is_move_diff(diff, path, dest_path)
-            ]
-            to_prune.update(prune)
+                # Found a move: count it
+                moves += 1
 
-            diff_record.moved_from = path
-            diff_record.moved_to = dest_path
-            diffs.append(diff_record)
+                #: Add to cache of used destinations
+                used_dests.add(dest_path)
+
+                diff_record = FsDiffRecord(path, DiffType.MOVED, entry_a, entry_b)
+                changes = self.change_detector.detect_changes(entry_a, entry_b, options)
+                effective_changes = self._effective_changes(changes, options)
+                for change in effective_changes:
+                    diff_record.add_change(change)
+
+                prune = [
+                    diff
+                    for diff in diff_map[path] + diff_map[dest_path]
+                    if self._is_move_diff(diff, path, dest_path)
+                ]
+                to_prune.update(prune)
+
+                diff_record.moved_from = path
+                diff_record.moved_to = dest_path
+                diffs.append(diff_record)
+
+        except KeyboardInterrupt:
+            progress.cancel("Quit!")
+            raise
+        except SystemExit:
+            progress.cancel("Exiting.")
+            raise
 
         # Prune ADDED/REMOVED diff records for detected moves
         _log_debug_fsdiff("Pruning %d diff records for detected moves", len(to_prune))
         diffs = [diff for diff in diffs if diff not in to_prune]
+
+        end_time = datetime.now()
+        progress.end(f"Found {moves} moves in {end_time - start_time}")
 
         return diffs
