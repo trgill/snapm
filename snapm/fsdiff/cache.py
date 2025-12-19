@@ -72,46 +72,60 @@ _ROOT_TIMESTAMP = 282528000
 _PROC_MEMINFO = "/proc/meminfo"
 
 
-def _get_dict_size() -> int:
+def _get_max_cache_records() -> int:
     """
-    Return an LZMA dictionary size appropriate for the running system:
+    Generate an approximate maximum number of ``FsDiffRecord`` objects
+    to attempt to compress given system memory constraints if the
+    DiffOptions.include_content_diff option is enabled. This is a
+    safety guard to avoid attempting to compress huge results sets on
+    memory constrained systems.
 
-    memtotal <= 4GiB: 256MiB
-    memtotal <= 8GiB: 512MiB
-    else: 1536GiB
+    memtotal < 2GiB: 1,000
+    memtotal < 4GiB: 10,000
+    memtotal < 8GiB: 50,000
+    memtotal < 16GiB: 100,000
+    memtotal >= 16GiB: unlimited (0)
 
-    :returns: An integer dictionary size value.
+    :returns: The maximum number of records to attempt to compress, or
+              zero for unlimited.
     :rtype: ``int``
     """
-    small = 0  # 0GiB - 4GiB
+    extra_small = 0  # < 2GiB
+    small = 2 * 2**30  # 2GiB - 4GiB
     medium = 4 * 2**30  # 4GiB - 8GiB
-    large = 8 * 2**30  # > 8GIB
+    large = 8 * 2**30  # 8GIB - 16GiB
+    extra_large = 16 * 2**30  # > 16GiB
 
-    dict_sizes = {
-        small: 256 * 2**20,  # 256MiB
-        medium: 512 * 2**20,  # 512MiB
-        large: 1536 * 2**20,  # 1536MiB
+    record_limits = {
+        extra_small: 1000,
+        small: 10000,
+        medium: 50000,
+        large: 100000,
+        extra_large: 0,
     }
 
     memtotal = 0
-    with open(_PROC_MEMINFO, "r", encoding="utf8") as fp:
-        for line in fp.readlines():
-            if line.startswith("MemTotal"):
-                try:
-                    _, memtotal_str, _ = line.split()
-                    memtotal = int(memtotal_str) * 2**10
-                    break
-                except ValueError as err:
-                    _log_debug(
-                        "Could not parse %s line '%s': %s", _PROC_MEMINFO, line, err
-                    )
+    try:
+        with open(_PROC_MEMINFO, "r", encoding="utf8") as fp:
+            for line in fp.readlines():
+                if line.startswith("MemTotal"):
+                    try:
+                        _, memtotal_str, _ = line.split()
+                        memtotal = int(memtotal_str) * 2**10
+                        break
+                    except ValueError as err:
+                        _log_debug(
+                            "Could not parse %s line '%s': %s", _PROC_MEMINFO, line, err
+                        )
+    except OSError as err:
+        _log_warn("Could not read %s: %s", _PROC_MEMINFO, err)
 
-    dict_size = dict_sizes[small]
-    for thresh, size in dict_sizes.items():
+    limit = record_limits[extra_small]
+    for thresh, value in record_limits.items():
         if memtotal >= thresh:
-            dict_size = size
+            limit = value
 
-    return dict_size
+    return limit
 
 
 def _check_cache_dir(dirpath: str, mode: int, name: str) -> str:
