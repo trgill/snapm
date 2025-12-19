@@ -8,10 +8,15 @@
 import unittest
 import os
 import stat
-import lzma
 import pickle
 from unittest.mock import MagicMock, patch, mock_open
 from uuid import uuid4
+
+try:
+    import zstandard as zstd
+    _HAVE_ZSTD = True
+except ModuleNotFoundError:
+    _HAVE_ZSTD = False
 
 from snapm import SnapmSystemError, SnapmNotFoundError, SnapmInvalidIdentifierError
 from snapm.fsdiff import cache
@@ -107,25 +112,36 @@ class TestCache(unittest.TestCase):
         with self.assertRaisesRegex(SnapmInvalidIdentifierError, "mount_a == mount_b"):
             cache._cache_name(self.mount_a, self.mount_a, self.results)
 
+    @unittest.skipIf(not _HAVE_ZSTD, "No zstandard module")
     @patch("snapm.fsdiff.cache._check_dirs")
-    @patch("lzma.open")
+    @patch("zstandard.ZstdCompressor")
     @patch("pickle.dump")
-    def test_save_cache(self, mock_dump, mock_lzma, mock_check):
+    @patch('builtins.open', new_callable=mock_open)
+    def test_save_cache(self, mock_file, mock_dump, mock_zstd, mock_check):
+        results = self.results
+
+        cache_rec = MagicMock(spec=FsDiffRecord)
+        cache_rec.path = "/some/path"
+        results._records = [cache_rec]
+        results.count = 1
+        results.__len__.return_value = 1
         cache.save_cache(self.mount_a, self.mount_b, self.results)
         mock_check.assert_called_once()
-        mock_lzma.assert_called_once()
+        mock_zstd.assert_called_once()
 
+    @unittest.skipIf(not _HAVE_ZSTD, "No zstandard module")
     @patch("snapm.fsdiff.cache._check_dirs")
     @patch("os.listdir")
-    @patch("lzma.open")
+    @patch("zstandard.ZstdDecompressor")
     @patch("pickle.load")
-    def test_load_cache_success(self, mock_load, mock_lzma, mock_listdir, mock_check):
+    @patch('builtins.open', new_callable=mock_open)
+    def test_load_cache_success(self, mock_file, mock_load, mock_zstd, mock_listdir, mock_check):
         # Setup matching filename
         uuid_a = cache._root_uuid(self.mount_a)
         uuid_b = self.mount_b.snapset.uuid
         # Ensure timestamp is fresh enough
         valid_ts = cache.floor(cache.datetime.now().timestamp())
-        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache"
+        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.zstd"
 
         mock_listdir.return_value = [fname]
 
@@ -133,6 +149,7 @@ class TestCache(unittest.TestCase):
         cached_res = MagicMock(spec=FsDiffResults)
         cached_res.timestamp = 12345678
         cached_res.options = self.results.options
+        cached_res.count = 1
 
         # Set up returned record object
         cached_rec = MagicMock(spec=FsDiffRecord)
@@ -175,9 +192,8 @@ class TestCache(unittest.TestCase):
 
     @patch("snapm.fsdiff.cache._check_dirs")
     @patch("os.listdir")
-    @patch("lzma.open")
     @patch("pickle.load")
-    def test_load_cache_options_mismatch(self, mock_load, mock_lzma, mock_listdir, mock_check):
+    def test_load_cache_options_mismatch(self, mock_load, mock_listdir, mock_check):
         uuid_a = cache._root_uuid(self.mount_a)
         uuid_b = self.mount_b.snapset.uuid
         valid_ts = cache.floor(cache.datetime.now().timestamp())
@@ -195,7 +211,7 @@ class TestCache(unittest.TestCase):
 
 
 class TestGetDictSize(unittest.TestCase):
-    """Test automatic lzma dictionary sizing"""
+    """Test automatic compression sizing heuristics"""
 
     def setUp(self):
         # Constants for byte calculations

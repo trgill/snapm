@@ -10,7 +10,16 @@ Top-level fsdiff interface.
 """
 from typing import Optional, TYPE_CHECKING
 import logging
-import lzma
+import pickle
+
+
+try:
+    import zstandard as zstd
+
+    compress_errors = (zstd.ZstdError,)
+except ModuleNotFoundError:
+    compress_errors = ()
+
 
 from snapm import SnapmError, SnapmNotFoundError
 from snapm.progress import TermControl
@@ -158,7 +167,7 @@ class FsDiffer:
                     quiet=self.options.quiet,
                     term_control=self._term_control,
                 )
-            except (OSError, lzma.LZMAError) as err:
+            except (OSError, pickle.PicklingError, *compress_errors) as err:
                 _log_info(
                     "Failed to save diff cache for %s/%s: %s",
                     mount_a.name,
