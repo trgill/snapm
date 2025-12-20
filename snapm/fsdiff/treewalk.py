@@ -198,7 +198,7 @@ class FsEntry:
         )
         fse_str = (
             f"{indent}path: {self.path}\n"
-            f"{indent}stat: {stat_str}\n"
+            f"{indent}stat:\n{stat_str}\n"
             f"{indent}hash: {self.content_hash}"
         )
         if self.symlink_target:
