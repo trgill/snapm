@@ -113,7 +113,6 @@ TEXT_EXTENSION_MAP = {
     ".fish": ("application/x-fish", "fish script"),
     ".ksh": ("application/x-ksh", "kornshell script"),
     ".csh": ("application/x-csh", "c shell script"),
-    ".tcsh": ("application/x-csh", "tcsh script"),
     ".bat": ("application/x-bat", "dos batch file"),
     ".cmd": ("application/x-bat", "windows command script"),
     ".ps1": ("text/x-powershell", "powershell script"),
@@ -500,6 +499,11 @@ class FileTypeInfo:
     Class representing file type information and encoding.
     """
 
+    TEXT_DOCUMENTS = (
+        "application/rtf",
+        "application/x-lyx",
+    )
+
     def __init__(
         self,
         mime_type: str,
@@ -527,6 +531,10 @@ class FileTypeInfo:
             FileTypeCategory.TEXT,
             FileTypeCategory.CONFIG,
             FileTypeCategory.LOG,
+            FileTypeCategory.SOURCE_CODE,
+        ) or (
+            category == FileTypeCategory.DOCUMENT
+            and (mime_type.startswith("text/") or (mime_type in self.TEXT_DOCUMENTS))
         )
 
     def __str__(self):
@@ -549,25 +557,120 @@ class FileTypeDetector:
     Detect file types using ``magic`` from python3-file-magic.
     """
 
-    # Custom rules for better categorization
+    # Custom rules for better categorization. Black likes to break this
+    # so turn off formatting for the category_rules dict.
+    # fmt: off
     category_rules: ClassVar[Dict[str, FileTypeCategory]] = {
-        "text/": FileTypeCategory.TEXT,
-        "application/json": FileTypeCategory.CONFIG,
-        "application/xml": FileTypeCategory.CONFIG,
-        "application/yaml": FileTypeCategory.CONFIG,
-        "image/": FileTypeCategory.IMAGE,
-        "audio/": FileTypeCategory.AUDIO,
-        "video/": FileTypeCategory.VIDEO,
+        # --- Archives & Compression ---
         "application/zip": FileTypeCategory.ARCHIVE,
+        "application/x-tar": FileTypeCategory.ARCHIVE,
         "application/gzip": FileTypeCategory.ARCHIVE,
+        "application/x-gzip": FileTypeCategory.ARCHIVE,
+        "application/x-bzip2": FileTypeCategory.ARCHIVE,
+        "application/x-lzip": FileTypeCategory.ARCHIVE,
+        "application/x-lzma": FileTypeCategory.ARCHIVE,
+        "application/x-xz": FileTypeCategory.ARCHIVE,
+        "application/zstd": FileTypeCategory.ARCHIVE,
+        "application/x-7z-compressed": FileTypeCategory.ARCHIVE,
+        "application/x-rar": FileTypeCategory.ARCHIVE,
+        "application/x-rar-compressed": FileTypeCategory.ARCHIVE,
+        "application/java-archive": FileTypeCategory.ARCHIVE,
+        "application/x-iso9660-image": FileTypeCategory.ARCHIVE,
+        "application/vnd.android.package-archive": FileTypeCategory.ARCHIVE,
+        # --- Executables & Libraries ---
         "application/x-executable": FileTypeCategory.EXECUTABLE,
+        "application/x-elf": FileTypeCategory.EXECUTABLE,
         "application/x-sharedlib": FileTypeCategory.EXECUTABLE,
+        "application/x-pie-executable": FileTypeCategory.EXECUTABLE,
+        "application/x-mach-binary": FileTypeCategory.EXECUTABLE,
+        "application/x-dosexec": FileTypeCategory.EXECUTABLE,
+        "application/vnd.microsoft.portable-executable": FileTypeCategory.EXECUTABLE,
+        "application/x-msdownload": FileTypeCategory.EXECUTABLE,
+        "application/x-object": FileTypeCategory.EXECUTABLE,
+        # --- Documents (Office & PDF) ---
+        "application/pdf": FileTypeCategory.DOCUMENT,
+        "application/msword": FileTypeCategory.DOCUMENT,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            FileTypeCategory.DOCUMENT,
+        "application/vnd.ms-excel": FileTypeCategory.DOCUMENT,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            FileTypeCategory.DOCUMENT,
+        "application/vnd.ms-powerpoint": FileTypeCategory.DOCUMENT,
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            FileTypeCategory.DOCUMENT,
+        "application/vnd.oasis.opendocument.text": FileTypeCategory.DOCUMENT,
+        "application/vnd.oasis.opendocument.spreadsheet": FileTypeCategory.DOCUMENT,
+        "application/rtf": FileTypeCategory.DOCUMENT,
+        "text/rtf": FileTypeCategory.DOCUMENT,
+        "text/markdown": FileTypeCategory.DOCUMENT,
+        "text/asciidoc": FileTypeCategory.DOCUMENT,
+        "text/x-nfo": FileTypeCategory.DOCUMENT,
+        "text/x-tex": FileTypeCategory.DOCUMENT,
+        "text/x-bibtex": FileTypeCategory.DOCUMENT,
+        "text/troff": FileTypeCategory.DOCUMENT,
+        # --- Configuration & Data Serialization ---
+        "application/json": FileTypeCategory.CONFIG,
+        "application/ld+json": FileTypeCategory.CONFIG,
+        "application/xml": FileTypeCategory.CONFIG,
+        "text/xml": FileTypeCategory.CONFIG,
+        "application/yaml": FileTypeCategory.CONFIG,
+        "text/yaml": FileTypeCategory.CONFIG,
+        "application/x-yaml": FileTypeCategory.CONFIG,
+        "text/x-toml": FileTypeCategory.CONFIG,
+        "application/toml": FileTypeCategory.CONFIG,
+        "text/x-ini": FileTypeCategory.CONFIG,  # Unofficial but common
+        # --- Databases ---
+        "application/vnd.sqlite3": FileTypeCategory.DATABASE,
+        "application/x-sqlite3": FileTypeCategory.DATABASE,
+        "application/x-dbf": FileTypeCategory.DATABASE,
+        "application/mbox": FileTypeCategory.DATABASE,  # Email storage
+        # --- Source Code / Web Standards ---
+        "application/javascript": FileTypeCategory.SOURCE_CODE,
+        "application/x-javascript": FileTypeCategory.SOURCE_CODE,
+        "text/javascript": FileTypeCategory.SOURCE_CODE,
+        "text/x-python": FileTypeCategory.SOURCE_CODE,
+        "text/x-script.python": FileTypeCategory.SOURCE_CODE,
+        "text/x-shellscript": FileTypeCategory.SOURCE_CODE,
+        "application/x-sh": FileTypeCategory.SOURCE_CODE,
+        "text/x-c": FileTypeCategory.SOURCE_CODE,
+        "text/x-c++": FileTypeCategory.SOURCE_CODE,
+        "text/x-java-source": FileTypeCategory.SOURCE_CODE,
+        "text/html": FileTypeCategory.SOURCE_CODE,
+        "text/css": FileTypeCategory.SOURCE_CODE,
+        "text/x-diff": FileTypeCategory.SOURCE_CODE,
+        "text/x-makefile": FileTypeCategory.SOURCE_CODE,
+        "application/x-zsh": FileTypeCategory.SOURCE_CODE,
+        "application/x-fish": FileTypeCategory.SOURCE_CODE,
+        "application/x-ksh": FileTypeCategory.SOURCE_CODE,
+        "application/x-csh": FileTypeCategory.SOURCE_CODE,
+        "application/x-bat": FileTypeCategory.SOURCE_CODE,
+        "text/x-powershell": FileTypeCategory.SOURCE_CODE,
+        "text/vbs": FileTypeCategory.SOURCE_CODE,
+        "text/x-lua": FileTypeCategory.SOURCE_CODE,
+        "text/x-perl": FileTypeCategory.SOURCE_CODE,
+        "text/x-tcl": FileTypeCategory.SOURCE_CODE,
+        "text/x-awk": FileTypeCategory.SOURCE_CODE,
+        "text/x-sed": FileTypeCategory.SOURCE_CODE,
+        # --- Certificates & Keys ---
+        "application/x-x509-ca-cert": FileTypeCategory.CERTIFICATE,
+        "application/x-pem-file": FileTypeCategory.CERTIFICATE,
+        "application/pkix-cert": FileTypeCategory.CERTIFICATE,
+        # --- System Inodes ---
         "inode/directory": FileTypeCategory.DIRECTORY,
         "inode/blockdevice": FileTypeCategory.BLOCK,
         "inode/chardevice": FileTypeCategory.CHAR,
         "inode/fifo": FileTypeCategory.FIFO,
         "inode/socket": FileTypeCategory.SOCK,
+        "inode/symlink": FileTypeCategory.SYMLINK,
+        # --- Generic Prefixes (Fallbacks) ---
+        "text/": FileTypeCategory.TEXT,
+        "image/": FileTypeCategory.IMAGE,
+        "audio/": FileTypeCategory.AUDIO,
+        "video/": FileTypeCategory.VIDEO,
+        "font/": FileTypeCategory.BINARY,
+        "model/": FileTypeCategory.BINARY,
     }
+    # fmt: on
 
     def detect_file_type(self, file_path: Path) -> FileTypeInfo:
         """
