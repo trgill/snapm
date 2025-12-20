@@ -52,6 +52,48 @@ _HASH_TYPES = {
 }
 
 
+#: Paths that are always excluded, no matter what the user says.
+_ALWAYS_EXCLUDE_PATTERNS = (
+    # --- /proc (Process Information & Kernel Interfaces) ---
+    "/proc/kcore",  # Virtual alias for physical RAM (Can be Terabytes in size)
+    "/proc/kmsg",  # Blocks indefinitely waiting for kernel log messages
+    "/proc/*/mem",  # Raw memory of processes (Access errors / security alerts)
+    "/proc/*/fd/*",  # Recursion hazards: reading your own open file descriptors
+    "/proc/*/task/*/mem",  # Thread specific memory
+    "/proc/sysrq-trigger",  # Write-only trigger, but unsafe to touch
+    "/proc/acpi/event",  # Deprecated blocking event stream
+    # --- /dev (Device Nodes) ---
+    # Infinite Data Streams (Will hang 'read()' loops or fill buffers)
+    "/dev/zero",
+    "/dev/full",
+    "/dev/random",
+    "/dev/urandom",
+    "/dev/kmsg",  # Kernel message stream
+    # Hardware & System Memory (Access violations or bus locking)
+    "/dev/mem",
+    "/dev/kmem",
+    "/dev/port",
+    "/dev/nvram",
+    # Blocking Input/Output Devices (Will hang waiting for user/hardware input)
+    "/dev/console",
+    "/dev/tty*",
+    "/dev/pts/*",
+    "/dev/ptmx",
+    "/dev/input/*",  # Keyboards/Mice (Keylogging / blocking)
+    "/dev/uinput",
+    # Watchdogs (Opening/Closing can trigger system reboot!)
+    "/dev/watchdog*",
+    # Tape Drives (Access can trigger physical rewind/seek)
+    "/dev/st*",
+    "/dev/nst*",
+    # --- /sys (Kernel Objects, DebugFS, TraceFS) ---
+    # These contain dynamic infinite streams for kernel debugging
+    "/sys/kernel/debug/*",  # DebugFS: Generally unsafe for automated scanning
+    "/sys/kernel/tracing/trace_pipe",  # TraceFS: Blocks waiting for trace data
+    "/sys/fs/cgroup/*",  # Control Groups: Complex hierarchy, recursion risks
+)
+
+#: Default system directories to exclude
 _EXCLUDE_SYSTEM_DIRS = (
     "/proc/*",
     "/sys/*",
@@ -536,13 +578,12 @@ class TreeWalker:
         progress.start(total)
 
         follow_symlinks = self.options.follow_symlinks
+        exclude_patterns = _ALWAYS_EXCLUDE_PATTERNS + self.exclude_patterns
         excluded = 0
         try:
             for i, pathname in enumerate(to_visit):
                 stripped_pathname = pathname.removeprefix(strip_prefix) or "/"
-                if any(
-                    fnmatch(stripped_pathname, pat) for pat in self.exclude_patterns
-                ):
+                if any(fnmatch(stripped_pathname, pat) for pat in exclude_patterns):
                     excluded += 1
                     continue
                 if self.file_patterns and not any(
