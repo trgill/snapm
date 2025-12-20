@@ -83,6 +83,7 @@ class FsDiffRecord:
         self.file_path = path
         self.change_type = diff_type
         self.file_type = self._get_file_type()
+        self.file_type_desc = self._get_file_type_desc()
         self.file_category = self._get_file_category()
         self.size_old = old_entry.size if old_entry else 0
         self.size_new = new_entry.size if new_entry else 0
@@ -164,6 +165,7 @@ class FsDiffRecord:
             f"{'  ' + moved_to if moved_to else ''}"  # no newline (embedded if set)
             f"  file_path: {self.file_path}\n"
             f"  file_type: {self.file_type}\n"
+            f"  file_type_desc: {self.file_type_desc}\n"
             f"  file_category: {self.file_category}\n"
             f"  size_old: {self.size_old}\n"
             f"  size_new: {self.size_new}\n"
@@ -194,6 +196,7 @@ class FsDiffRecord:
             "diff_type": self.diff_type.value,
             "file_path": self.file_path,
             "file_type": self.file_type,
+            "file_type_desc": self.file_type_desc,
             "file_category": self.file_category,
             "size_old": self.size_old,
             "size_new": self.size_new,
@@ -254,6 +257,24 @@ class FsDiffRecord:
         if entry.file_type_info:
             return entry.file_type_info.mime_type
         return "file"
+
+    def _get_file_type_desc(self) -> str:
+        """
+        Get file type description for reporting.
+
+        :returns: A detailed description of the file type for this diff record.
+        :rtype: ``str``
+        """
+        entry = self.new_entry or self.old_entry
+        if not entry:
+            return "unknown"
+        if entry.is_dir:
+            return "filesystem directory"
+        if entry.is_symlink:
+            return "symbolic link"
+        if entry.file_type_info:
+            return entry.file_type_info.description
+        return "unknown"
 
     def _get_file_category(self) -> str:
         """
@@ -637,18 +658,21 @@ class FsDiffResults:
         out = ""
         for record in self._records:
             summary = (
-                f"\n  Summary: {record.content_diff_summary}"
+                f"\n  content_diff_summary: {record.content_diff_summary}"
                 if record.content_diff_summary
                 else ""
             )
 
             change_descs = ", ".join(chg.description for chg in record.changes)
-            description = f"\n  Description: {change_descs}" if change_descs else ""
+            description = f"\n  changes: {change_descs}" if change_descs else ""
 
             sep = "" if first else "\n"
             out += (
                 f"{sep}"
-                f"Path: {record.path}\n  DiffType: {record.diff_type.value}"
+                f"Path: {record.path}\n"
+                f"  diff_type: {record.diff_type.value}\n"
+                f"  file_type: {record.file_type}\n"
+                f"  file_type_desc: {record.file_type_desc}"
                 f"{description}{summary}"
             )
             first = False

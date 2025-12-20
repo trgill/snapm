@@ -72,8 +72,8 @@ class TestFsDiffResults(unittest.TestCase):
         # Short
         short = self.results.short()
         self.assertIn("Path: /a", short)
-        self.assertIn("DiffType: modified", short)
-        self.assertIn("Summary: diff", short)
+        self.assertIn("diff_type: modified", short)
+        self.assertIn("content_diff_summary: diff", short)
 
         # Full
         full = self.results.full()
