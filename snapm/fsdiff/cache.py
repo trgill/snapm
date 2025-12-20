@@ -8,7 +8,7 @@
 """
 File system diff cache
 """
-from typing import Optional, TYPE_CHECKING
+from typing import Dict, Optional, TYPE_CHECKING
 from stat import S_ISDIR, S_ISLNK
 from datetime import datetime
 from uuid import UUID, uuid5
@@ -51,26 +51,25 @@ _log_error = _log.error
 
 
 #: Top-level snapm cache directory
-_SNAPM_CACHE_DIR = "/var/cache/snapm"
+_SNAPM_CACHE_DIR: str = "/var/cache/snapm"
 
 #: Cache directory file mode
-_SNAPM_CACHE_MODE = 0o700
+_SNAPM_CACHE_MODE: int = 0o700
 
 #: Directory for storing diff cache files
-_DIFF_CACHE_DIR = "/var/cache/snapm/diffcache"
+_DIFF_CACHE_DIR: str = "/var/cache/snapm/diffcache"
 
 #: Default cache expiry: 15m
-_CACHE_EXPIRES_SECS = 900
+_CACHE_EXPIRES_SECS: int = 900
 
 #: Magic number to represent default expiry time.
-_DEFAULT_EXPIRES = -1
+_DEFAULT_EXPIRES: int = -1
 
 #: Magic number for fake root file system timestamp
-_ROOT_TIMESTAMP = 282528000
+_ROOT_TIMESTAMP: int = 282528000
 
 #: Location of the meminfo file in procfs
-_PROC_MEMINFO = "/proc/meminfo"
-
+_PROC_MEMINFO: str = "/proc/meminfo"
 
 def _get_max_cache_records() -> int:
     """
