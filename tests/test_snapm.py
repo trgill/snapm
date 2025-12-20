@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import subprocess
 import unittest
+from unittest.mock import MagicMock, mock_open, patch
 import logging
 from uuid import UUID
 import os
@@ -217,6 +218,112 @@ class SnapmTestsSimple(unittest.TestCase):
     def test__unescape_mounts_not_a_string(self):
         with self.assertRaises(AttributeError):
             snapm._snapm._unescape_mounts(1)
+
+    @patch("builtins.open", new_callable=mock_open, read_data="MemTotal:        16384000 kB\n")
+    def test_get_total_memory_16GiB(self, mock_file):
+        """Test reading total system memory."""
+        # 16384000 kB * 1024 = 16777216000 bytes
+        mem = snapm.get_total_memory()
+        self.assertEqual(mem, 16777216000)
+
+    @patch("builtins.open", new_callable=mock_open, read_data="MemTotal:   2048 kB\n")
+    def test_get_total_memory_2MiB(self, mock_file):
+        """Test parsing MemTotal from meminfo."""
+        # 2048 kB = 2097152 bytes
+        self.assertEqual(snapm.get_total_memory(), 2097152)
+
+    def test_get_current_rss_real(self):
+        """Test getting current RSS."""
+        # This uses resource.getrusage, usually available.
+        # We just want to ensure it returns an int > 0 or 0, not crash.
+        rss = snapm.get_current_rss()
+        self.assertIsInstance(rss, int)
+        self.assertGreaterEqual(rss, 0)
+
+    @patch("builtins.open", new_callable=mock_open, read_data="VmRSS:      1024 kB\n")
+    def test_get_current_rss(self, mock_file):
+        """Test parsing VmRSS from status file."""
+        # 1024 kB = 1048576 bytes
+        self.assertEqual(snapm.get_current_rss(), 1048576)
+
+    @patch("builtins.open", side_effect=OSError)
+    def test_get_current_rss_fail(self, mock_file):
+        """Test VmRSS failure handling."""
+        self.assertEqual(snapm.get_current_rss(), 0)
+
+    @patch("builtins.open", side_effect=OSError)
+    def test_get_total_memory_fail(self, mock_file):
+        """Test MemTotal failure handling."""
+        self.assertEqual(snapm.get_total_memory(), 0)
+
+    def test_fstab_reader_malformed(self):
+        """Test FsTabReader skipping malformed lines."""
+        with patch("builtins.open", mock_open(read_data="valid / xfs defaults 0 0\nmalformed_line\n")):
+            fstab = snapm.FsTabReader("/etc/fstab")
+            self.assertEqual(len(fstab.entries), 1)
+            self.assertEqual(fstab.entries[0].where, "/")
+
+    def test_fstab_reader_io_error(self):
+        """Test FsTabReader handling IO errors."""
+        with patch("builtins.open", side_effect=IOError("Read error")):
+            with self.assertRaises(snapm.SnapmSystemError):
+                snapm.FsTabReader()
+
+    @patch("subprocess.run")
+    def test_get_device_path_errors(self, mock_run):
+        """Test get_device_path error handling."""
+        # Case 1: blkid not found
+        mock_run.side_effect = FileNotFoundError
+        with self.assertRaises(snapm.SnapmNotFoundError):
+            snapm.get_device_path("uuid", "123")
+
+        # Case 2: Unexpected error
+        mock_run.side_effect = Exception("Boom")
+        with self.assertRaises(snapm.SnapmCalloutError):
+            snapm.get_device_path("uuid", "123")
+
+    def test_snapshot_mounted_checks(self):
+        """Test Snapshot mounted checks via /proc/self/mounts."""
+        # Mock a snapshot
+        snap = MagicMock(spec=snapm.Snapshot)
+        snap.mount_point = "/mnt/origin"
+        snap.devpath = "/dev/vg/lv-snap"
+        snap.origin = "/dev/vg/lv"
+
+        # We have to bind the property to the class or instance to test the property logic
+        # explicitly if testing the base class logic, but Snapshot is abstract.
+        # Ideally, we create a concrete subclass or rely on integration tests.
+        # Here is a unit test approach using a temporary concrete class:
+        class ConcreteSnapshot(snapm.Snapshot):
+            @property
+            def devpath(self): return "/dev/vg/lv-snap"
+            @property
+            def status(self): return snapm.SnapStatus.ACTIVE
+            @property
+            def origin(self): return "/dev/vg/lv"
+
+        s = ConcreteSnapshot("s1", "set1", "/dev/vg/lv", 0, "/mnt/origin", MagicMock())
+
+        #mounts_data = "/dev/vg/lv-snap /mnt/snap xfs rw 0 0\n/dev/vg/lv /mnt/origin xfs rw 0 0\n"
+        mounts_data = "/dev/vg/lv /mnt/origin xfs rw 0 0\n/dev/vg/lv-snap /mnt/snap xfs rw 0 0\n"
+
+        def mock_samefile(path1, path2):
+            # Snapshot device and mount point match
+            if path1 == "/dev/vg/lv-snap" and path2 == "/dev/vg/lv-snap":
+                return True
+            # Origin device and mount point match
+            if path1 == "/dev/vg/lv" and path2 == "/dev/vg/lv":
+                return True
+            return False
+
+        with patch("builtins.open", mock_open(read_data=mounts_data)), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.samefile", side_effect=mock_samefile):
+
+            self.assertTrue(s.snapshot_mounted)
+            # Test case: Mount point has origin mounted (implies snapshot is NOT mounted there)
+            # This happens if we haven't mounted the snapshot yet or reverted.
+            self.assertTrue(s.origin_mounted)
 
 
 @unittest.skipIf(not have_root(), "requires root privileges")
