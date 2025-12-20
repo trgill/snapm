@@ -417,3 +417,45 @@ class TestTreeWalkFull(unittest.TestCase):
 
         tree = walker.walk_tree(mount, strip_prefix=str(self.root))
         self.assertIsNone(tree["/file_a"].content_hash)
+
+    def test_always_exclude_patterns(self):
+        """Test that hazardous paths are always excluded."""
+        # Create a mock tree containing a hazardous path
+        walker = TreeWalker(self.opts)
+        mount = MagicMock(spec=Mount)
+        mount.root = "/tmp/test"
+        mount.name = "Test Root"
+
+        test_walk = [
+            ("/tmp/test/proc", [], ["kcore"]),
+            ("/tmp/test/etc", [], ["normal.conf"]),
+        ]
+        # Mock os.walk to yield a hazardous path
+        # /proc/kcore is in _ALWAYS_EXCLUDE_PATTERNS
+        with patch("os.walk", return_value=test_walk), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.lstat") as mock_lstat:
+
+            mock_lstat.return_value.st_mode = 0o0
+            tree = walker.walk_tree(mount, strip_prefix="/tmp/test")
+
+            # Should NOT be in the result tree
+            self.assertNotIn("/proc/kcore", tree)
+
+            # Should be in the result tree
+            self.assertIn("/etc/normal.conf", tree)
+
+    def test_hash_large_file(self):
+        """Test hashing a file larger than the 64KB read buffer."""
+        # Create a 65KB file
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(b"0" * (64 * 1024 + 100))
+            fname = f.name
+
+        try:
+            walker = TreeWalker(self.opts)
+            # We just need to ensure it runs without error
+            digest = walker._calculate_content_hash(fname)
+            self.assertEqual(len(digest), 64) # sha256 hex length
+        finally:
+            os.unlink(fname)
