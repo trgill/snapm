@@ -149,6 +149,63 @@ SNAPM_VALID_NAME_CHARS = set(
     string.ascii_lowercase + string.ascii_uppercase + string.digits + "+_.-"
 )
 
+#: Location of the meminfo file in procfs
+_PROC_MEMINFO: str = "/proc/meminfo"
+
+#: Location of the self/status file in procfs
+_PROC_SELF_STATUS: str = "/proc/self/status"
+
+
+def get_current_rss() -> int:
+    """
+    Return the running process's current VmRSS value in bytes.
+
+    :returns: VmRSS read from `/proc/self/status` as an integer byte value,
+              or 0 meaning "VmRSS unavailable".
+    :type: ``int``
+    """
+    try:
+        with open(_PROC_SELF_STATUS, "r", encoding="utf8") as fp:
+            for line in fp.readlines():
+                if line.startswith("VmRSS"):
+                    try:
+                        _, vmrss_str, _ = line.split()
+                        return int(vmrss_str) * 2**10
+                    except ValueError as err:
+                        _log_debug(
+                            "Could not parse %s line '%s': %s",
+                            _PROC_SELF_STATUS,
+                            line,
+                            err,
+                        )
+    except OSError as err:
+        _log_warn("Could not read %s: %s", _PROC_SELF_STATUS, err)
+    return 0
+
+
+def get_total_memory() -> int:
+    """
+    Return the total physical memory available to the system, excluding swap,
+    in bytes, or 0 meaning "MemTotal" unavailable.
+
+    :returns: Total physical RAM in bytes.
+    :rtype: ``int``
+    """
+    try:
+        with open(_PROC_MEMINFO, "r", encoding="utf8") as fp:
+            for line in fp.readlines():
+                if line.startswith("MemTotal"):
+                    try:
+                        _, memtotal_str, _ = line.split()
+                        return int(memtotal_str) * 2**10
+                    except ValueError as err:
+                        _log_debug(
+                            "Could not parse %s line '%s': %s", _PROC_MEMINFO, line, err
+                        )
+    except OSError as err:
+        _log_warn("Could not read %s: %s", _PROC_MEMINFO, err)
+    return 0
+
 
 class SubsystemFilter(logging.Filter):
     """
@@ -2294,6 +2351,9 @@ __all__ = [
     # Path to runtime directory
     "SNAPM_RUNTIME_DIR",
     "NAMESPACE_SNAPSHOT_SET",
+    # Memory usage
+    "get_current_rss",
+    "get_total_memory",
     # Debug logging - subsystem name interface
     "SubsystemFilter",
     "SNAPM_SUBSYSTEM_MANAGER",

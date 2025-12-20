@@ -28,6 +28,8 @@ except ModuleNotFoundError:
 
 from snapm import (
     NAMESPACE_SNAPSHOT_SET,
+    get_current_rss,
+    get_total_memory,
     SnapmSystemError,
     SnapmNotFoundError,
     SnapmInvalidIdentifierError,
@@ -69,12 +71,6 @@ _DEFAULT_EXPIRES: int = -1
 #: Magic number for fake root file system timestamp
 _ROOT_TIMESTAMP: int = 282528000
 
-#: Location of the meminfo file in procfs
-_PROC_MEMINFO: str = "/proc/meminfo"
-
-#: Location of the self/status file in procfs
-_PROC_SELF_STATUS: str = "/proc/self/status"
-
 #: Maximum fraction of memory used to attempt caching
 _MAX_RSS_FRACTION = 0.6
 
@@ -86,57 +82,6 @@ _COMPRESSION_EXTENSIONS: Dict[str, str] = {
 }
 
 
-def _get_current_rss() -> int:
-    """
-    Return the running process's current VmRSS value in bytes.
-
-    :returns: VmRSS read from `/proc/self/status` as an integer byte value,
-              or 0 meaning "VmRSS unavailable".
-    :type: ``int``
-    """
-    try:
-        with open(_PROC_SELF_STATUS, "r", encoding="utf8") as fp:
-            for line in fp.readlines():
-                if line.startswith("VmRSS"):
-                    try:
-                        _, vmrss_str, _ = line.split()
-                        return int(vmrss_str) * 2**10
-                    except ValueError as err:
-                        _log_debug(
-                            "Could not parse %s line '%s': %s",
-                            _PROC_SELF_STATUS,
-                            line,
-                            err,
-                        )
-    except OSError as err:
-        _log_warn("Could not read %s: %s", _PROC_SELF_STATUS, err)
-    return 0
-
-
-def _get_total_memory() -> int:
-    """
-    Return the total physical memory available to the system, excluding swap,
-    in bytes, or 0 meaning "MemTotal" unavailable.
-
-    :returns: Total physical RAM in bytes.
-    :rtype: ``int``
-    """
-    try:
-        with open(_PROC_MEMINFO, "r", encoding="utf8") as fp:
-            for line in fp.readlines():
-                if line.startswith("MemTotal"):
-                    try:
-                        _, memtotal_str, _ = line.split()
-                        return int(memtotal_str) * 2**10
-                    except ValueError as err:
-                        _log_debug(
-                            "Could not parse %s line '%s': %s", _PROC_MEMINFO, line, err
-                        )
-    except OSError as err:
-        _log_warn("Could not read %s: %s", _PROC_MEMINFO, err)
-    return 0
-
-
 def _should_cache() -> bool:
     """
     Determine whether it is safe to attempt writing the cache given system
@@ -146,8 +91,8 @@ def _should_cache() -> bool:
     :rtype: ``bool``
     """
 
-    memtotal = _get_total_memory()
-    rss = _get_current_rss()
+    memtotal = get_total_memory()
+    rss = get_current_rss()
 
     if not memtotal:
         _log_warn("Cannot determine available system memory: disabling cache writing")
