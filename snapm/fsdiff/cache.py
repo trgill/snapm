@@ -408,6 +408,7 @@ def load_cache(
                 term_control=term_control,
             )
             try:
+                results = None
                 if uncompress == "zstd":
                     dctx = zstd.ZstdDecompressor()
                     with open(cache_path, mode="rb") as fp:

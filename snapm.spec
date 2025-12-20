@@ -33,6 +33,9 @@ BuildRequires:	python3-sphinx
 BuildRequires:	python3-wcwidth
 BuildRequires:	python3-wheel
 BuildRequires:	python3-file-magic
+%if 0%{?rhel} >= 10
+BuildRequires:  python3-zstandard
+%endif
 %if 0%{?fedora}
 BuildRequires: libfaketime
 %endif
