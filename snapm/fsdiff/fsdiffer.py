@@ -11,14 +11,18 @@ Top-level fsdiff interface.
 from typing import Optional, TYPE_CHECKING
 import logging
 import pickle
+import lzma
 
 
 try:
     import zstandard as zstd
 
-    compress_errors = (zstd.ZstdError,)
+    compress_errors = (
+        lzma.LZMAError,
+        zstd.ZstdError,
+    )
 except ModuleNotFoundError:
-    compress_errors = ()
+    compress_errors = (lzma.LZMAError,)
 
 
 from snapm import SnapmError, SnapmNotFoundError

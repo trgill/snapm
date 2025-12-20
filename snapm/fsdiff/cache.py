@@ -8,7 +8,7 @@
 """
 File system diff cache
 """
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
 from stat import S_ISDIR, S_ISLNK
 from datetime import datetime
 from uuid import UUID, uuid5
@@ -16,6 +16,7 @@ from io import RawIOBase
 from math import floor
 import logging
 import pickle
+import lzma
 import os
 
 try:
@@ -70,6 +71,14 @@ _ROOT_TIMESTAMP: int = 282528000
 
 #: Location of the meminfo file in procfs
 _PROC_MEMINFO: str = "/proc/meminfo"
+
+#: Compression types
+_COMPRESSION_EXTENSIONS: Dict[str, str] = {
+    None: "cache",
+    "lzma": "lzma",
+    "zstd": "zstd",
+}
+
 
 def _get_max_cache_records() -> int:
     """
@@ -232,6 +241,35 @@ def _cache_name(mount_a: "Mount", mount_b: "Mount", results: FsDiffResults) -> s
     return f"{uuid_a!s}.{uuid_b!s}.{opts_hash}.{timestamp}.cache"
 
 
+def _compress_type() -> Tuple[str, Tuple[Exception, ...]]:
+    """
+    Determine the compression type to use when writing the diffcache.
+
+    :returns: A 2-tuple containing a string describing the chosen
+              compression format or and a tuple of exception types for the
+              chosen format.
+    :rtype: ``Tuple[str, Tuple[Exception, ...]]``
+    """
+    compress = None
+    compress_errors = ()
+    limit = _get_max_cache_records()
+    if limit and results.count > limit and results.options.include_content_diffs:
+        _log_warn(
+            "Large cache with include_content_diffs detected: "
+            "disabling cache compression (%d > %d)",
+            results.count,
+            limit,
+        )
+    else:
+        if _HAVE_ZSTD:
+            compress = "zstd"
+            compress_errors = (zstd.ZstdError,)
+        else:
+            compress = "lzma"
+            compress_errors = (lzma.LZMAError,)
+    return (compress, compress_errors)
+
+
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
@@ -296,12 +334,82 @@ def load_cache(
 
     term_control = term_control or TermControl(color=color)
 
+    def _read_cache(
+        reader: RawIOBase,
+        progress: ProgressBase,
+        name: str,
+        errors: Tuple[Exception, ...],
+    ) -> Optional[FsDiffResults]:
+        # We trust the files in /var/cache/snapm/diffcache since the
+        # directory is root-owned and has restrictive permissions that
+        # are verified on startup.
+        candidate = pickle.load(reader)
+        _log_debug(
+            "Loaded candidate diffcache pickle from %s with options=%s",
+            name,
+            repr(candidate.options),
+        )
+        if candidate.options != options:
+            _log_debug("Ignoring cache entry with mismatched options")
+            return None
+        records = []
+        start_time = datetime.now()
+        try:
+            progress.start(candidate.count)
+        except AttributeError as attr_err:
+            _log_debug(
+                "Ignoring mismatched cache file version: %s",
+                attr_err,
+            )
+            return None
+        for i in range(0, candidate.count):
+            progress.progress(i, f"Loading record {i}")
+            try:
+                record = pickle.load(reader)
+                if record is None:
+                    break
+                records.append(record)
+            except EOFError:
+                if len(records) == candidate.count:
+                    break
+                _log_error("Detected truncated cache file %s", name)
+                raise
+            except (OSError, pickle.UnpicklingError, *errors):
+                progress.cancel("Error.")
+                raise
+
+        end_time = datetime.now()
+        progress.end(
+            f"Loaded {candidate.count} records from diffcache "
+            f"in {end_time - start_time}"
+        )
+        return FsDiffResults(records, candidate.options, candidate.timestamp)
+
     for file_name in os.listdir(_DIFF_CACHE_DIR):
-        if not file_name.endswith(".cache") and not file_name.endswith(".cache.zstd"):
+        if (
+            not file_name.endswith(".cache")
+            and file_name.rsplit(".", 1)[-1] not in _COMPRESSION_EXTENSIONS
+        ):
             continue
 
-        try:
+        uncompress = None
+        uncompress_errors = ()
+        cache_name = file_name
+        if file_name.endswith(".zstd"):
+            if not _HAVE_ZSTD:
+                _log_warn(
+                    "Ignoring zstd compressed cache file: zstd support not available"
+                )
+                continue
             cache_name = file_name.removesuffix(".zstd")
+            uncompress = "zstd"
+            uncompress_errors = (zstd.ZstdError,)
+        elif file_name.endswith(".lzma"):
+            cache_name = file_name.removesuffix(".lzma")
+            uncompress = "lzma"
+            uncompress_errors = (lzma.LZMAError,)
+
+        try:
             (load_uuid_a, load_uuid_b, _, timestamp_str, _) = cache_name.split(".")
         except ValueError:
             _log_debug("Ignoring cache file with malformed name: %s", file_name)
@@ -322,61 +430,6 @@ def load_cache(
                 _log_error("Error unlinking stale cache file %s: %s", file_name, err)
             continue
 
-        def _read_cache(
-            reader: RawIOBase,
-            progress: ProgressBase,
-            name: str,
-        ) -> Optional[FsDiffResults]:
-            # We trust the files in /var/cache/snapm/diffcache since the
-            # directory is root-owned and has restrictive permissions that
-            # are verified on startup.
-            candidate = pickle.load(reader)
-            _log_debug(
-                "Loaded candidate diffcache pickle from %s with options=%s",
-                name,
-                repr(candidate.options),
-            )
-            if candidate.options != options:
-                _log_debug("Ignoring cache entry with mismatched options")
-                return None
-            records = []
-            start_time = datetime.now()
-            try:
-                progress.start(candidate.count)
-            except AttributeError as attr_err:
-                _log_debug(
-                    "Ignoring mismatched cache file version: %s",
-                    attr_err,
-                )
-                return None
-            for i in range(0, candidate.count):
-                progress.progress(i, f"Loading record {i}")
-                try:
-                    record = pickle.load(reader)
-                    if record is None:
-                        break
-                    records.append(record)
-                except EOFError:
-                    if len(records) == candidate.count:
-                        break
-                    _log_error("Detected truncated cache file %s", name)
-                    raise
-                except (OSError, pickle.UnpicklingError):
-                    progress.cancel("Error.")
-                except KeyboardInterrupt:
-                    progress.cancel("Quit!")
-                    raise
-                except SystemExit:
-                    progress.cancel("Exiting.")
-                    raise
-
-            end_time = datetime.now()
-            progress.end(
-                f"Loaded {candidate.count} records from diffcache "
-                f"in {end_time - start_time}"
-            )
-            return FsDiffResults(records, candidate.options, candidate.timestamp)
-
         if str(uuid_a) == load_uuid_a and str(uuid_b) == load_uuid_b:
             progress = ProgressFactory.get_progress(
                 "Loading cache",
@@ -384,20 +437,29 @@ def load_cache(
                 term_control=term_control,
             )
             try:
-                if cache_path.endswith(".zstd"):
+                if uncompress == "zstd":
                     dctx = zstd.ZstdDecompressor()
                     with open(cache_path, mode="rb") as fp:
                         with dctx.stream_reader(fp) as reader:
-                            results = _read_cache(reader, progress, file_name)
-                            if results is None:
-                                continue
+                            results = _read_cache(
+                                reader, progress, file_name, uncompress_errors
+                            )
+                elif uncompress == "lzma":
+                    with lzma.LZMAFile(filename=cache_path, mode="rb") as reader:
+                        results = _read_cache(
+                            reader, progress, file_name, uncompress_errors
+                        )
                 else:
-                    with open(cache_path, mode="rb") as reader:
-                        results = _read_cache(reader, progress, file_name)
-                        if results is None:
-                            continue
+                    raise SnapmNotFoundError(f"Unknown compression type: {uncompress}")
+                if results is None:
+                    continue
                 return results
-            except (OSError, EOFError, pickle.UnpicklingError) as err:
+            except (
+                OSError,
+                EOFError,
+                pickle.UnpicklingError,
+                *uncompress_errors,
+            ) as err:
                 _log_warn("Deleting unreadable cache file %s: %s", file_name, err)
                 try:
                     os.unlink(cache_path)
@@ -405,6 +467,8 @@ def load_cache(
                     _log_error(
                         "Error unlinking unreadable cache file %s: %s", file_name, err2
                     )
+                if progress.total:
+                    progress.cancel("Error.")
                 continue
             except KeyboardInterrupt:
                 if progress.total:
@@ -457,19 +521,10 @@ def save_cache(
     )
 
     count = len(results)
-    limit = _get_max_cache_records()
-    compress = False
-    if limit and count > limit and results.options.include_content_diffs:
-        _log_warn(
-            "Large cache with include_content_diffs detected: "
-            "disabling cache compression (%d > %d)",
-            count,
-            limit,
-        )
-    else:
-        if _HAVE_ZSTD:
-            compress = True
-            cache_path += ".zstd"
+
+    compress, compress_errors = _compress_type(results)
+
+    cache_path += "." + _COMPRESSION_EXTENSIONS[compress]
 
     start_time = datetime.now()
     progress.start(count)
@@ -494,16 +549,18 @@ def save_cache(
             writer.flush()
 
     try:
-        if compress:
+        if compress == "zstd":
             cctx = zstd.ZstdCompressor()
             with open(cache_path, "wb") as fc:
                 with cctx.stream_writer(fc) as compressor:
                     _write_cache(results, compressor)
+        elif compress == "lzma":
+            with lzma.LZMAFile(filename=cache_path, mode="wb") as compressor:
+                _write_cache(results, compressor)
         else:
-            with open(cache_path, "wb") as fp:
-                _write_cache(results, fp)
+            raise SnapmNotFoundError(f"Unknown compression type: {compress}")
 
-    except (OSError, pickle.PicklingError) as err:
+    except (OSError, pickle.PicklingError, *compress_errors) as err:
         _log_error("Error saving cache: %s", err)
         progress.cancel("Error.")
         raise
