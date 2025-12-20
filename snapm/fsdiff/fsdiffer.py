@@ -25,7 +25,13 @@ except ModuleNotFoundError:
     compress_errors = (lzma.LZMAError,)
 
 
-from snapm import SnapmError, SnapmNotFoundError
+from snapm import (
+    get_current_rss,
+    get_total_memory,
+    SnapmError,
+    SnapmSystemError,
+    SnapmNotFoundError,
+)
 from snapm.progress import TermControl
 
 from .cache import load_cache, save_cache
@@ -44,6 +50,47 @@ _log_debug = _log.debug
 _log_info = _log.info
 _log_warn = _log.warning
 _log_error = _log.error
+
+#: Maximum fraction of memory used to attempt diffing after building trees
+_MAX_RSS_FRACTION = 0.333
+
+
+def _should_diff(options: DiffOptions) -> bool:
+    """
+    Determine whether it is safe to attempt computing the diff given system
+    memory constraints and current state.
+
+    :param options: The effective options for this run.
+    :type options: ``DiffOptions``
+    :returns: ``True`` if diffing should be attempted or ``False`` otherwise.
+    :rtype: ``bool``
+    """
+    if not options.include_content_diffs:
+        return True
+
+    memtotal = get_total_memory()
+    rss = get_current_rss()
+
+    if not memtotal:
+        _log_warn("Cannot determine available system memory!")
+        return True
+
+    if not rss:
+        _log_warn("Cannot determine current process memory use!")
+        return True
+
+    fraction = rss / memtotal
+    if fraction > _MAX_RSS_FRACTION:
+        _log_error(
+            "Cannot compute diff: current RSS exceeds safe threshold "
+            "of system memory (%d%% > %d%%)",
+            round(fraction * 100),
+            round(_MAX_RSS_FRACTION * 100),
+        )
+        _log_error("Try again with -C / --no-content-diff")
+        return False
+
+    return True
 
 
 class FsDiffer:
@@ -158,6 +205,9 @@ class FsDiffer:
             quiet=self.options.quiet,
             term_control=self._term_control,
         )
+
+        if not _should_diff(self.options):
+            raise SnapmSystemError("RSS limit exceeded after tree construction")
 
         results = self.diff_engine.compute_diff(
             tree_a, tree_b, self.options, self._term_control
