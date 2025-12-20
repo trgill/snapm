@@ -31,7 +31,7 @@ class TestFileTypeDetector(unittest.TestCase):
         mock_magic.return_value = mock_res
 
         path = Path("/var/log/syslog")
-        info = self.detector.detect_file_type(path)
+        info = self.detector.detect_file_type(path, use_magic=True)
 
         self.assertEqual(info.category, FileTypeCategory.LOG)
 
@@ -44,7 +44,7 @@ class TestFileTypeDetector(unittest.TestCase):
         mock_magic.return_value = mock_res
 
         path = Path("/etc/app/config.json")
-        info = self.detector.detect_file_type(path)
+        info = self.detector.detect_file_type(path, use_magic=True)
 
         self.assertEqual(info.category, FileTypeCategory.CONFIG)
 
@@ -72,7 +72,7 @@ class TestFileTypeDetector(unittest.TestCase):
         mock_magic.side_effect = magic.error("magic failed")
 
         path = Path("/broken")
-        info = self.detector.detect_file_type(path)
+        info = self.detector.detect_file_type(path, use_magic=True)
 
         self.assertEqual(info.category, FileTypeCategory.UNKNOWN)
         self.assertEqual(info.mime_type, "application/octet-stream")

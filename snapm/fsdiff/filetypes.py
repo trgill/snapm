@@ -8,7 +8,7 @@
 """
 File type information support.
 """
-from typing import Optional, ClassVar, Dict
+from typing import ClassVar, Dict, Optional, Tuple
 from pathlib import Path
 from enum import Enum
 import logging
@@ -277,6 +277,21 @@ TEXT_FILENAME_MAP = {
     "*fstab": ("text/plain", "static file system information"),
 }
 
+# List of systemd unit file extensions for special handling.
+SYSTEMD_UNIT_EXTENSIONS = (
+    ".service",
+    ".socket",
+    ".device",
+    ".mount",
+    ".automount",
+    ".swap",
+    ".target",
+    ".path",
+    ".timer",
+    ".slice",
+    ".scope",
+)
+
 # Mappings for Binary Extensions
 # Format: ".ext": ("mime/type", "description starting with lowercase")
 BINARY_EXTENSION_MAP = {
@@ -363,7 +378,6 @@ BINARY_EXTENSION_MAP = {
     ".mpg": ("video/mpeg", "mpeg video file"),
     ".mpeg": ("video/mpeg", "mpeg video file"),
     ".3gp": ("video/3gpp", "3gpp video file"),
-    ".ts": ("video/mp2t", "mpeg transport stream"),
     ".mts": ("video/mp2t", "hdv video file"),
     ".vob": ("video/mpeg", "dvd video object"),
     # Documents (Binary)
@@ -465,6 +479,108 @@ BINARY_FILE_PATHS = {
     "/usr/local/lib": ("application/x-sharedlib", "shared library"),
     "/usr/local/lib64": ("application/x-sharedlib", "shared library"),
 }
+
+
+def _generic_guess_file(
+    file_path: Path,
+    extension_map: Dict[str, Tuple[str, str]],
+    filename_map: Dict[str, Tuple[str, str]],
+    encoding: str,
+) -> Optional[Tuple[str, str, str]]:
+    """
+    Attempt to guess a file's MIME type and description based on the file
+    name and extension.
+
+    :param file_path: A ``Path`` instance containing the file path to check.
+    :type file_path: ``Path``
+    :param extension_map: A map of ".extension": (mime_type, description)
+                          tuples to use.
+    :type extension_map: ``Dict[str, Tuple[str, str]]``
+    :param filename_map: A map of "filename": (mime_type, description)
+                         tuples to use.
+    :returns: A 3-tuple containing (mime_type, description, encoding) if the
+              type could be guessed or ``None`` otherwise.
+    :rtype: ``Optional[Tuple[str, str, str]]``
+    """
+    # Check exact filename match (case-insensitive) for extensionless files
+    for file_name_pattern in filename_map.keys():
+        if Path(file_path.name.lower()).match(file_name_pattern):
+            return (*filename_map[file_name_pattern], encoding)
+
+    extension = file_path.suffix
+
+    # Check extension match
+    extension = extension.lower()
+    if extension and extension in extension_map:
+        return (*extension_map[extension], encoding)
+
+    return None
+
+
+def _guess_text_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
+    """
+    Attempt to guess a text file's MIME type and description based on the file
+    name and extension.
+
+    :param file_path: A ``Path`` instance containing the file path to check.
+    :type file_path: ``Path``
+    :returns: A 3-tuple containing (mime_type, description, encoding) if the
+              type could be guessed or ``None`` otherwise.
+    :rtype: ``Optional[Tuple[str, str, str]]``
+    """
+    return _generic_guess_file(
+        file_path, TEXT_EXTENSION_MAP, TEXT_FILENAME_MAP, "utf-8"
+    )
+
+
+def _guess_binary_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
+    """
+    Attempt to guess a binary file's MIME type and description based on the
+    file name and extension.
+
+    :param file_path: A ``Path`` instance containing the file path to check.
+    :type file_path: ``Path``
+    :returns: A 3-tuple containing (mime_type, description, encoding) if the
+              type could be guessed or ``None`` otherwise.
+    :rtype: ``Optional[Tuple[str, str, str]]``
+    """
+    guess = _generic_guess_file(
+        file_path, BINARY_EXTENSION_MAP, BINARY_FILENAME_MAP, "binary"
+    )
+
+    if guess is not None:
+        return guess
+
+    abs_parent_path = file_path.absolute().parent
+    abs_parent_str = str(abs_parent_path)
+    if abs_parent_str in BINARY_FILE_PATHS:
+        # Honour known text-like patterns even under binary-heavy directories.
+        text_guess = _guess_text_file(file_path)
+        if text_guess is not None:
+            return text_guess
+        return (*BINARY_FILE_PATHS[abs_parent_str], "binary")
+    return None
+
+
+def _guess_file(file_path: Path) -> Tuple[str, str, str]:
+    """
+    Attempt to guess a file's MIME type and description based on the file name
+    and extension.
+
+    :param file_path: A ``Path`` instance containing the file path to check.
+    :type file_path: ``Path``
+    :returns: A 3-tuple containing (mime_type, description, encoding).
+    :rtype: ``Tuple[str, str, str]``
+    """
+    guess = _guess_binary_file(file_path)
+    if guess is not None:
+        return guess
+
+    guess = _guess_text_file(file_path)
+    if guess is not None:
+        return guess
+
+    return ("application/octet-stream", "unknown file type", "binary")
 
 
 class FileTypeCategory(Enum):
@@ -672,36 +788,40 @@ class FileTypeDetector:
     }
     # fmt: on
 
-    def detect_file_type(self, file_path: Path) -> FileTypeInfo:
+    def detect_file_type(self, file_path: Path, use_magic=False) -> FileTypeInfo:
         """
-        Detect comprehensive file type information.
+        Detect comprehensive file type information, optionally using
+        python-magic for MIME type detection.
 
         :param file_path: The path to the file to inspect.
         :type file_path: ``Path``.
         :returns: File type information for ``file_path``.
         :rtype: ``FileTypeInfo``
         """
-        # c9s magic does not have magic.error
-        if hasattr(magic, "error"):
-            magic_errors = (magic.error, OSError, ValueError)
+        if use_magic:
+            # c9s magic does not have magic.error
+            if hasattr(magic, "error"):
+                magic_errors = (magic.error, OSError, ValueError)
+            else:
+                magic_errors = (OSError, ValueError)
+
+            try:
+                fm = magic.detect_from_filename(str(file_path))
+                mime_type = fm.mime_type
+                encoding = fm.encoding
+                description = fm.name
+
+                category = self._categorize_file(mime_type, file_path)
+
+                return FileTypeInfo(mime_type, description, category, encoding)
+
+            except magic_errors as err:
+                _log_warn("Error detecting file type for %s: %s", str(file_path), err)
+                return FileTypeInfo(
+                    "application/octet-stream", "unknown", FileTypeCategory.UNKNOWN
+                )
         else:
-            magic_errors = (OSError, ValueError)
-
-        try:
-            fm = magic.detect_from_filename(str(file_path))
-            mime_type = fm.mime_type
-            encoding = fm.encoding
-            description = fm.name
-
-            category = self._categorize_file(mime_type, file_path)
-
-            return FileTypeInfo(mime_type, description, category, encoding)
-
-        except magic_errors as err:
-            _log_warn("Error detecting file type for %s: %s", str(file_path), err)
-            return FileTypeInfo(
-                "application/octet-stream", "unknown", FileTypeCategory.UNKNOWN
-            )
+            return self._guess_file_type(file_path)
 
     def _categorize_file(self, mime_type: str, file_path: Path) -> FileTypeCategory:
         """
@@ -724,9 +844,29 @@ class FileTypeDetector:
         if "database" in path_str or path_str.endswith((".db", ".sqlite")):
             return FileTypeCategory.DATABASE
 
+        # Special rules for systemd unit files outside /etc
+        if file_path.suffix in SYSTEMD_UNIT_EXTENSIONS:
+            return FileTypeCategory.CONFIG
+
         # Check MIME type rules
         for pattern, category in self.category_rules.items():
             if mime_type.startswith(pattern):
                 return category
 
         return FileTypeCategory.BINARY
+
+    def _guess_file_type(self, file_path: Path) -> FileTypeInfo:
+        """
+        Attempt to guess file type based on extension and file path without
+        using python-magic.
+
+        :param file_path: The path to guess file type for.
+        :type file_path: ``Path``
+        :returns: A ``FileTypeInfo`` object with a best-effort guess of the
+                  file type.
+        :rtype: ``FileTypeInfo``
+        """
+        guess = _guess_file(file_path)
+        mime_type, description, encoding = guess
+        category = self._categorize_file(mime_type, file_path)
+        return FileTypeInfo(mime_type, description, category, encoding)

@@ -418,9 +418,9 @@ class TreeWalker:
         :returns: A new ``FsEntry`` representing the directory.
         :rtype: ``FsEntry``
         """
-        fti = None
-        if self.options.include_file_type:
-            fti = self.file_type_detector.detect_file_type(dir_path)
+        fti = self.file_type_detector.detect_file_type(
+            Path(dir_path), use_magic=self.options.include_file_type
+        )
 
         return FsEntry(dir_path, strip_prefix, dir_stat, file_type_info=fti)
 
@@ -437,9 +437,9 @@ class TreeWalker:
         :returns: A new ``FsEntry`` representing the file.
         :rtype: ``FsEntry``
         """
-        fti = None
-        if self.options.include_file_type:
-            fti = self.file_type_detector.detect_file_type(file_path)
+        fti = self.file_type_detector.detect_file_type(
+            Path(file_path), use_magic=self.options.include_file_type
+        )
 
         content_hash = None
         if stat.S_ISREG(file_stat.st_mode) and getattr(
