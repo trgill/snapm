@@ -113,13 +113,14 @@ class TestCache(unittest.TestCase):
             cache._cache_name(self.mount_a, self.mount_a, self.results)
 
     @unittest.skipIf(not _HAVE_ZSTD, "No zstandard module")
+    @patch("snapm.fsdiff.cache._should_cache")
     @patch("snapm.fsdiff.cache._check_dirs")
     @patch("zstandard.ZstdCompressor")
     @patch("pickle.dump")
     @patch('builtins.open', new_callable=mock_open)
-    def test_save_cache(self, mock_file, mock_dump, mock_zstd, mock_check):
+    def test_save_cache(self, mock_file, mock_dump, mock_zstd, mock_check, mock_should):
         results = self.results
-
+        mock_should.return_value = True
         cache_rec = MagicMock(spec=FsDiffRecord)
         cache_rec.path = "/some/path"
         results._records = [cache_rec]
@@ -208,122 +209,3 @@ class TestCache(unittest.TestCase):
 
         with self.assertRaises(SnapmNotFoundError):
             cache.load_cache(self.mount_a, self.mount_b, DiffOptions(content_only=False))
-
-
-class TestGetDictSize(unittest.TestCase):
-    """Test automatic compression sizing heuristics"""
-
-    def setUp(self):
-        # Expected return values based on the function's logic
-        self.LIMIT_EXTRA_SMALL = 1000
-        self.LIMIT_SMALL = 10000
-        self.LIMIT_MEDIUM = 50000
-        self.LIMIT_LARGE = 100000
-        self.LIMIT_EXTRA_LARGE = 0
-
-    def _create_meminfo_content(self, total_memory_kb):
-        """Helper to create fake /proc/meminfo content."""
-        return [
-            f"MemTotal:       {total_memory_kb} kB\n",
-            "MemFree:         10000 kB\n",
-            "MemAvailable:    2733124 kB\n",
-            "Buffers:           11848 kB\n",
-            "Cached:           930844 kB\n",
-        ]
-
-
-    @patch('builtins.open', new_callable=mock_open)
-    def test_very_small_memory_returns_1000(self, mock_file):
-        """Test that systems with <= 2GiB memory get the small results max."""
-        # Case: 1 GiB system
-        mem_kb = 1 * 1024 * 1024 # 1 GiB in kB
-        mock_file.return_value.readlines.return_value = (
-            self._create_meminfo_content(mem_kb)
-        )
-
-        result = cache._get_max_cache_records()
-
-        self.assertEqual(result, self.LIMIT_EXTRA_SMALL, "Should return 1000 for 1GiB RAM")
-
-    @patch('builtins.open', new_callable=mock_open)
-    def test_small_memory_returns_10000(self, mock_file):
-        """Test that systems with <= 4GiB memory get the small results max."""
-        # Case: 3 GiB system
-        mem_kb = 3 * 1024 * 1024 # 3 GiB in kB
-        mock_file.return_value.readlines.return_value = (
-            self._create_meminfo_content(mem_kb)
-        )
-
-        result = cache._get_max_cache_records()
-
-        self.assertEqual(result, self.LIMIT_SMALL, "Should return 10000 for 3GiB RAM")
-
-    @patch('builtins.open', new_callable=mock_open)
-    def test_medium_memory_returns_50000(self, mock_file):
-        """Test that systems with > 4GiB and <= 8GiB memory get the medium results max."""
-        # Case: 6 GiB system
-        mem_kb = 6 * 1024 * 1024 # 6 GiB in kB
-        mock_file.return_value.readlines.return_value = (
-            self._create_meminfo_content(mem_kb)
-        )
-
-        result = cache._get_max_cache_records()
-
-        self.assertEqual(result, self.LIMIT_MEDIUM, "Should return 50000 for 6GiB RAM")
-
-    @patch('builtins.open', new_callable=mock_open)
-    def test_large_memory_returns_100000(self, mock_file):
-        """Test that systems with > 8GiB memory get the large results max."""
-        # Case: 10 GiB system
-        mem_kb = 10 * 1024 * 1024 # 10 GiB in kB
-        mock_file.return_value.readlines.return_value = (
-            self._create_meminfo_content(mem_kb)
-        )
-
-        result = cache._get_max_cache_records()
-
-        self.assertEqual(result, self.LIMIT_LARGE, "Should return 100000 for 10GiB RAM")
-
-    @patch('builtins.open', new_callable=mock_open)
-    def test_extra_large_memory_returns_0(self, mock_file):
-        """Test that systems with > 16GiB memory get the extra_large results max."""
-        # Case: 32 GiB system
-        mem_kb = 32 * 1024 * 1024 # 32 GiB in kB
-        mock_file.return_value.readlines.return_value = (
-            self._create_meminfo_content(mem_kb)
-        )
-
-        result = cache._get_max_cache_records()
-
-        self.assertEqual(result, self.LIMIT_EXTRA_LARGE, "Should return 0 for 32GiB RAM")
-
-    @patch('builtins.open', new_callable=mock_open)
-    def test_boundary_conditions(self, mock_file):
-        """Test the exact boundary of 4GiB (should be small/medium threshold logic)."""
-        # The function logic is: if memtotal >= thresh: dict_size = dict_sizes[thresh]
-        # dict_sizes keys are: 0, 4GiB, 8GiB.
-
-        # Case: Exactly 4 GiB
-        # 4GiB >= 4GiB is True, so it should upgrade to Medium size (512MiB)
-        # *Note: Verify if this matches your intention. Based on your code:
-        # medium = 4 * 2**30. If memtotal == 4GiB, it matches medium key.
-        mem_kb = 4 * 1024 * 1024
-        mock_file.return_value.readlines.return_value = (
-            self._create_meminfo_content(mem_kb)
-        )
-
-        result = cache._get_max_cache_records()
-        self.assertEqual(result, self.LIMIT_MEDIUM, "Exactly 4GiB should trigger Medium size based on loop logic")
-
-    @patch('builtins.open', new_callable=mock_open)
-    # We patch the logger to suppress output and prevent NameError if _log_debug is not imported
-    @patch('snapm.fsdiff.cache._log_debug')
-    def test_malformed_meminfo_defaults_to_small(self, _mock_log, mock_file):
-        """Test that parsing errors result in the safe default (Small size)."""
-        # Malformed line (string instead of int)
-        mock_file.return_value.readlines.return_value = ["MemTotal:       NotANumber kB\n"]
-
-        result = cache._get_max_cache_records()
-
-        # Should default to memtotal = 0, which falls into the 'small' bucket
-        self.assertEqual(result, self.LIMIT_EXTRA_SMALL, "Parsing error should fallback to small results max")

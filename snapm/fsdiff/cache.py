@@ -72,6 +72,12 @@ _ROOT_TIMESTAMP: int = 282528000
 #: Location of the meminfo file in procfs
 _PROC_MEMINFO: str = "/proc/meminfo"
 
+#: Location of the self/status file in procfs
+_PROC_SELF_STATUS: str = "/proc/self/status"
+
+#: Maximum fraction of memory used to attempt caching
+_MAX_RSS_FRACTION = 0.6
+
 #: Compression types
 _COMPRESSION_EXTENSIONS: Dict[str, str] = {
     None: "cache",
@@ -80,60 +86,89 @@ _COMPRESSION_EXTENSIONS: Dict[str, str] = {
 }
 
 
-def _get_max_cache_records() -> int:
+def _get_current_rss() -> int:
     """
-    Generate an approximate maximum number of ``FsDiffRecord`` objects
-    to attempt to compress given system memory constraints if the
-    DiffOptions.include_content_diff option is enabled. This is a
-    safety guard to avoid attempting to compress huge results sets on
-    memory constrained systems.
+    Return the running process's current VmRSS value in bytes.
 
-    memtotal < 2GiB: 1,000
-    memtotal < 4GiB: 10,000
-    memtotal < 8GiB: 50,000
-    memtotal < 16GiB: 100,000
-    memtotal >= 16GiB: unlimited (0)
+    :returns: VmRSS read from `/proc/self/status` as an integer byte value,
+              or 0 meaning "VmRSS unavailable".
+    :type: ``int``
+    """
+    try:
+        with open(_PROC_SELF_STATUS, "r", encoding="utf8") as fp:
+            for line in fp.readlines():
+                if line.startswith("VmRSS"):
+                    try:
+                        _, vmrss_str, _ = line.split()
+                        return int(vmrss_str) * 2**10
+                    except ValueError as err:
+                        _log_debug(
+                            "Could not parse %s line '%s': %s",
+                            _PROC_SELF_STATUS,
+                            line,
+                            err,
+                        )
+    except OSError as err:
+        _log_warn("Could not read %s: %s", _PROC_SELF_STATUS, err)
+    return 0
 
-    :returns: The maximum number of records to attempt to compress, or
-              zero for unlimited.
+
+def _get_total_memory() -> int:
+    """
+    Return the total physical memory available to the system, excluding swap,
+    in bytes, or 0 meaning "MemTotal" unavailable.
+
+    :returns: Total physical RAM in bytes.
     :rtype: ``int``
     """
-    extra_small = 0  # < 2GiB
-    small = 2 * 2**30  # 2GiB - 4GiB
-    medium = 4 * 2**30  # 4GiB - 8GiB
-    large = 8 * 2**30  # 8GIB - 16GiB
-    extra_large = 16 * 2**30  # > 16GiB
-
-    record_limits = {
-        extra_small: 1000,
-        small: 10000,
-        medium: 50000,
-        large: 100000,
-        extra_large: 0,
-    }
-
-    memtotal = 0
     try:
         with open(_PROC_MEMINFO, "r", encoding="utf8") as fp:
             for line in fp.readlines():
                 if line.startswith("MemTotal"):
                     try:
                         _, memtotal_str, _ = line.split()
-                        memtotal = int(memtotal_str) * 2**10
-                        break
+                        return int(memtotal_str) * 2**10
                     except ValueError as err:
                         _log_debug(
                             "Could not parse %s line '%s': %s", _PROC_MEMINFO, line, err
                         )
     except OSError as err:
         _log_warn("Could not read %s: %s", _PROC_MEMINFO, err)
+    return 0
 
-    limit = record_limits[extra_small]
-    for thresh, value in record_limits.items():
-        if memtotal >= thresh:
-            limit = value
 
-    return limit
+def _should_cache() -> bool:
+    """
+    Determine whether it is safe to attempt writing the cache given system
+    memory constraints and current state.
+
+    :returns: ``True`` if caching should be attempted or ``False`` otherwise.
+    :rtype: ``bool``
+    """
+
+    memtotal = _get_total_memory()
+    rss = _get_current_rss()
+
+    if not memtotal:
+        _log_warn("Cannot determine available system memory: disabling cache writing")
+        return False
+
+    if not rss:
+        _log_warn(
+            "Cannot determine current process memory use: disabling cache writing"
+        )
+        return False
+
+    fraction = rss / memtotal
+    if fraction > _MAX_RSS_FRACTION:
+        _log_warn(
+            "Current RSS exceeds safe threshold of system memory: disabling cache (%d%% > %d%%)",
+            round(fraction * 100),
+            round(_MAX_RSS_FRACTION * 100),
+        )
+        return False
+
+    return True
 
 
 def _check_cache_dir(dirpath: str, mode: int, name: str) -> str:
@@ -252,21 +287,12 @@ def _compress_type() -> Tuple[str, Tuple[Exception, ...]]:
     """
     compress = None
     compress_errors = ()
-    limit = _get_max_cache_records()
-    if limit and results.count > limit and results.options.include_content_diffs:
-        _log_warn(
-            "Large cache with include_content_diffs detected: "
-            "disabling cache compression (%d > %d)",
-            results.count,
-            limit,
-        )
+    if _HAVE_ZSTD:
+        compress = "zstd"
+        compress_errors = (zstd.ZstdError,)
     else:
-        if _HAVE_ZSTD:
-            compress = "zstd"
-            compress_errors = (zstd.ZstdError,)
-        else:
-            compress = "lzma"
-            compress_errors = (lzma.LZMAError,)
+        compress = "lzma"
+        compress_errors = (lzma.LZMAError,)
     return (compress, compress_errors)
 
 
@@ -512,6 +538,9 @@ def save_cache(
     cache_name = _cache_name(mount_a, mount_b, results)
     cache_path = os.path.join(_DIFF_CACHE_DIR, cache_name)
 
+    if not _should_cache():
+        return
+
     term_control = term_control or TermControl(color=color)
 
     progress = ProgressFactory.get_progress(
@@ -522,7 +551,7 @@ def save_cache(
 
     count = len(results)
 
-    compress, compress_errors = _compress_type(results)
+    compress, compress_errors = _compress_type()
 
     cache_path += "." + _COMPRESSION_EXTENSIONS[compress]
 
