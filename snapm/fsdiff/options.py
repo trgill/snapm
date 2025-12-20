@@ -41,7 +41,7 @@ class DiffOptions:
     #: Generate content diffs for detected file modifications
     include_content_diffs: bool = True
     #: Generate file type information using magic
-    include_file_type: bool = False
+    use_magic_file_type: bool = False
     #: Follow symlinks when walking file system trees
     follow_symlinks: bool = False
     #: Maximum file size for diff comparisons

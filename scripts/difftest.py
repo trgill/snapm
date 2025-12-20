@@ -28,7 +28,7 @@ def main():
     parser.add_argument(
         "-f",
         "--file-types",
-        dest="include_file_type",
+        dest="use_magic_file_type",
         help="Generate file type information (slower)",
         action="store_true",
     )

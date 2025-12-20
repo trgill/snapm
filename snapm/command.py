@@ -2715,7 +2715,7 @@ def _add_diff_args(parser):
     parser.add_argument(
         "-f",
         "--file-types",
-        dest="include_file_type",
+        dest="use_magic_file_type",
         action="store_true",
         help="Generate file type information using libmagic",
     )
