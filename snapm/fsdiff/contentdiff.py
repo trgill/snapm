@@ -612,7 +612,7 @@ class ContentDifferManager:
             differ = (
                 self.get_differ_for_file(file_type_info)
                 if file_type_info is not None
-                else TextContentDiffer()
+                else BinaryContentDiffer()
             )
             return differ.generate_diff(old_path, new_path, old_entry, new_entry)
         except (LookupError, OSError, UnicodeError, TypeError) as err:
