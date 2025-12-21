@@ -532,3 +532,38 @@ class TestDiffEngine(unittest.TestCase):
         self.assertIn(ChangeType.CONTENT, change_types)
         self.assertIn(ChangeType.PERMISSIONS, change_types)
 
+
+    def test_render_unified_diff_modes(self):
+        """Test rendering of new/deleted file modes."""
+        from snapm.fsdiff.engine import render_unified_diff
+
+        # Added file
+        rec_add = FsDiffRecord("/new", DiffType.ADDED, new_entry=make_entry("/new", mode=0o755))
+        rec_add.set_content_diff(ContentDiff("unified"))
+        rec_add.content_diff.diff_data = ["header", "header", "+content"]
+
+        diff = render_unified_diff(rec_add, None)
+        self.assertIn("new file mode 0o100755", diff)
+        self.assertIn("--- /dev/null", diff)
+
+        # Deleted file
+        rec_rm = FsDiffRecord("/old", DiffType.REMOVED, old_entry=make_entry("/old", mode=0o644))
+        rec_rm.set_content_diff(ContentDiff("unified"))
+        rec_rm.content_diff.diff_data = ["header", "header", "-content"]
+
+        diff = render_unified_diff(rec_rm, None)
+        self.assertIn("deleted file mode 0o100644", diff)
+        self.assertIn("+++ /dev/null", diff)
+
+    def test_FsDiffRecord_str_full(self):
+        """Test __str__ with all optional fields populated."""
+        entry = make_entry("/path")
+        rec = FsDiffRecord("/path", DiffType.MOVED, entry, entry)
+        rec.moved_from = "/old"
+        rec.moved_to = "/path"
+        rec.content_diff_summary = "diff summary"
+
+        s = str(rec)
+        self.assertIn("moved_from: /old", s)
+        self.assertIn("moved_to: /path", s)
+        self.assertIn("content_diff_summary: diff summary", s)
