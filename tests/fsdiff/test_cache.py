@@ -161,7 +161,7 @@ class TestCache(unittest.TestCase):
         uuid_b = self.mount_b.snapset.uuid
         # Ensure timestamp is fresh enough
         valid_ts = cache.floor(cache.datetime.now().timestamp())
-        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.zstd"
+        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.zst"
 
         mock_listdir.return_value = [fname]
 
@@ -199,7 +199,7 @@ class TestCache(unittest.TestCase):
         uuid_a = cache._root_uuid(self.mount_a)
         uuid_b = self.mount_b.snapset.uuid
         valid_ts = cache.floor(cache.datetime.now().timestamp())
-        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.lzma"
+        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.xz"
 
         mock_listdir.return_value = [fname]
 
@@ -313,7 +313,7 @@ class TestCache(unittest.TestCase):
         # Force _HAVE_ZSTD false for this test
         with patch("snapm.fsdiff.cache._HAVE_ZSTD", False):
             with patch("snapm.fsdiff.cache._check_dirs"):
-                mock_listdir.return_value = ["test.zstd"]
+                mock_listdir.return_value = ["test.zst"]
                 with self.assertRaises(SnapmNotFoundError):
                     cache.load_cache(self.mount_a, self.mount_b, DiffOptions())
 
@@ -342,7 +342,7 @@ class TestCache(unittest.TestCase):
         uuid_a = cache._root_uuid(self.mount_a)
         uuid_b = self.mount_b.snapset.uuid
         valid_ts = cache.floor(cache.datetime.now().timestamp())
-        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.lzma"
+        fname = f"{uuid_a}.{uuid_b}.123.{valid_ts}.cache.xz"
 
         mock_listdir.return_value = [fname]
         # Mock LZMAFile to return a context manager
@@ -362,7 +362,7 @@ class TestCache(unittest.TestCase):
                 # *uncompress_errors) handler in load_cache(). It was manually
                 # verified that this does happen in normal operation with a
                 # 0-byte cache file:
-                # WARNING - Deleting unreadable cache file b6a0adc0-...-c60b311965f9.8.1.cache.zstd:
+                # WARNING - Deleting unreadable cache file b6a0adc0-...-c60b311965f9.8.1.cache.zst:
                 # zstd decompress error: Unknown frame descriptor
                 #_mock_unlink.assert_called()
 

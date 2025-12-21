@@ -77,8 +77,8 @@ _MAX_RSS_FRACTION = 0.6
 #: Compression types
 _COMPRESSION_EXTENSIONS: Dict[str, str] = {
     None: "cache",
-    "lzma": "lzma",
-    "zstd": "zstd",
+    "lzma": "xz",
+    "zstd": "zst",
 }
 
 
@@ -357,26 +357,26 @@ def load_cache(
         return FsDiffResults(records, candidate.options, candidate.timestamp)
 
     for file_name in os.listdir(_DIFF_CACHE_DIR):
-        if (
-            not file_name.endswith(".cache")
-            and file_name.rsplit(".", 1)[-1] not in _COMPRESSION_EXTENSIONS
-        ):
+        if file_name.rsplit(".", 1)[-1] not in _COMPRESSION_EXTENSIONS.values():
+            _log_debug(
+                "Ignoring cache file with unknown compression type: %s", file_name
+            )
             continue
 
         uncompress = None
         uncompress_errors = ()
         cache_name = file_name
-        if file_name.endswith(".zstd"):
+        if file_name.endswith(".zst"):
             if not _HAVE_ZSTD:
                 _log_warn(
                     "Ignoring zstd compressed cache file: zstd support not available"
                 )
                 continue
-            cache_name = file_name.removesuffix(".zstd")
+            cache_name = file_name.removesuffix(".zst")
             uncompress = "zstd"
             uncompress_errors = (zstd.ZstdError,)
-        elif file_name.endswith(".lzma"):
-            cache_name = file_name.removesuffix(".lzma")
+        elif file_name.endswith(".xz"):
+            cache_name = file_name.removesuffix(".xz")
             uncompress = "lzma"
             uncompress_errors = (lzma.LZMAError,)
 
