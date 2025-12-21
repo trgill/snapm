@@ -6,6 +6,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 import unittest
+from unittest.mock import MagicMock, patch
 import logging
 import os
 
@@ -268,6 +269,25 @@ class CommandTests(CommandTestsBase):
     volumes = ["root", "home", "var"]
     thin_volumes = ["opt", "srv"]
     stratis_volumes = ["fs1", "fs2"]
+
+    def _get_diff_args(self):
+        """Helper to generate default diff args for MockArgs."""
+        args = MockArgs()
+        defaults = {
+            'diff_from': 'a', 'diff_to': 'b', 'output_format': ['diff'],
+            'cache_mode': 'auto', 'cache_expires': None, 'pretty': False,
+            'desc': 'none', 'stat': False, 'options': None, 'color': 'auto',
+            'ignore_timestamps': False, 'ignore_permissions': False,
+            'ignore_ownership': False, 'content_only': False,
+            'include_system_dirs': False, 'include_content_diffs': True,
+            'use_magic_file_type': False, 'follow_symlinks': False,
+            'max_file_size': 0, 'max_content_diff_size': 2**20,
+            'max_content_hash_size': 2**20, 'file_patterns': None,
+            'exclude_patterns': None, 'from_path': None, 'quiet': False
+        }
+        for k, v in defaults.items():
+            setattr(args, k, v)
+        return args
 
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)
@@ -1058,3 +1078,137 @@ class CommandTests(CommandTestsBase):
         args = self.get_debug_main_args()
         args += ["snapset", "delete", "hourly.0"]
         self.assertEqual(command.main(args), 0)
+
+    def test_main_snapset_diff(self):
+        """Test 'snapm snapset diff' command."""
+        self.manager.create_snapshot_set("testset0", self.mount_points())
+        self.manager.create_snapshot_set("testset1", self.mount_points())
+
+        # Diff against self (should fail)
+        args = self.get_debug_main_args()
+        args += ["snapset", "diff", "testset0", "testset0"]
+        self.assertEqual(command.main(args), 1)
+
+        # Diff against running system (valid)
+        # Note: This will actually run a diff.
+        args = self.get_debug_main_args()
+        args += [
+            "snapset",
+            "diff",
+            "--no-content-diff",
+            "--cache-mode",
+            "never",
+            "testset0",
+            "testset1",
+            "-s",
+            "/quux"
+        ]
+
+        # We expect 0, but if something changes on the live system it's still 0 (success)
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset1"))
+
+    def test_main_snapset_diffreport(self):
+        """Test 'snapm snapset diffreport' command."""
+        self.manager.create_snapshot_set("testset0", self.mount_points())
+        self.manager.create_snapshot_set("testset1", self.mount_points())
+
+        # Diff against self (should fail)
+        args = self.get_debug_main_args()
+        args += ["snapset", "diffreport", "testset0", "testset0"]
+        self.assertEqual(command.main(args), 1)
+
+        # Diff against running system (valid)
+        # Note: This will actually run a diffreport.
+        args = self.get_debug_main_args()
+        args += [
+            "snapset",
+            "diffreport",
+            "--no-content-diff",
+            "--cache-mode",
+            "never",
+            "testset0",
+            "testset1",
+            "-s",
+            "/quux"
+        ]
+
+        # We expect 0, but if something changes on the live system it's still 0 (success)
+        self.assertEqual(command.main(args), 0)
+
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset0"))
+        self.manager.delete_snapshot_sets(snapm.Selection(name="testset1"))
+
+    @patch("snapm.command.diff_snapsets")
+    def test__diff_cmd_success(self, mock_diff):
+        """Test _diff_cmd success path."""
+        args = self._get_diff_args()
+
+        # Mock result behavior
+        mock_res = MagicMock()
+        mock_res.diff.return_value = "diff output"
+        mock_diff.return_value = mock_res
+
+        ret = command._diff_cmd(args)
+        self.assertEqual(ret, 0)
+        mock_diff.assert_called()
+
+    def test__diff_cmd_validation_errors(self):
+        """Test _diff_cmd argument validation errors."""
+        args = self._get_diff_args()
+
+        # Error: same source and dest
+        args.diff_to = "a"
+        self.assertEqual(command._diff_cmd(args), 1)
+        args.diff_to = "b" # reset
+
+        # Error: pretty without json
+        args.pretty = True
+        args.output_format = ["tree"]
+        self.assertEqual(command._diff_cmd(args), 1)
+        args.pretty = False
+
+        # Error: desc without tree
+        args.desc = "short"
+        args.output_format = ["json"]
+        self.assertEqual(command._diff_cmd(args), 1)
+
+    @patch("snapm.command.diff_snapsets")
+    def test__diffreport_cmd(self, mock_diff):
+        """Test _diffreport_cmd success path."""
+        args = self._get_diff_args()
+        # Add report specific args
+        args.json = False
+        args.rows = False
+        args.separator = None
+        args.name_prefixes = False
+        args.no_headings = False
+        args.sort = None
+        args.debug = None
+
+        mock_diff.return_value = MagicMock(spec=command.FsDiffResults)
+
+        ret = command._diffreport_cmd(args)
+        self.assertEqual(ret, 0)
+
+    @patch("snapm.command.edit_schedule")
+    def test__schedule_edit_cmd(self, mock_edit):
+        """Test _schedule_edit_cmd."""
+        args = MockArgs()
+        args.schedule_name = "sched1"
+        args.sources = ["/mnt"]
+        args.size_policy = "10%"
+        args.autoindex = True
+        args.calendarspec = "daily"
+        args.policy_type = "count"
+        args.keep_count = 5
+        args.bootable = False
+        args.revert = False
+        args.json = False
+
+        mock_edit.return_value = MagicMock()
+        ret = command._schedule_edit_cmd(args)
+        self.assertEqual(ret, 0)
+        mock_edit.assert_called()
