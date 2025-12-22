@@ -7,6 +7,8 @@ snapshot set captures coordinated snapshots across multiple volumes,
 representing a consistent point-in-time system state that can be referenced and
 managed as a single unit.
 
+![Snapshot Manager logo with Tux.](https://raw.githubusercontent.com/snapshotmanager/snapshotmanager-docs/refs/heads/main/static/imgs/logo-large-1024x1024.png)
+
 ## Features
 
 - **Coordinated snapshot sets**: Create coordinated snapshots across
