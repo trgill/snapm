@@ -271,6 +271,10 @@ for guidelines.
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
+The Snapshot Manager logo incorporates an image of Tux, the Linux mascot originally
+conceived and designed by [Larry
+Ewing](https://web.archive.org/web/20191001080512/https://isc.tamu.edu/~lewing/linux/).
+
 ## Related Projects
 
 - [boom](https://github.com/snapshotmanager/boom) - Boot manager for
