@@ -59,6 +59,143 @@ EiB and ZiB. Units may be abbreviated to the first character.
 
 The USED size policy can only be applied to mounted file systems.
 
+Mount Manager
+=============
+
+The Mount Manager provides a convenient way to access the contents of a
+snapshot set without needing to reboot or manually mount individual
+snapshot volumes. This is particularly useful for inspecting files,
+recovering data, running commands against the snapshotted state, or
+comparing configurations.
+
+How it Works
+------------
+
+When a snapshot set is mounted, ``snapm`` performs the following steps:
+
+1. Creates a mount point at ``/run/snapm/mounts/<snapset_name>``
+2. Mounts the root snapshot volume to this location
+3. Mounts additional snapshot volumes from their corresponding
+   snapshot devices to the appropriate paths within the hierarchy
+4. Bind-mounts API and runtime file systems (such as ``/proc``,
+   ``/sys``, and ``/dev``) from the host system
+5. Bind-mounts non-snapset file systems (such as ``/boot``) from
+   the host system
+
+This creates a complete, consistent view of the system as it existed
+at the time the snapshot set was created (with the exception of API
+and non-snapset file systems that are bind mounted from the host). The mounted
+snapshot set can then be browsed interactively or used as a target for
+commands.
+
+Automatic Mount Management
+--------------------------
+
+All ``snapm`` operations that require access to a snapshot set's
+contents will automatically mount the snapshot set if it is not
+already mounted. When the operation completes, the snapshot set is
+unmounted only if it was not already mounted before the operation
+began.
+
+This means that commands like ``snapset exec``, ``snapset shell``,
+and ``snapset diff`` can be used without explicitly mounting first.
+However, if you plan to perform multiple operations on the same
+snapshot set, explicitly mounting it first with ``snapset mount``
+is more efficient as it avoids repeated mount and unmount cycles:
+
+.. code-block:: bash
+
+   # Without explicit mount: each command mounts and unmounts
+   snapm snapset exec backup rpm -qa > /tmp/backup-packages.txt
+   snapm snapset exec backup grep root /etc/passwd
+   snapm snapset exec backup cat /etc/hostname
+
+   # With explicit mount: mount once, operate, unmount once
+   snapm snapset mount backup
+   snapm snapset exec backup rpm -qa > /tmp/backup-packages.txt
+   snapm snapset exec backup grep root /etc/passwd
+   snapm snapset exec backup cat /etc/hostname
+   snapm snapset umount backup
+
+The second approach is significantly faster when performing several
+operations, as the mount and unmount overhead is incurred only once.
+
+Use Cases
+---------
+
+The Mount Manager enables several common administrative tasks:
+
+* **File Recovery**: Browse and copy individual files from a previous
+  system state without reverting the entire snapshot set.
+
+* **Configuration Inspection**: Examine configuration files from a
+  snapshot to investigate the state at a particular point in time.
+
+* **Package Inspection**: Query the package database within a snapshot
+  to determine what was installed at a particular point in time.
+
+* **Log Analysis**: Access log files from a snapshot to investigate
+  issues that occurred before the current system state.
+
+* **Script Execution**: Run maintenance or diagnostic scripts against
+  the snapshotted file system state.
+
+Interactive Access
+------------------
+
+The ``snapset shell`` command provides an interactive shell session
+within the mounted snapshot set environment. This is the simplest way
+to explore a snapshot set interactively:
+
+.. code-block:: bash
+
+   snapm snapset shell backup
+
+This mounts the snapshot set (if not already mounted), changes the
+root to the mounted snapshot, and starts a shell. When the shell
+exits, the snapshot set is unmounted if it was not already mounted
+before the command was run. The shell defaults to ``/bin/bash`` if the
+``SHELL`` environment variable is unset; otherwise the executable specified in
+``SHELL`` will be executed. The chosen shell must exist in the corresponding
+snapshot set.
+
+Command Execution
+-----------------
+
+For scripted or non-interactive use, the ``snapset exec`` command
+allows running a specific command within the snapshot set environment:
+
+.. code-block:: bash
+
+   snapm snapset exec backup rpm -qa
+
+The command and any arguments following the snapshot set name are
+passed through to the execution environment.
+
+Direct Mount Point Access
+-------------------------
+
+When a snapshot set is explicitly mounted, its contents can also be
+accessed directly through the mount point at
+``/run/snapm/mounts/<snapset_name>`` using normal file system
+operations:
+
+.. code-block:: bash
+
+   # Mount the snapshot set
+   snapm snapset mount backup
+
+   # Access contents directly via the mount point
+   ls /run/snapm/mounts/backup/etc
+   cp /run/snapm/mounts/backup/etc/nginx/nginx.conf /tmp/
+   grep -r "error" /run/snapm/mounts/backup/var/log/
+
+   # Unmount when finished
+   snapm snapset umount backup
+
+The mount status of a snapshot set is visible in the ``snapset show``
+and ``snapset list`` output via the ``Mounted`` field.
+
 Difference Engine
 =================
 
@@ -241,6 +378,8 @@ created snapshot set on stdout:
    Status:           Active
    Autoactivate:     yes
    Bootable:         yes
+   OriginMounted:    yes
+   Mounted:          no
    BootEntries:
      SnapshotEntry:  f574a20
      RevertEntry:    f428f9f
@@ -262,6 +401,8 @@ can be used to take regular snapshots with a common name:
    UUID:             ae082452-7995-5316-ac65-388eadd9879c
    Status:           Active
    Autoactivate:     yes
+   OriginMounted:    yes
+   Mounted:          no
    Bootable:         no
 
 The basename and index values are available via the ``snapset list``
@@ -270,12 +411,12 @@ report:
 .. code-block:: bash
 
    snapm snapset list -o+basename,index
-   SnapsetName  Time                 NrSnapshots Status  Sources  Basename     Index
-   backup       2025-03-25 18:12:54            2 Invalid /, /var  backup           -
-   hourly.0     2025-03-25 19:40:39            2 Invalid /, /var  hourly           0
-   hourly.1     2025-03-26 14:17:11            2 Active  /, /var  hourly           1
-   hourly.2     2025-03-26 14:17:15            2 Active  /, /var  hourly           2
-   hourly.3     2025-03-26 14:17:18            2 Active  /, /var  hourly           3
+   SnapsetName  Time                 NrSnapshots Status  Sources  Mounted  Basename     Index
+   backup       2025-03-25 18:12:54            2 Invalid /, /var  no       backup           -
+   hourly.0     2025-03-25 19:40:39            2 Invalid /, /var  yes      hourly           0
+   hourly.1     2025-03-26 14:17:11            2 Active  /, /var  no       hourly           1
+   hourly.2     2025-03-26 14:17:15            2 Active  /, /var  no       hourly           2
+   hourly.3     2025-03-26 14:17:18            2 Active  /, /var  no       hourly           3
 
 snapset delete
 --------------
@@ -534,9 +675,9 @@ Sources fields:
 .. code-block:: bash
 
    snapm snapset list
-   SnapsetName  Time                 NrSnapshots Status  Sources
-   backup       2024-12-05 19:14:03            3 Active  /, /home, /var
-   upgrade      2024-12-05 19:14:09            2 Active  /, /var
+   SnapsetName  Time                 NrSnapshots Status  Sources         Mounted
+   backup       2024-12-05 19:14:03            3 Active  /, /home, /var  no
+   upgrade      2024-12-05 19:14:09            2 Active  /, /var         yes
 
 Custom field specifications may be given with the ``-o``/``--options``
 argument. To obtain a list of available fields run ``snapm snapset list
@@ -547,19 +688,24 @@ argument. To obtain a list of available fields run ``snapm snapset list
    snapm snapset list -ohelp
    Snapshot set Fields
    -------------------
-     name         - Snapshot set name [str]
-     uuid         - Snapshot set UUID [uuid]
-     timestamp    - Snapshot set creation time as a UNIX epoch value [num]
-     time         - Snapshot set creation time [time]
-     nr_snapshots - Number of snapshots [num]
-     sources      - Snapshot set sources [strlist]
-     mountpoints  - Snapshot set mount points [strlist]
-     devices      - Snapshot set devices [strlist]
-     status       - Snapshot set status [str]
-     autoactivate - Autoactivation status [str]
-     bootable     - Configured for snapshot boot [str]
-     bootentry    - Snapshot set boot entry [sha]
-     revertentry  - Snapshot set revert boot entry [sha]
+     name           - Snapshot set name [str]
+     uuid           - Snapshot set UUID [uuid]
+     basename       - Snapshot set basename [str]
+     index          - Snapshot set index [idx]
+     timestamp      - Snapshot set creation time as a UNIX epoch value [num]
+     time           - Snapshot set creation time [time]
+     nr_snapshots   - Number of snapshots [num]
+     sources        - Snapshot set sources [strlist]
+     mountpoints    - Snapshot set mount points [strlist]
+     devices        - Snapshot set devices [strlist]
+     status         - Snapshot set status [str]
+     autoactivate   - Autoactivation status [str]
+     mounted        - SnapshotSet mount status [str]
+     origin_mounted - SnapshotSet origin mount status [str]
+     mount_root     - SnapshotSet mount root directory path [str]
+     bootable       - Configured for snapshot boot [str]
+     bootentry      - Snapshot set boot entry [sha]
+     revertentry    - Snapshot set revert boot entry [sha]
 
 To specify custom fields pass a comma separated list to ``-o``:
 
@@ -597,7 +743,8 @@ by other tools using the ``--json`` argument:
                    "/",
                    "/home",
                    "/var"
-               ]
+               ],
+               "snapset_mounted": false
            },
            {
                "snapset_name": "upgrade",
@@ -607,7 +754,8 @@ by other tools using the ``--json`` argument:
                "snapset_sources": [
                    "/",
                    "/var"
-               ]
+               ],
+               "snapset_mounted": true
            }
        ]
    }
@@ -641,6 +789,8 @@ By default the output is formatted in the same way as the output of the
    UUID:             87c6df8f-bd8c-5c9d-b081-4f6d6068cc07
    Status:           Active
    Autoactivate:     yes
+   OriginMounted:    yes
+   Mounted:          no
    Bootable:         yes
    BootEntries:
      SnapshotEntry:  a60dab4
@@ -659,6 +809,8 @@ The individual snapshots making up each set are also displayed if
    UUID:             f0a46cde-9eed-5335-b239-66ed53e5b503
    Status:           Active
    Autoactivate:     yes
+   OriginMounted:    yes
+   Mounted:          no
    Bootable:         yes
    BootEntries:
      SnapshotEntry:  dfce8d8
@@ -720,6 +872,8 @@ argument:
           "UUID": "87e31113-75a5-5eb6-b016-762639a2c7ed",
           "Status": "Active",
           "Autoactivate": true,
+          "OriginMounted": true,
+          "Mounted": false,
           "Bootable": true,
           "BootEntries": {
               "SnapshotEntry": "7c56dc0",
@@ -731,6 +885,105 @@ argument:
 The ``show --json``  command uses the normal ``show`` output property names as
 the JSON keys. A ``BootEntries`` object will be added if either boot or revert
 entries are configured for the snapshot set.
+
+snapset mount
+-------------
+
+Mount the members of an existing snapshot set.
+
+.. code-block:: bash
+
+   snapm snapset mount <snapset_name>
+
+The snapshot set's root volume is mounted at
+``/run/snapm/mounts/<snapset_name>``. Additional snapshot volumes are
+mounted from their corresponding snapshot devices to the appropriate
+paths within this hierarchy. API and runtime file systems, along with
+any non-snapset file systems such as ``/boot``, are bind-mounted from
+the host system.
+
+.. code-block:: bash
+
+   snapm snapset mount backup
+   ls /run/snapm/mounts/backup/
+
+Once mounted, the snapshot set contents can be accessed directly
+through the mount point, or via ``snapset exec`` and ``snapset shell``
+commands, until explicitly unmounted with ``snapset umount``.
+
+snapset umount
+--------------
+
+Unmount the members of an existing snapshot set.
+
+.. code-block:: bash
+
+   snapm snapset umount <snapset_name>
+
+This reverses the mount operations performed by ``snapset mount``,
+unmounting all volumes from ``/run/snapm/mounts/<snapset_name>``.
+
+.. code-block:: bash
+
+   snapm snapset umount backup
+
+snapset exec
+------------
+
+Execute a command within a snapshot set environment.
+
+.. code-block:: bash
+
+   snapm snapset exec <snapset_name> <command> [args...]
+
+If the snapshot set is not already mounted, it is mounted
+automatically. The specified command is executed with the snapshot
+set as its root file system. If the snapshot set was not mounted
+before the command, it is unmounted afterward. Arguments following
+the command are passed through verbatim.
+
+Query the package list from a snapshot:
+
+.. code-block:: bash
+
+   snapm snapset exec backup rpm -qa
+
+Search for a pattern in configuration files:
+
+.. code-block:: bash
+
+   snapm snapset exec backup grep -r "Listen" /etc/httpd/
+
+Check disk usage within the snapshot:
+
+.. code-block:: bash
+
+   snapm snapset exec backup df -h
+
+snapset shell
+-------------
+
+Start an interactive shell within a snapshot set environment.
+
+.. code-block:: bash
+
+   snapm snapset shell <snapset_name>
+
+If the snapshot set is not already mounted, it is mounted
+automatically. An interactive shell session is started with the
+snapshot set as its root file system. When the shell exits, the
+snapshot set is unmounted if it was not mounted before the command
+was run.
+
+.. code-block:: bash
+
+   snapm snapset shell backup
+   # Now operating within the 'backup' snapshot environment
+   # Use 'exit' to return to the normal system
+
+This provides a convenient way to interactively explore a snapshot
+set's contents, recover files, or run multiple commands without
+needing to prefix each with ``snapset exec``.
 
 Snapshot Commands
 =================
@@ -956,21 +1209,24 @@ To display the available fields for either report use the field name
   snapm snapset list -ohelp
   Snapshot set Fields
   -------------------
-    name         - Snapshot set name [str]
-    uuid         - Snapshot set UUID [uuid]
-    basename     - Snapshot set basename [str]
-    index        - Snapshot set index [idx]
-    timestamp    - Snapshot set creation time as a UNIX epoch value [num]
-    time         - Snapshot set creation time [time]
-    nr_snapshots - Number of snapshots [num]
-    sources      - Snapshot set sources [strlist]
-    mountpoints  - Snapshot set mount points [strlist]
-    devices      - Snapshot set devices [strlist]
-    status       - Snapshot set status [str]
-    autoactivate - Autoactivation status [str]
-    bootable     - Configured for snapshot boot [str]
-    bootentry    - Snapshot set boot entry [sha]
-    revertentry  - Snapshot set revert boot entry [sha]
+    name           - Snapshot set name [str]
+    uuid           - Snapshot set UUID [uuid]
+    basename       - Snapshot set basename [str]
+    index          - Snapshot set index [idx]
+    timestamp      - Snapshot set creation time as a UNIX epoch value [num]
+    time           - Snapshot set creation time [time]
+    nr_snapshots   - Number of snapshots [num]
+    sources        - Snapshot set sources [strlist]
+    mountpoints    - Snapshot set mount points [strlist]
+    devices        - Snapshot set devices [strlist]
+    status         - Snapshot set status [str]
+    autoactivate   - Autoactivation status [str]
+    mounted        - SnapshotSet mount status [str]
+    origin_mounted - SnapshotSet origin mount status [str]
+    mount_root     - SnapshotSet mount root directory path [str]
+    bootable       - Configured for snapshot boot [str]
+    bootentry      - Snapshot set boot entry [sha]
+    revertentry    - Snapshot set revert boot entry [sha]
 
 JSON Output
 -----------
@@ -992,7 +1248,8 @@ tools using the ``--json`` argument:
                     "/",
                     "/home",
                     "/var"
-                ]
+                ],
+                "snapset_mounted": false
             },
             {
                 "snapset_name": "before-upgrade",
@@ -1002,7 +1259,8 @@ tools using the ``--json`` argument:
                 "snapset_sources": [
                     "/",
                     "/var"
-                ]
+                ],
+                "snapset_mounted": true
             }
         ]
     }
@@ -1032,6 +1290,8 @@ normal ``show`` output property names to JSON keys:
             "UUID": "6330328b-a9d0-5b41-ac96-53b371449965",
             "Status": "Active",
             "Autoactivate": true,
+            "OriginMounted": true,
+            "Mounted": false,
             "Bootable": true,
             "BootEntries": {
                 "SnapshotEntry": "66dc7ad",
