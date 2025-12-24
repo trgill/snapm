@@ -20,8 +20,24 @@ managed as a single unit.
 - **Flexible scheduling**: Integration with systemd timers for automated
   snapshot creation with retention policies
 - **Size policies**: Flexible snapshot sizing with multiple strategies
+- **Difference engine**: Compare snapshot sets to identify added, removed,
+  moved, and modified files with multiple output formats
 - **Plugin architecture**: Extensible design for additional storage
   backends
+
+## Screenshots
+
+### Difference Engine Tree Output
+
+Compare a snapshot set to the running system with a hierarchical tree view:
+
+![snapset diff tree output](https://raw.githubusercontent.com/snapshotmanager/snapshotmanager-docs/refs/heads/main/static/png/Screenshot-snapm-snapset-diff.png)
+
+### Difference Report
+
+Generate tabular reports of changes between snapshot sets:
+
+![snapset diffreport output](https://raw.githubusercontent.com/snapshotmanager/snapshotmanager-docs/refs/heads/main/static/png/Screenshot-snapm-snapset-diffreport.png)
 
 ## Quick Start
 
@@ -177,6 +193,44 @@ Alternatively revert the entire snapshot set:
 
 ```bash
 snapm snapset revert dev-checkpoint
+```
+
+#### Understanding Changes
+
+Compare a snapshot set to the current system to see what changed:
+
+```bash
+snapm snapset diff pre-update .
+```
+
+View changes as a hierarchical tree (default):
+
+```bash
+snapm snapset diff --output-format tree pre-update .
+```
+
+Generate a unified diff of modified file contents:
+
+```bash
+snapm snapset diff --output-format diff pre-update .
+```
+
+Get a summary of change counts:
+
+```bash
+snapm snapset diff --output-format summary pre-update .
+```
+
+Export changed paths for use with other tools:
+
+```bash
+snapm snapset diff --output-format paths pre-update . | xargs tar cvf changes.tar
+```
+
+Generate a tabular report of differences:
+
+```bash
+snapm snapset diffreport -o path,type,size_delta pre-update .
 ```
 
 ## Documentation
