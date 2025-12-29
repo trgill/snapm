@@ -904,12 +904,15 @@ class Manager:
         :returns: A (possibly empty) ``ConfigParser`` instance.
         :rtype: ``ConfigParser``
         """
-        plugin_conf_file = join(_PLUGINS_D_PATH, f"{plugin_name}.conf")
+        plugin_conf_file = f"{plugin_name}.conf"
+        plugin_conf_path = join(_PLUGINS_D_PATH, plugin_conf_file)
         cfg = ConfigParser()
 
-        if exists(plugin_conf_file):
-            _log_debug("Loading plugin configuration from '%s'", plugin_conf_file)
-            cfg.read([plugin_conf_file])
+        cfg.plugin_conf_file = plugin_conf_file  # for warning logging
+
+        if exists(plugin_conf_path):
+            _log_debug("Loading plugin configuration from '%s'", plugin_conf_path)
+            cfg.read([plugin_conf_path])
 
         return cfg
 

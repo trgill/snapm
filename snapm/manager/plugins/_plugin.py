@@ -81,13 +81,31 @@ class PluginLimits:
 
         if cfg.has_section(_PLUGIN_CFG_LIMITS):
             if cfg.has_option(_PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_ORIGIN):
-                self.snapshots_per_origin = cfg.getint(
-                    _PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_ORIGIN
-                )
+                try:
+                    self.snapshots_per_origin = cfg.getint(
+                        _PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_ORIGIN
+                    )
+                except ValueError:
+                    value = cfg.get(_PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_ORIGIN)
+                    _log_warn(
+                        "Ignoring invalid plugin %s value in %s: %s",
+                        _PLUGIN_CFG_SNAPS_PER_ORIGIN,
+                        cfg.plugin_conf_file,
+                        str(value),
+                    )
             if cfg.has_option(_PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_POOL):
-                self.snapshots_per_pool = cfg.getint(
-                    _PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_POOL
-                )
+                try:
+                    self.snapshots_per_pool = cfg.getint(
+                        _PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_POOL
+                    )
+                except ValueError:
+                    value = cfg.get(_PLUGIN_CFG_LIMITS, _PLUGIN_CFG_SNAPS_PER_POOL)
+                    _log_warn(
+                        "Ignoring invalid plugin %s value in %s: %s",
+                        _PLUGIN_CFG_SNAPS_PER_POOL,
+                        cfg.plugin_conf_file,
+                        str(value),
+                    )
 
 
 class Plugin:
@@ -105,14 +123,30 @@ class Plugin:
 
         self.limits = PluginLimits(plugin_cfg)
 
-        self.priority = 0
+        priority = PLUGIN_NO_PRIORITY
 
         if plugin_cfg.has_section(_PLUGIN_CFG_PRIORITY):
             if plugin_cfg.has_option(_PLUGIN_CFG_PRIORITY, _PLUGIN_CFG_PLUGIN_PRIORITY):
-                self.priority = plugin_cfg.getint(
-                    _PLUGIN_CFG_PRIORITY,
-                    _PLUGIN_CFG_PLUGIN_PRIORITY,
-                )
+                try:
+                    priority = plugin_cfg.getint(
+                        _PLUGIN_CFG_PRIORITY,
+                        _PLUGIN_CFG_PLUGIN_PRIORITY,
+                    )
+                except ValueError:
+                    # We know it has a value, just not a valid one: We'll fix it in post.
+                    priority = plugin_cfg.get(
+                        _PLUGIN_CFG_PRIORITY,
+                        _PLUGIN_CFG_PLUGIN_PRIORITY,
+                    )
+                if not isinstance(priority, int) or priority <= PLUGIN_NO_PRIORITY:
+                    _log_warn(
+                        "Ignoring invalid plugin priority value in %s: %s",
+                        plugin_cfg.plugin_conf_file,
+                        str(priority),
+                    )
+                    priority = PLUGIN_NO_PRIORITY
+
+        self.priority = priority
 
     def _log_error(self, *args):
         """
