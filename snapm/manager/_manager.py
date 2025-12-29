@@ -11,13 +11,14 @@ Manager interface and plugin infrastructure.
 from subprocess import run, CalledProcessError
 from dataclasses import dataclass, field
 from configparser import ConfigParser
+from collections import defaultdict
 import logging
 from time import time
 from math import floor
 from stat import S_ISBLK, S_ISDIR, S_ISLNK
 from os.path import exists, ismount, join, normpath, samefile
 from json import JSONDecodeError
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 from functools import wraps
 import threading
 import fcntl
@@ -64,6 +65,11 @@ from ._loader import load_plugins
 from ._signals import suspend_signals
 from ._schedule import Schedule, GcPolicy
 from ._mounts import Mounts
+
+
+if TYPE_CHECKING:
+    from snapm.manager.plugins import Plugin
+
 
 _log = logging.getLogger(__name__)
 
@@ -927,8 +933,33 @@ class Manager:
         :param size_policies: A dictionary mapping sources to size policies.
         :returns: A dictionary mapping sources to plugins.
         """
+
+        def get_highest_priority(providers: List["Plugin"]) -> "Plugin":
+            """
+            Given a list of candidate providers, select the one with the
+            highest numeric priority.
+
+            :param providers: A list of providers to consider.
+            :type providers: ``List[Plugin]``
+            :returns: The highest priority provider in ``providers``.
+            :rtype: ``Plugin``.
+            """
+            if not providers:
+                raise ValueError("Empty providers list")
+
+            max_priority = max(prov.priority for prov in providers)
+            candidates = [prov for prov in providers if prov.priority == max_priority]
+
+            if len(candidates) > 1:
+                names = ",".join(prov.name for prov in candidates)
+                raise SnapmNoProviderError(
+                    f"Multiple providers with priority {max_priority}: {names}"
+                )
+
+            return candidates[0]
+
         # Initialise provider mapping.
-        provider_map = {k: None for k in sources}
+        provider_map = defaultdict(list)
 
         # Find provider plugins for sources
         for source in sources:
@@ -949,15 +980,20 @@ class Manager:
 
             for plugin in self.plugins:
                 if plugin.can_snapshot(source):
-                    provider_map[source] = plugin
+                    provider_map[source].append(plugin)
 
-        # Verify each mount point has a provider plugin
-        for source in provider_map:
-            if provider_map[source] is None:
+        # Verify each requested source has at least one provider, then
+        # select the highest-priority provider per source.
+        resolved = {}
+        for source in sources:
+            providers = provider_map.get(source, [])
+            if not providers:
                 raise SnapmNoProviderError(
                     f"Could not find snapshot provider for {source}"
                 )
-        return provider_map
+            resolved[source] = get_highest_priority(providers)
+
+        return resolved
 
     def _snapset_from_name_or_uuid(self, name=None, uuid=None):
         """
@@ -1219,7 +1255,7 @@ class Manager:
         origins = {}
         mounts = {}
 
-        for source in provider_map:
+        for source, provider in provider_map.items():
             if S_ISBLK(os.stat(source).st_mode):
                 mounts[source] = _find_mount_point_for_devpath(source)
                 origins[source] = source
@@ -1230,10 +1266,10 @@ class Manager:
                     )
             else:
                 mount = source
-                origins[source] = provider_map[source].origin_from_mount_point(mount)
+                origins[source] = provider.origin_from_mount_point(mount)
 
             try:
-                provider_map[source].check_create_snapshot(
+                provider.check_create_snapshot(
                     origins[source], name, timestamp, mount, size_policies[source]
                 )
             except SnapmInvalidIdentifierError as err:
@@ -1257,14 +1293,14 @@ class Manager:
         _suspend_journal()
 
         snapshots = []
-        for source in provider_map:
+        for source, provider in provider_map.items():
             if S_ISBLK(os.stat(source).st_mode):
                 mount = mounts[source]
             else:
                 mount = source
             try:
                 snapshots.append(
-                    provider_map[source].create_snapshot(
+                    provider.create_snapshot(
                         origins[source], name, timestamp, mount, size_policies[source]
                     )
                 )
