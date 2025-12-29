@@ -474,9 +474,18 @@ _plugin_fields = [
         REP_STR,
         lambda f, d: f.report_str(d.snapshot_class.__name__),
     ),
+    FieldType(
+        PR_PLUGIN,
+        "priority",
+        "Priority",
+        "The current priority assigned to this plugin",
+        8,
+        REP_NUM,
+        lambda f, d: f.report_num(d.priority),
+    ),
 ]
 
-_DEFAULT_PLUGIN_FIELDS = "name,version,type"
+_DEFAULT_PLUGIN_FIELDS = "name,version,type,priority"
 
 _schedule_fields = [
     FieldType(

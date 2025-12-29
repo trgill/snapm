@@ -44,6 +44,15 @@ _PLUGIN_CFG_SNAPS_PER_ORIGIN = "MaxSnapshotsPerOrigin"
 #: Plugin configuration snapshots per pool
 _PLUGIN_CFG_SNAPS_PER_POOL = "MaxSnapshotsPerPool"
 
+#: Plugin Priority section
+_PLUGIN_CFG_PRIORITY = "Priority"
+
+#: PluginPriority value
+_PLUGIN_CFG_PLUGIN_PRIORITY = "PluginPriority"
+
+#: Plugin priority if unset: subclasses should check for this and set.
+PLUGIN_NO_PRIORITY = 0
+
 
 class PluginLimits:
     """
@@ -82,6 +91,15 @@ class Plugin:
         self.logger = logger
 
         self.limits = PluginLimits(plugin_cfg)
+
+        self.priority = 0
+
+        if plugin_cfg.has_section(_PLUGIN_CFG_PRIORITY):
+            if plugin_cfg.has_option(_PLUGIN_CFG_PRIORITY, _PLUGIN_CFG_PLUGIN_PRIORITY):
+                self.priority = plugin_cfg.getint(
+                    _PLUGIN_CFG_PRIORITY,
+                    _PLUGIN_CFG_PLUGIN_PRIORITY,
+                )
 
     def _log_error(self, *args):
         """
@@ -470,6 +488,7 @@ __all__ = [
     "DMSETUP_FIELDS_VG_LV",
     "DMSETUP_FIELDS_UUID",
     "DMSETUP_REPORT_SEP",
+    "PLUGIN_NO_PRIORITY",
     "Plugin",
     "encode_mount_point",
     "decode_mount_point",

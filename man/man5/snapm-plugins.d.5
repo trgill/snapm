@@ -35,6 +35,14 @@ since they share the same underlying \fBdm-thin\fP implementation.
 The values in both cases are a single non-negative integer specifying
 the maximum allowed number of snapshots across all snapshot sets and
 unmanaged snapshots.
+.TP
+.B Priority
+The Priority section may contain the \fBPluginPriority\fP key. Setting
+this key to an integer value greater than zero will override the default
+priority value for the corresponding plugin. This can be used, for
+example, to prefer \fBlvm2-cow\fP snapshots over \fBlvm2-thin\fP even
+when the latter are available and could be used to snapshot a given
+source.
 .
 .SH AUTHORS
 .

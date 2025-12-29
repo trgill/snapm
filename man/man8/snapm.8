@@ -900,6 +900,17 @@ A plugin model is used to map mount points or devices onto possible snapshot
 when creating a snapshot set. The current plugins support LVM2 copy-on-write,
 LVM2 thin provisioned and Stratis snapshots.
 .P
+Plugins are assigned a positive integer priority value: in the case that two
+or more plugins are able to snapshot the same source (for example,
+\fBlvm2-cow\fP vs. \fBlvm2-thin\fP on the same logical volume, or file system
+vs. block device snapshots), the plugin with the greater priority value is
+selected automatically.
+.P
+Plugins have a default static priority value assigned by the plugin author.
+System administrators can override this by modifying the appropriate file in
+\fI/etc/snapm/plugins.d\fP. See \fBsnapm-plugins.d(5)\fP for further
+information.
+.P
 The \fIsnapset\fP subcommand allows snapshot sets to be created, deleted,
 enumerated, renamed, reverted, and activated or deactivated.
 .P
