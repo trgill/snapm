@@ -41,6 +41,7 @@ from snapm.manager.plugins import (
     DMSETUP_NO_HEADINGS,
     DMSETUP_COLUMNS,
     DMSETUP_FIELDS_UUID,
+    PLUGIN_NO_PRIORITY,
     Plugin,
     parse_snapshot_name,
     device_from_mount_point,
@@ -78,6 +79,9 @@ DEV_STRATIS_PREFIX = "/dev/stratis/"
 
 # Minimum allowed Stratis snapshot size (512MiB)
 MIN_STRATIS_SNAPSHOT_SIZE = 512 * 1024**2
+
+#: Stratis static priority value
+STRATIS_STATIC_PRIORITY = 20
 
 
 def is_stratis_device(devpath):
@@ -458,6 +462,9 @@ class Stratis(Plugin):
             ) from err
         except StratisCliStratisdVersionError as err:
             raise SnapmPluginError(f"Stratisd version check failed: {err}") from err
+
+        if self.priority == PLUGIN_NO_PRIORITY:
+            self.priority = STRATIS_STATIC_PRIORITY
 
     # pylint: disable=too-many-locals
     def discover_snapshots(self):

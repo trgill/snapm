@@ -39,6 +39,7 @@ from snapm.manager.plugins import (
     DMSETUP_NO_HEADINGS,
     DMSETUP_COLUMNS,
     DMSETUP_FIELDS_UUID,
+    PLUGIN_NO_PRIORITY,
     Plugin,
     parse_snapshot_name,
     device_from_mount_point,
@@ -175,6 +176,12 @@ _LVM_CMDS = [
 
 MINIMUM_LVM_VERSION = (2, 3, 11)
 MINIMUM_LVM_VERSION_JSON_STD = (2, 3, 17)
+
+#: Lvm2Cow Static Priority
+LVM2_COW_STATIC_PRIORITY = 10
+
+#: Lvm2Thin Static Priority
+LVM2_THIN_STATIC_PRIORITY = 15
 
 # LVM2 environment variables to filter out
 _LVM_ENV_FILTER = [
@@ -1060,6 +1067,8 @@ class Lvm2Cow(_Lvm2):
     def __init__(self, logger, plugin_cfg):
         super().__init__(logger, plugin_cfg)
         self.origins = {}
+        if self.priority == PLUGIN_NO_PRIORITY:
+            self.priority = LVM2_COW_STATIC_PRIORITY
 
     def discover_snapshots(self):
         """
@@ -1374,6 +1383,8 @@ class Lvm2Thin(_Lvm2):
     def __init__(self, logger, plugin_cfg):
         super().__init__(logger, plugin_cfg)
         self.pools = {}
+        if self.priority == PLUGIN_NO_PRIORITY:
+            self.priority = LVM2_THIN_STATIC_PRIORITY
 
     def discover_snapshots(self):
         snapshots = []
