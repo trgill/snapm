@@ -10,8 +10,9 @@ Snapshot manager plugin helpers.
 """
 import os
 from os.path import sep as path_sep, ismount
+import logging
 
-from snapm import SNAPM_VALID_NAME_CHARS, Snapshot
+from snapm import SNAPM_VALID_NAME_CHARS, SNAPM_SUBSYSTEM_PLUGIN, Snapshot
 
 _MOUNT_SEPARATOR = "-"
 _ESCAPED_MOUNT_SEPARATOR = "--"
@@ -52,6 +53,18 @@ _PLUGIN_CFG_PLUGIN_PRIORITY = "PluginPriority"
 
 #: Plugin priority if unset: subclasses should check for this and set.
 PLUGIN_NO_PRIORITY = 0
+
+_log = logging.getLogger(__name__)
+
+_log_debug = _log.debug
+_log_info = _log.info
+_log_warn = _log.warning
+_log_error = _log.error
+
+
+def _log_debug_plugin(msg, *args, **kwargs):
+    """A wrapper for plugin subsystem debug logs."""
+    _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_PLUGIN}, **kwargs)
 
 
 class PluginLimits:
