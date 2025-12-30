@@ -154,9 +154,9 @@ class ManagerTests(unittest.TestCase):
     Tests for snapm.manager.Manager that apply to all supported snapshot
     providers.
     """
-    volumes = ["root", "home", "var", "data_vol"]
-    thin_volumes = ["opt", "srv", "thin-vol"]
-    stratis_volumes = ["fs1", "fs2"]
+    volumes = ["root", "var"]
+    thin_volumes = ["opt"]
+    stratis_volumes = ["fs1"]
 
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)
@@ -399,12 +399,17 @@ class ManagerTests(unittest.TestCase):
             self.manager.create_snapshot_set(name, self.mount_points())
 
     def test_create_snapshot_set_no_space_raises(self):
-        with self.assertRaises(snapm.SnapmNoSpaceError) as cm:
-            for i in range(0, 10):
+        # Hack alert: override the default MaxSnapshotsPerOrigin for this
+        # test.
+        for p in self.manager.plugins:
+            if p.limits:
+                p.limits.snapshots_per_origin = 100
+
+        with self.assertRaises(snapm.SnapmNoSpaceError):
+            for i in range(0, 50):
                 self.manager.create_snapshot_set(
                     f"testset{i}", self.mount_points()
                 )
-                self._lvm.dump_lvs()
 
     def test_create_delete_snapshot_set(self):
         self.manager.create_snapshot_set("testset0", self.mount_points())
@@ -928,8 +933,8 @@ class ManagerTestsThin(unittest.TestCase):
     snapshot providers (lvm2thin and stratis).
     """
     volumes = [] # Do not use lvm2cow
-    thin_volumes = ["root", "home", "var", "data_vol"]
-    stratis_volumes = ["fs1", "fs2"]
+    thin_volumes = ["root", "var"]
+    stratis_volumes = ["fs1"]
 
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)

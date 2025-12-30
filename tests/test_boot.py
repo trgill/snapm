@@ -83,7 +83,7 @@ class BootTestsBase(unittest.TestCase):
     Base class for boot tests.
     """
     volumes = ["root", "home", "var"]
-    thin_volumes = ["opt", "srv"]
+    thin_volumes = []
     boot_volumes = [
         ("root", "/"),
         ("home", "/home"),

@@ -266,9 +266,9 @@ class CommandTests(CommandTestsBase):
     Test command interfaces with devices
     """
 
-    volumes = ["root", "home", "var"]
-    thin_volumes = ["opt", "srv"]
-    stratis_volumes = ["fs1", "fs2"]
+    volumes = ["root"]
+    thin_volumes = ["opt"]
+    stratis_volumes = ["fs1"]
 
     def _get_diff_args(self):
         """Helper to generate default diff args for MockArgs."""

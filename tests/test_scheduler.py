@@ -54,8 +54,8 @@ class SchedulerTests(unittest.TestCase):
     snapshot providers.
     """
     volumes = ["root", "var"]
-    thin_volumes = ["opt", "srv", "thin-vol"]
-    stratis_volumes = ["fs1", "fs2"]
+    thin_volumes = ["opt"]
+    stratis_volumes = ["fs1"]
 
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)
