@@ -6,6 +6,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 import unittest
+from unittest.mock import Mock, patch
 import logging
 import os
 import os.path
@@ -19,7 +20,7 @@ import snapm
 import snapm.manager as manager
 import boom
 
-from tests import have_root, BOOT_ROOT_TEST
+from tests import have_root, BOOT_ROOT_TEST, MockPlugin
 from ._util import LvmLoopBacked, StratisLoopBacked
 
 
@@ -924,6 +925,138 @@ class ManagerTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmNotFoundError):
             # Split non-existent source from snapshot set
             split = self.manager.split_snapshot_set(testset, None, [split_source])
+
+    @patch("snapm.manager._manager.exists", return_value=True)
+    @patch("snapm.manager._manager.ismount", return_value=True)
+    def test_find_plugins_respects_priority(self, _ismount_mock, _exists_mock):
+        """
+        Verify that _find_and_verify_plugins selects the plugin with the
+        highest numerical priority when multiple plugins support a source.
+        """
+        # 1. Create two mock plugins that support the same source
+        source_path = "/dev/test/vol"
+
+        class LowPrioPlugin(MockPlugin):
+            name = "low-prio"
+
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 10
+
+            def can_snapshot(self, source):
+                return source == source_path
+
+        class HighPrioPlugin(MockPlugin):
+            name = "high-prio"
+
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 20
+
+            def can_snapshot(self, source):
+                return source == source_path
+
+        # 2. Inject plugins
+        self.manager.plugins = [LowPrioPlugin(Mock(), Mock()), HighPrioPlugin(Mock(), Mock())]
+
+        # 3. Run selection
+        sources = [source_path]
+        size_policies = {source_path: None}
+
+        # _find_and_verify_plugins(self, sources, size_policies, _requested_provider=None)
+        provider_map = self.manager._find_and_verify_plugins(sources, size_policies)
+
+        # 4. Assert the High Priority plugin was selected
+        selected_plugin = provider_map[source_path]
+        self.assertEqual(selected_plugin.name, "high-prio")
+        self.assertEqual(selected_plugin.priority, 20)
+
+    @patch("snapm.manager._manager.exists", return_value=True)
+    @patch("snapm.manager._manager.ismount", return_value=True)
+    def test_lvm2_cow_priority_override(self, _ismount_mock, _exists_mock):
+        """
+        Verify overriding lvm2-cow priority via config allows it to supersede
+        lvm2-thin (simulating the 'thick snapshot of thin vol' scenario).
+        """
+        source_path = "/home"
+
+        # Simulate lvm2-thin (usually higher priority for thin volumes)
+        class Lvm2Thin(MockPlugin):
+            name = "lvm2-thin"
+
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 15
+
+            def can_snapshot(self, source):
+                return True
+
+        # Simulate lvm2-cow (usually lower priority)
+        class Lvm2Cow(MockPlugin):
+            name = "lvm2-cow"
+
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 10
+
+            def can_snapshot(self, source):
+                return True
+
+        # Initialize plugins
+        mock_logger = Mock()
+        thin_plugin = Lvm2Thin(mock_logger, Mock())
+        cow_plugin = Lvm2Cow(mock_logger, Mock())
+
+        # Manually construct manager
+        self.manager.plugins = [thin_plugin, cow_plugin]
+        self.manager._log_debug = Mock()
+        self.manager._log_error = Mock() # Suppress error logs during test
+
+        sources = [source_path]
+        size_policies = {source_path: "2%SIZE"}
+
+        # CASE A: Default priorities
+        # Expect lvm2-thin to be selected because 15 > 10
+        provider_map = self.manager._find_and_verify_plugins(sources, size_policies)
+        self.assertEqual(provider_map[source_path].name, "lvm2-thin")
+
+        # CASE B: Dynamic Override
+        # Simulate the user editing /etc/snapm/plugins.d/lvm2-cow.conf
+        # by manually modifying the plugin instance priority.
+        cow_plugin.priority = 100
+
+        # Re-run selection
+        provider_map = self.manager._find_and_verify_plugins(sources, size_policies)
+
+        # Expect lvm2-cow to be selected because 100 > 15
+        self.assertEqual(provider_map[source_path].name, "lvm2-cow")
+
+    @patch("snapm.manager._manager.exists", return_value=True)
+    @patch("snapm.manager._manager.ismount", return_value=True)
+    def test_find_plugins_priority_tie_raises(self, _ismount_mock, _exists_mock):
+        source_path = "/dev/test/vol"
+
+        class Prio1(MockPlugin):
+            name = "prio1"
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 10
+            def can_snapshot(self, _source): return True
+
+        class Prio2(MockPlugin):
+            name = "prio2"
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 10
+            def can_snapshot(self, _source): return True
+
+        mock_logger = Mock()
+        self.manager.plugins = [Prio1(Mock(), Mock()), Prio2(Mock(), Mock())]
+        sources = [source_path]
+        size_policies = {source_path: None}
+
+        with self.assertRaises(snapm.SnapmNoProviderError):
+            self.manager._find_and_verify_plugins(sources, size_policies)
 
 
 @unittest.skipIf(not have_root(), "requires root privileges")

@@ -6,13 +6,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 import unittest
+from unittest.mock import Mock
 import logging
-
 from configparser import ConfigParser
 
 log = logging.getLogger()
 
 import snapm.manager.plugins as plugins
+
+from tests import MockPlugin
 
 
 def _find_device_mounts():
@@ -40,38 +42,9 @@ class PluginTests(unittest.TestCase):
         log.debug("Tearing down %s", self._testMethodName)
 
     def test_plugin_info(self):
-        class ConcretePlugin(plugins.Plugin):
-            """Minimal fulfillment of the ABC contract"""
-            def discover_snapshots(self): return []
-            def can_snapshot(self, source): return False
-            def check_create_snapshot(self, _origin, _snapset_name, _timestamp, _mount_point, _size_policy):
-                raise NotImplementedError
-            def create_snapshot(self, _origin, _snapset_name, _timestamp, _mount_point, _size_policy):
-                raise NotImplementedError
-            def rename_snapshot(self, _old_name, _origin, _snapset_name, _timestamp, _mount_point):
-                raise NotImplementedError
-            def check_resize_snapshot(self, _name, _origin, _mount_point, _size_policy):
-                raise NotImplementedError
-            def resize_snapshot(self, name, _origin, _mount_point, _size_policy):
-                raise NotImplementedError
-            def check_revert_snapshot(self, _name, _origin):
-                raise NotImplementedError
-            def revert_snapshot(self, _name):
-                raise NotImplementedError
-            def delete_snapshot(self, _name):
-                raise NotImplementedError
-            def activate_snapshot(self, _name):
-                raise NotImplementedError
-            def deactivate_snapshot(self, _name):
-                raise NotImplementedError
-            def set_autoactivate(self, _name, auto=False):
-                raise NotImplementedError
-            def origin_from_mount_point(self, _mount_point):
-                raise NotImplementedError
-
         cfg = ConfigParser()
         cfg.plugin_conf_file = "concrete-test.conf"
-        p = ConcretePlugin(log, cfg)
+        p = MockPlugin(log, cfg)
         info = p.info()
         self.assertEqual(info, {"name": "plugin", "version": "0.1.0"})
         self.assertEqual(p.priority, plugins.PLUGIN_NO_PRIORITY)
@@ -202,3 +175,53 @@ class PluginTests(unittest.TestCase):
         }
         for line in lines:
             self.assertEqual(_parse_proc_mounts_line(line), lines[line])
+
+    def test_default_priority(self):
+        """Verify Plugin has a default priority of 0 if unset."""
+        logger = Mock()
+        cfg = ConfigParser()
+
+        plugin = MockPlugin(logger, cfg)
+        self.assertEqual(plugin.priority, 0)
+
+    def test_static_priority(self):
+        """Verify Plugin uses the static class priority."""
+        logger = Mock()
+        cfg = ConfigParser()
+        cfg.plugin_conf_file = "highprio-testing.conf"
+
+        class HighPrioPlugin(MockPlugin):
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+                self.priority = 100
+
+        plugin = HighPrioPlugin(logger, cfg)
+        self.assertEqual(plugin.priority, 100)
+
+    def test_config_priority_override(self):
+        """Verify configuration file overrides static priority."""
+        logger = Mock()
+        cfg = ConfigParser()
+        cfg.add_section("Priority")
+        cfg.set("Priority", "PluginPriority", "999")
+        cfg.plugin_conf_file = "lowprio-testing.conf"
+
+        class LowPrioPlugin(MockPlugin):
+            def __init__(self, logger, plugin_cfg):
+                super().__init__(logger, plugin_cfg)
+
+        plugin = LowPrioPlugin(logger, cfg)
+        self.assertEqual(plugin.priority, 999)
+
+    def test_limits_error_checking(self):
+        """Verify PluginLimits warns or handles invalid integers."""
+        cfg = ConfigParser()
+        cfg.plugin_conf_file = "limits-testing.conf"
+        cfg.add_section("Limits")
+
+        # Invalid integer string
+        cfg.set("Limits", "MaxSnapshotsPerOrigin", "invalid")
+
+        limits = plugins.PluginLimits(cfg)
+
+        self.assertEqual(limits.snapshots_per_origin, 0)

@@ -537,6 +537,7 @@ __all__ = [
     "DMSETUP_FIELDS_UUID",
     "DMSETUP_REPORT_SEP",
     "PLUGIN_NO_PRIORITY",
+    "PluginLimits",
     "Plugin",
     "encode_mount_point",
     "decode_mount_point",

@@ -10,6 +10,8 @@ import os
 from os.path import abspath, join
 import time
 
+import snapm.manager.plugins as plugins
+
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -54,6 +56,36 @@ class MockArgs(object):
     keep_monthly = 0
     keep_quaterly = 0
     keep_yearly = 0
+
+
+class MockPlugin(plugins.Plugin):
+    """Minimal fulfillment of the ABC contract"""
+    def discover_snapshots(self): return []
+    def can_snapshot(self, _source): return False
+    def check_create_snapshot(self, _origin, _snapset_name, _timestamp, _mount_point, _size_policy):
+        raise NotImplementedError
+    def create_snapshot(self, _origin, _snapset_name, _timestamp, _mount_point, _size_policy):
+        raise NotImplementedError
+    def rename_snapshot(self, _old_name, _origin, _snapset_name, _timestamp, _mount_point):
+        raise NotImplementedError
+    def check_resize_snapshot(self, _name, _origin, _mount_point, _size_policy):
+        raise NotImplementedError
+    def resize_snapshot(self, name, _origin, _mount_point, _size_policy):
+        raise NotImplementedError
+    def check_revert_snapshot(self, _name, _origin):
+        raise NotImplementedError
+    def revert_snapshot(self, _name):
+        raise NotImplementedError
+    def delete_snapshot(self, _name):
+        raise NotImplementedError
+    def activate_snapshot(self, _name):
+        raise NotImplementedError
+    def deactivate_snapshot(self, _name):
+        raise NotImplementedError
+    def set_autoactivate(self, _name, auto=False):
+        raise NotImplementedError
+    def origin_from_mount_point(self, _mount_point):
+        raise NotImplementedError
 
 
 def is_redhat():
