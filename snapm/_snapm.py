@@ -9,6 +9,7 @@
 Global definitions for the top-level snapm package.
 """
 from typing import Optional, TextIO, Union, TYPE_CHECKING
+from abc import ABC, abstractmethod
 from uuid import UUID, uuid5
 from datetime import datetime
 from stat import S_ISBLK
@@ -1527,9 +1528,9 @@ class SnapshotSet:
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
-class Snapshot:
+class Snapshot(ABC):
     """
-    Base class for individual snapshots. Each snapshot plugin should
+    Abstract base class for individual snapshots. Each snapshot plugin should
     subclass ``Snapshot`` to provide a specific implementation.
     """
 
@@ -1654,18 +1655,18 @@ class Snapshot:
         return self._index
 
     @property
+    @abstractmethod
     def origin(self):
         """
         The origin of this snapshot.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @property
+    @abstractmethod
     def origin_options(self):
         """
         File system options needed to specify the origin of this snapshot.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @property
     def timestamp(self):
@@ -1711,21 +1712,22 @@ class Snapshot:
         self._snapshot_set = value
 
     @property
+    @abstractmethod
     def devpath(self):
         """
         The device path for this snapshot.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @property
+    @abstractmethod
     def status(self):
         """
         The status of this snapshot. Returns a ``SnapStatus`` enum
         value representing the current state of the snapshot.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @property
+    @abstractmethod
     def size(self):
         """
         The size of this snapshot in bytes. For snapshots with fixed-size
@@ -1733,9 +1735,9 @@ class Snapshot:
         that dynamically allocate space to the snapshot it reflects the
         device or volume size.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @property
+    @abstractmethod
     def free(self):
         """
         The space available to this snapshot in bytes. For snapshots with
@@ -1743,15 +1745,14 @@ class Snapshot:
         current backstore. For snapshots that dynamically allocate space
         to the snapshot it indicates the pooled space available.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @property
+    @abstractmethod
     def autoactivate(self):
         """
         The autoactivation status of this snapshot. Returns ``True`` if the
         snapshot is automatically activated or ``False`` otherwise.
         """
-        raise NotImplementedError  # pragma: no cover
 
     @autoactivate.setter
     def autoactivate(self, value):
@@ -1870,11 +1871,11 @@ class Snapshot:
         self.invalidate_cache()
         self.provider.revert_snapshot(self.name)
 
+    @abstractmethod
     def invalidate_cache(self):
         """
         Invalidate any cached data describing this snapshot.
         """
-        raise NotImplementedError  # pragma: no cover
 
     def activate(self):
         """

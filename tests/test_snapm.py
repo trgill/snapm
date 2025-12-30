@@ -295,12 +295,22 @@ class SnapmTestsSimple(unittest.TestCase):
         # Ideally, we create a concrete subclass or rely on integration tests.
         # Here is a unit test approach using a temporary concrete class:
         class ConcreteSnapshot(snapm.Snapshot):
+            """Minimal fulfillment of the ABC contract"""
+            @property
+            def origin(self): return "/dev/vg/lv"
+            @property
+            def origin_options(self): return ""
             @property
             def devpath(self): return "/dev/vg/lv-snap"
             @property
             def status(self): return snapm.SnapStatus.ACTIVE
             @property
-            def origin(self): return "/dev/vg/lv"
+            def size(self): return 0
+            @property
+            def free(self): return 0
+            @property
+            def autoactivate(self): return False
+            def invalidate_cache(self): return
 
         s = ConcreteSnapshot("s1", "set1", "/dev/vg/lv", 0, "/mnt/origin", MagicMock())
 
