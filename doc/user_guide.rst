@@ -1060,18 +1060,103 @@ Plugin Commands
 The ``plugin`` command is used to display information on the available
 snapshot provider plugins.
 
+Plugin Priority
+---------------
+
+Snapshot manager uses a priority system to select which plugin should handle
+snapshot operations when multiple plugins are capable of snapshotting a given
+source. Higher priority values are preferred over lower values.
+
+Each plugin has a default priority based on its snapshot implementation:
+
+* **lvm2-cow** (LVM2 copy-on-write): Priority 10
+* **lvm2-thin** (LVM2 thin provisioning): Priority 15
+* **stratis** (Stratis storage): Priority 20
+
 plugin list
 -----------
 
-The ``plugin list`` command lists the available plugins:
+The ``plugin list`` command displays information about each plugin, including
+the configured priority values:
 
 .. code-block:: bash
 
    snapm plugin list
-   PluginName PluginVersion PluginType
-   lvm2-cow   0.1.0         Lvm2CowSnapshot
-   lvm2-thin  0.1.0         Lvm2ThinSnapshot
-   stratis    0.1.0         StratisSnapshot
+   PluginName PluginVersion PluginType       Priority
+   lvm2-cow   0.1.0         Lvm2CowSnapshot        10
+   lvm2-thin  0.1.0         Lvm2ThinSnapshot       15
+   stratis    0.1.0         StratisSnapshot        20
+
+Overriding Plugin Priority
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default plugin priorities can be overridden using configuration files in
+``/etc/snapm/plugins.d/``. This allows administrators to prefer one snapshot
+implementation over another when multiple backends are available, overriding
+the built-in default priority levels.
+
+For example, to prefer LVM2 copy-on-write over thin provisioning snapshots,
+edit ``/etc/snapm/plugins.d/lvm2-cow.conf``:
+
+.. code-block:: ini
+
+   [Priority]
+   PluginPriority = 18
+
+This sets the lvm2-cow plugin priority to 18, making it preferred over
+lvm2-thin (default priority 15). After creating or modifying plugin
+configuration files, verify the changes:
+
+.. code-block:: bash
+
+   snapm plugin list
+   PluginName PluginVersion PluginType       Priority
+   lvm2-cow   0.1.0         Lvm2CowSnapshot        18
+   lvm2-thin  0.1.0         Lvm2ThinSnapshot       15
+   stratis    0.1.0         StratisSnapshot        20
+
+Plugin priority values must be positive integers. Setting a priority to 0 or
+a negative value will generate a warning message and cause the plugin to use
+its default priority.
+
+Plugin Selection Behavior
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When creating snapshots, ``snapm`` queries all available plugins to determine
+which can handle each source. If multiple plugins are capable, the plugin with
+the highest priority value is selected.
+
+Priority-based selection applies when:
+
+* Creating new snapshot sets with ``snapset create``
+* Configuring or creating scheduled snapshots with ``schedule create`` or
+  ``snapset create-scheduled``
+* Sources that could use multiple snapshot backends (e.g., LVM2 volumes that
+  support both copy-on-write and thin provisioning)
+
+Priority does not affect:
+
+* Existing snapshots (which always use their original plugin)
+* Sources that can only be handled by a single plugin type
+
+Plugin List Report Fields
+--------------------------
+
+The ``plugin list`` command supports the following report fields:
+
+Plugin fields:
+
+.. code-block:: bash
+
+   snapm plugin list -ohelp
+   Plugin Fields
+   -------------
+     name         - Name of the plugin [str]
+     version      - Version of the plugin [str]
+     type         - The snapshot type created by this plugin [str]
+     priority     - The current priority assigned to this plugin [num]
+
+The default field selection includes name, version, type, and priority.
 
 Schedule Commands
 =================
@@ -1749,6 +1834,35 @@ Check Stratis logs:
 .. code-block:: bash
 
    journalctl -u stratisd
+
+**Wrong Plugin Selected for Snapshots**
+
+If snapshots are being created with an unexpected plugin:
+
+1. Check current plugin priorities:
+
+   .. code-block:: bash
+
+      snapm plugin list
+
+2. Verify plugin configuration files:
+
+   .. code-block:: bash
+
+      ls -l /etc/snapm/plugins.d/
+      cat /etc/snapm/plugins.d/*.conf
+
+3. Check which plugins can handle a given source with verbose output:
+
+   .. code-block:: bash
+
+      snapm -vv snapset create test /source
+
+4. Override priorities by creating or modifying plugin configuration files in
+   ``/etc/snapm/plugins.d/`` with appropriate ``PluginPriority`` values.
+
+Remember: Higher priority values are preferred. The plugin with the highest
+priority value that can handle a source will be selected.
 
 Performance Considerations
 --------------------------
