@@ -10,6 +10,7 @@ Snapshot manager plugin helpers.
 """
 import os
 from os.path import sep as path_sep, ismount
+from abc import ABC, abstractmethod
 import logging
 
 from snapm import SNAPM_VALID_NAME_CHARS, SNAPM_SUBSYSTEM_PLUGIN, Snapshot
@@ -108,7 +109,7 @@ class PluginLimits:
                     )
 
 
-class Plugin:
+class Plugin(ABC):
     """
     Abstract base class for snapshot manager plugins.
     """
@@ -190,6 +191,7 @@ class Plugin:
         """
         self.size_map = None
 
+    @abstractmethod
     def discover_snapshots(self):
         """
         Discover snapshots managed by this plugin class.
@@ -197,8 +199,8 @@ class Plugin:
         Returns a list of objects that are a subclass of ``Snapshot``.
         :returns: A list of snapshots discovered by this plugin class.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def can_snapshot(self, source):
         """
         Test whether this plugin can snapshot the specified mount point or
@@ -208,8 +210,8 @@ class Plugin:
         :returns: ``True`` if this plugin can snapshot the file system mounted
                   at ``mount_point``, or ``False`` otherwise.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def check_create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
@@ -223,8 +225,8 @@ class Plugin:
         :raises: ``SnapmNoSpaceError`` if there is insufficient free space to
                  create the snapshot.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def create_snapshot(
         self, origin, snapset_name, timestamp, mount_point, size_policy
     ):
@@ -238,8 +240,8 @@ class Plugin:
         :raises: ``SnapmNoSpaceError`` if there is insufficient free space to
                  create the snapshot.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def rename_snapshot(self, old_name, origin, snapset_name, timestamp, mount_point):
         """
         Rename the snapshot named ``old_name`` according to the provided
@@ -251,8 +253,8 @@ class Plugin:
         :param timestamp: The snapshot set timestamp.
         :param mount_point: The mount point of the snapshot.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def check_resize_snapshot(self, name, origin, mount_point, size_policy):
         """
         Check whether this snapshot can be resized to the requested
@@ -264,8 +266,8 @@ class Plugin:
                  satisfy the requested size policy or ``SnapmPluginError`` if
                  another reason prevents the snapshot from being resized.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def resize_snapshot(self, name, origin, mount_point, size_policy):
         """
         Attempt to resize the snapshot ``name`` to the requested
@@ -277,8 +279,8 @@ class Plugin:
                  satisfy the requested size policy or ``SnapmPluginError`` if
                  another reason prevents the snapshot from being resized.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def check_revert_snapshot(self, name, origin):
         """
         Check whether this snapshot can be reverted or not. This method returns
@@ -291,8 +293,8 @@ class Plugin:
                  ``SnapmPluginError`` if another reason prevents the snapshot
                  from being merged.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def revert_snapshot(self, name):
         """
         Request to revert a snapshot and revert the content of the origin
@@ -303,32 +305,32 @@ class Plugin:
 
         :param name: The name of the snapshot to revert.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def delete_snapshot(self, name):
         """
         Delete the snapshot named ``name``
 
         :param name: The name of the snapshot to be removed.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def activate_snapshot(self, name):
         """
         Activate the snapshot named ``name``
 
         :param name: The name of the snapshot to be activated.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def deactivate_snapshot(self, name):
         """
         Deactivate the snapshot named ``name``
 
         :param name: The name of the snapshot to be deactivated.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def set_autoactivate(self, name, auto=False):
         """
         Set the autoactivation state of the snapshot named ``name``.
@@ -336,15 +338,14 @@ class Plugin:
         :param name: The name of the snapshot to be modified.
         :param auto: ``True`` to enable autoactivation or ``False`` otherwise.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def origin_from_mount_point(self, mount_point):
         """
         Return a string representing the origin from a given mount point path.
 
         :param mount_point: The mount point path.
         """
-        raise NotImplementedError
 
 
 def _escape_bad_chars(path):
