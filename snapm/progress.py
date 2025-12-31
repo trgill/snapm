@@ -320,12 +320,22 @@ class ProgressBase(ABC):
         self.stream: Optional[TextIO] = None
         self.width: int = -1
         self.first_update: bool = True
+        self.skip_line: bool = False
         self.registered: bool = False
         self.register: bool = register
 
     def reset_position(self):
         """Mark progress bar as displaced by external output."""
-        self.first_update = True
+        self._check_in_progress(0, "reset_position")
+        self.skip_line = True
+        self._do_reset_position()
+
+    @abstractmethod
+    def _do_reset_position(self):
+        """
+        Do any work necessary when resetting position due to interleaved log
+        messages.
+        """
 
     def _calculate_width(
         self, width: Optional[int] = None, width_frac: Optional[float] = None
@@ -580,6 +590,8 @@ class Progress(ProgressBase):
         self.no_clear = no_clear
         self.pbar: Optional[str] = None
         self.first_update: bool = False
+        self.skip_line: bool = False
+        self.did_erase: bool = False
         columns = self.term.columns or DEFAULT_COLUMNS
         self.budget: int = max(MIN_BUDGET, columns - 10)
         self.fps: int = DEFAULT_FPS
@@ -601,6 +613,18 @@ class Progress(ProgressBase):
             except UnicodeEncodeError:
                 self.did = "="
                 self.todo = "-"
+
+    def _do_reset_position(self):
+        """
+        Erase our last update before the logging subsystem outputs its message.
+        """
+        # Only do this *once* - otherwise we end up erasing log messages if
+        # multiple log messages notify us of a reset between progress updates.
+        if not self.did_erase:
+            erase = 2 * (self.term.BOL + self.term.UP + self.term.CLEAR_EOL)
+            print(erase, end="", file=self.stream)
+            _flush_with_broken_pipe_guard(self.stream)
+            self.did_erase = True
 
     def _do_start(self):
         """
@@ -625,6 +649,7 @@ class Progress(ProgressBase):
         message = message or ""
         percent = float(done) / float(self.total)
         n = int((self.width - 10) * percent)
+        must_update = False
 
         # Used by cancel()
         self.done = done
@@ -632,7 +657,11 @@ class Progress(ProgressBase):
         # Stash last message in case we need it later.
         self._last_message = message
 
-        if self.first_update:
+        if self.skip_line:
+            must_update = True
+            prefix = ""
+            self.skip_line = False
+        elif self.first_update:
             prefix = self.term.HIDE_CURSOR + self.term.BOL
             self.first_update = False
         else:
@@ -642,7 +671,8 @@ class Progress(ProgressBase):
             message = message[0 : self.budget - 3] + "..."
 
         now = datetime.now()
-        if (now - self._last).total_seconds() * _USECS_PER_SEC >= self._interval_us:
+        past = (now - self._last).total_seconds() * _USECS_PER_SEC >= self._interval_us
+        if must_update or past:
             self._last = now
             print(
                 prefix
@@ -661,6 +691,7 @@ class Progress(ProgressBase):
                 file=self.stream,
                 end="",
             )
+            self.did_erase = False
             _flush_with_broken_pipe_guard(self.stream)
 
     def _do_end(self, message: Optional[str] = None):
@@ -762,6 +793,14 @@ class SimpleProgress(ProgressBase):
         self.stream: Optional[TextIO] = term_stream or sys.stdout
         self.width: int = self._calculate_width(width=width, width_frac=width_frac)
 
+    def _do_reset_position(self):
+        """
+        Respond to progress displacement on this ``SimpleProgress`` object.
+
+        No-op for ``SimpleProgress`` instances.
+        """
+        return
+
     def _do_start(self):
         """
         Start reporting progress on this ``SimpleProgress`` object.
@@ -814,6 +853,14 @@ class NullProgress(ProgressBase):
     """
     A progress class that produces no output.
     """
+
+    def _do_reset_position(self):
+        """
+        Respond to progress displacement on this ``NullProgress`` object.
+
+        No-op for ``NullProgress`` instances.
+        """
+        return
 
     def _do_start(self):
         """

@@ -332,11 +332,12 @@ class ProgressAwareHandler(logging.StreamHandler):
 
     def emit(self, record):
         try:
+            # Notify before logging so that the progress subsystem can erase
+            # its last output before the logging message is printed.
+            notify_log_output(self.stream)
             msg = self.format(record)
             self.stream.write(msg + "\n")
             self.stream.flush()
-            # Notify after write completes
-            notify_log_output(self.stream)
         except Exception:  # pylint: disable=broad-exception-caught
             self.handleError(record)
 

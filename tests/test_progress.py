@@ -149,6 +149,9 @@ class TestProgressBase(unittest.TestCase):
                 self.header = "Header"
                 self.width = self._calculate_width(width=20)
 
+            def _do_reset_position(self):
+                pass
+
             def _do_start(self):
                 pass
 
@@ -167,6 +170,9 @@ class TestProgressBase(unittest.TestCase):
 
             def __init__(self):
                 self.width = self._calculate_width(width=20)
+
+            def _do_reset_position(self):
+                pass
 
             def _do_start(self):
                 pass
