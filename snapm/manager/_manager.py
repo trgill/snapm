@@ -923,7 +923,9 @@ class Manager:
         return cfg
 
     def _find_and_verify_plugins(
-        self, sources, size_policies,
+        self,
+        sources,
+        size_policies,
     ):
         """
         Find snapshot provider plugins for each source in ``sources``
@@ -1246,7 +1248,7 @@ class Manager:
         )
 
         # Initialise provider mapping.
-        provider_map = self._find_and_verify_plugins(sources, size_policies, None)
+        provider_map = self._find_and_verify_plugins(sources, size_policies)
 
         for provider in set(provider_map.values()):
             provider.start_transaction()
