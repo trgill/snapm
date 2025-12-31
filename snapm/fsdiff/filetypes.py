@@ -9,6 +9,7 @@
 File type information support.
 """
 from typing import ClassVar, Dict, Optional, Tuple
+from fnmatch import fnmatch
 from pathlib import Path
 from enum import Enum
 import logging
@@ -492,6 +493,32 @@ BINARY_FILE_PATHS = {
     "/usr/local/lib64": ("application/x-sharedlib", "shared library"),
 }
 
+# Patterns that indicate binary content in /var/log
+BINARY_LOG_PATTERNS = [
+    "*btmp*",
+    "*wtmp*",
+    "*lastlog",
+    "*sa[0-9][0-9]",
+    "*.journal",
+]
+
+
+def _is_binary_log(file_path: Path) -> bool:
+    """
+    Determine based on file name pattern match whether ``file_path``
+    refers to a log file that normally contains binary data.
+
+    :param file_path: The path to test.
+    :type file_path: ``Path``
+    :returns: ``True`` if ``file_path`` is likely a binary log, or ``False``
+              otherwise.
+    :rtype: ``bool``
+    """
+    for binary_pattern in BINARY_LOG_PATTERNS:
+        if fnmatch(str(file_path), binary_pattern):
+            return True
+    return False
+
 
 def _generic_guess_file(
     file_path: Path,
@@ -552,6 +579,8 @@ def _guess_text_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
     for abs_parent_path in file_path.absolute().parents:
         abs_parent_str = str(abs_parent_path)
         if abs_parent_str in TEXT_FILE_PATHS:
+            if _is_binary_log(file_path):
+                return ("application/octet-stream", "binary log file", "binary")
             return (*TEXT_FILE_PATHS[abs_parent_str], "utf-8")
     return None
 
@@ -622,6 +651,7 @@ class FileTypeCategory(Enum):
     EXECUTABLE = "executable"
     CONFIG = "config"
     LOG = "log"
+    BINARY_LOG = "binary_log"
     DATABASE = "database"
     DOCUMENT = "document"
     DIRECTORY = "directory"
@@ -855,6 +885,7 @@ class FileTypeDetector:
                 Path(str(file_path).removeprefix(strip_prefix))
             )
 
+    # pylint: disable=too-many-return-statements
     def _categorize_file(self, mime_type: str, file_path: Path) -> FileTypeCategory:
         """
         Categorize file based on MIME type and path patterns.
@@ -870,6 +901,8 @@ class FileTypeDetector:
         # Check path-based rules for common locations
         path_str = str(file_path).lower()
         if "/log/" in path_str or path_str.endswith(".log"):
+            if _is_binary_log(file_path):
+                return FileTypeCategory.BINARY_LOG
             return FileTypeCategory.LOG
         if path_str.startswith("/etc/") or path_str.endswith(".conf"):
             return FileTypeCategory.CONFIG
