@@ -12,6 +12,7 @@ from typing import ClassVar, Dict, Optional, Tuple
 from pathlib import Path
 from enum import Enum
 import logging
+
 import magic
 
 from snapm import SNAPM_SUBSYSTEM_FSDIFF
@@ -277,6 +278,17 @@ TEXT_FILENAME_MAP = {
     "*fstab": ("text/plain", "static file system information"),
 }
 
+# Directories typically containing text files.
+# Format: "parent_path": ("mime/type", "description starting with lowercase")
+TEXT_FILE_PATHS = {
+    "/etc": ("text/plain", "configuration file"),
+    "/usr/share/doc": ("text/plain", "documentation"),
+    "/usr/local/etc": ("text/plain", "local configuration"),
+    "/usr/local/share/doc": ("text/plain", "local documentation"),
+    "/var/log": ("text/plain", "log file"),
+}
+
+
 # List of systemd unit file extensions for special handling.
 SYSTEMD_UNIT_EXTENSIONS = (
     ".service",
@@ -460,8 +472,8 @@ BINARY_FILENAME_MAP = {
     "*.git/index": ("application/x-git-index", "git index file"),
 }
 
+# Mappings that are typically for binaries/libraries
 BINARY_FILE_PATHS = {
-    # Directories strictly for binaries/libraries on Modern Linux
     "/bin": ("application/x-executable", "executable"),
     "/sbin": ("application/x-executable", "executable"),
     "/lib": ("application/x-sharedlib", "shared library"),
@@ -528,9 +540,20 @@ def _guess_text_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
               type could be guessed or ``None`` otherwise.
     :rtype: ``Optional[Tuple[str, str, str]]``
     """
-    return _generic_guess_file(
+    guess = _generic_guess_file(
         file_path, TEXT_EXTENSION_MAP, TEXT_FILENAME_MAP, "utf-8"
     )
+
+    if guess is not None:
+        return guess
+
+    # Walk up the directory structure checking for parents paths that typically
+    # hold text like files.
+    for abs_parent_path in file_path.absolute().parents:
+        abs_parent_str = str(abs_parent_path)
+        if abs_parent_str in TEXT_FILE_PATHS:
+            return (*TEXT_FILE_PATHS[abs_parent_str], "utf-8")
+    return None
 
 
 def _guess_binary_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
@@ -551,14 +574,16 @@ def _guess_binary_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
     if guess is not None:
         return guess
 
-    abs_parent_path = file_path.absolute().parent
-    abs_parent_str = str(abs_parent_path)
-    if abs_parent_str in BINARY_FILE_PATHS:
-        # Honour known text-like patterns even under binary-heavy directories.
-        text_guess = _guess_text_file(file_path)
-        if text_guess is not None:
-            return text_guess
-        return (*BINARY_FILE_PATHS[abs_parent_str], "binary")
+    # Walk up the directory structure checking for parents paths that typically
+    # hold binary files.
+    for abs_parent_path in file_path.absolute().parents:
+        abs_parent_str = str(abs_parent_path)
+        if abs_parent_str in BINARY_FILE_PATHS:
+            # Honour known text-like patterns even under binary-heavy directories.
+            text_guess = _guess_text_file(file_path)
+            if text_guess is not None:
+                return text_guess
+            return (*BINARY_FILE_PATHS[abs_parent_str], "binary")
     return None
 
 
