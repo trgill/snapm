@@ -813,13 +813,18 @@ class FileTypeDetector:
     }
     # fmt: on
 
-    def detect_file_type(self, file_path: Path, use_magic=False) -> FileTypeInfo:
+    def detect_file_type(
+        self, file_path: Path, strip_prefix: str = "", use_magic=False
+    ) -> FileTypeInfo:
         """
         Detect comprehensive file type information, optionally using
         python-magic for MIME type detection.
 
         :param file_path: The path to the file to inspect.
         :type file_path: ``Path``.
+        :param strip_prefix: An optional prefix (mount root) to strip from the
+                             ``file_path`` when guessing file types.
+        :type strip_prefix: ``str``
         :returns: File type information for ``file_path``.
         :rtype: ``FileTypeInfo``
         """
@@ -846,7 +851,9 @@ class FileTypeDetector:
                     "application/octet-stream", "unknown", FileTypeCategory.UNKNOWN
                 )
         else:
-            return self._guess_file_type(file_path)
+            return self._guess_file_type(
+                Path(str(file_path).removeprefix(strip_prefix))
+            )
 
     def _categorize_file(self, mime_type: str, file_path: Path) -> FileTypeCategory:
         """

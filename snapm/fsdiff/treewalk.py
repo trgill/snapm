@@ -461,7 +461,9 @@ class TreeWalker:
         :rtype: ``FsEntry``
         """
         fti = self.file_type_detector.detect_file_type(
-            Path(dir_path), use_magic=self.options.use_magic_file_type
+            Path(dir_path),
+            strip_prefix=strip_prefix,
+            use_magic=self.options.use_magic_file_type,
         )
 
         return FsEntry(dir_path, strip_prefix, dir_stat, file_type_info=fti)
@@ -480,7 +482,9 @@ class TreeWalker:
         :rtype: ``FsEntry``
         """
         fti = self.file_type_detector.detect_file_type(
-            Path(file_path), use_magic=self.options.use_magic_file_type
+            Path(file_path),
+            strip_prefix=strip_prefix,
+            use_magic=self.options.use_magic_file_type,
         )
 
         content_hash = None
