@@ -923,7 +923,7 @@ class Manager:
         return cfg
 
     def _find_and_verify_plugins(
-        self, sources, size_policies, _requested_provider=None
+        self, sources, size_policies,
     ):
         """
         Find snapshot provider plugins for each source in ``sources``
