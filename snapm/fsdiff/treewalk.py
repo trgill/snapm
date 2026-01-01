@@ -198,7 +198,15 @@ class FsEntry:
         if stat.S_ISLNK(stat_info.st_mode):
             if os.path.lexists(path):
                 #: The symbolic link target
-                self.symlink_target = os.readlink(path)
+                try:
+                    self.symlink_target = os.readlink(path)
+                except FileNotFoundError:
+                    # Magic kernel links in /proc
+                    self.symlink_target = ""
+                    self.broken_symlink = True
+                    self.xattrs: Dict[str, bytes] = {}
+                    self.file_type_info = file_type_info
+                    return
                 if os.path.isabs(self.symlink_target):
                     target_for_check = self.symlink_target
                 else:
