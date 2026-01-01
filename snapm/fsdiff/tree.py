@@ -160,7 +160,7 @@ class DiffTree:
         else:
             color, marker = self.marker_map.get(record.diff_type, ("", ""))
 
-        return f"{color}{marker}{self.term_control.NORMAL}"
+        return f"{color}{marker}{self.term_control.WHITE}"
 
     # pylint: disable=too-many-locals,too-many-branches
     def render(
