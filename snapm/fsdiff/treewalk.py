@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import datetime
 import itertools
 import logging
+import errno
 import stat
 import os
 
@@ -102,6 +103,15 @@ _ALWAYS_EXCLUDE_PATTERNS = (
     "*/sys/*/bind",  # Driver binding API (write only).
     "*/sys/*/unbind",  # Driver unbinding API (write only).
     "*/sys/*/uevent",  # Driver model uevent channel (write only).
+)
+
+#: Paths where we should avoid trying to read content in chunks.
+_NO_CHUNK_PATHS = (
+    "/proc/sys/fs/binfmt_misc/*",
+    "/proc/sys/net/ipv*/conf/*",
+    "/proc/irq/*/*",
+    "/sys/*",
+    "/dev/*",
 )
 
 #: Default system directories to exclude
@@ -511,7 +521,7 @@ class TreeWalker:
             self.options, "include_content_hash", True
         ):
             if file_stat.st_size <= self.options.max_content_hash_size:
-                content_hash = self._calculate_content_hash(file_path)
+                content_hash = self._calculate_content_hash(file_path, strip_prefix)
         return FsEntry(
             file_path,
             strip_prefix,
@@ -674,18 +684,52 @@ class TreeWalker:
         )
         return tree
 
-    def _calculate_content_hash(self, file_path: str) -> str:
+    def _calculate_content_hash(self, file_path: str, strip_prefix: str = "") -> str:
         """
         Calculate content hash for regular files
 
         :param file_path: The path to the file to hash.
         :type file_path: ``str``
+        :param strip_prefix: An optional leading path prefix to strip from
+                             stored path values.
+        :type strip_prefix: ``str``
         :returns: A string representation of the hash of the file content using
                   the configured hash algorithm.
         :rtype: ``str``
         """
+        stripped_file_path = file_path.removeprefix(strip_prefix) or "/"
+        no_chunk = any(fnmatch(stripped_file_path, pat) for pat in _NO_CHUNK_PATHS)
+
         hasher = self.hasher(usedforsecurity=False)
-        with open(file_path, "rb") as f:
-            for chunk in iter(lambda: f.read(65536), b""):
-                hasher.update(chunk)
+        try:
+            with open(file_path, "rb") as fp:
+                if no_chunk:
+                    # Path may not support the size argument to read(): slurp it.
+                    try:
+                        hasher.update(fp.read())
+                    except OSError as err:
+                        _log_debug_fsdiff(
+                            "Exception reading %s: %s (from %s)", file_path, err, fp
+                        )
+                        return ""
+                else:
+                    try:
+                        for chunk in iter(lambda: fp.read(65536), b""):
+                            hasher.update(chunk)
+                    except OSError as err:
+                        _log_debug_fsdiff(
+                            "Exception reading %s: %s (from %s)", file_path, err, fp
+                        )
+                        return ""
+        except PermissionError as perr:
+            _log_debug_fsdiff("Permission denied reading %s: %s", file_path, perr)
+            return ""
+        except ProcessLookupError:
+            # Kernel thread - silently ignored.
+            return ""
+        except OSError as oserr:
+            # Ignore probable zombies.
+            if not ("/proc" in file_path and oserr.errno == errno.EINVAL):
+                _log_debug_fsdiff("Exception opening %s: %s", file_path, oserr)
+            return ""
         return hasher.hexdigest()
