@@ -14,9 +14,14 @@ from pathlib import Path
 from enum import Enum
 import logging
 
-import magic
+try:
+    import magic
 
-from snapm import SNAPM_SUBSYSTEM_FSDIFF
+    _HAVE_MAGIC = True
+except ModuleNotFoundError:
+    _HAVE_MAGIC = False
+
+from snapm import SNAPM_SUBSYSTEM_FSDIFF, SnapmNotFoundError
 
 _log = logging.getLogger(__name__)
 
@@ -859,6 +864,9 @@ class FileTypeDetector:
         :rtype: ``FileTypeInfo``
         """
         if use_magic:
+            if not _HAVE_MAGIC:
+                raise SnapmNotFoundError("python-file-magic is not installed")
+
             # c9s magic does not have magic.error
             if hasattr(magic, "error"):
                 magic_errors = (magic.error, OSError, ValueError)

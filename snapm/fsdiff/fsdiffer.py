@@ -15,6 +15,29 @@ import lzma
 
 
 try:
+    import magic
+
+    _HAVE_MAGIC = True
+
+    # This is horrible and shouldn't be necessary:
+    # https://github.com/snapshotmanager/snapm/issues/858
+    # https://bugzilla.redhat.com/show_bug.cgi?id=2419719
+    def close(theself):
+        """
+        Work around Magic destructor breakage.
+
+        :param theself: The ``magic.Magic`` instance.
+        :type theself: ``magic.Magic``
+        """
+        if magic._close:  # pylint: disable=protected-access
+            magic._close(theself._magic_t)  # pylint: disable=protected-access
+
+    magic.Magic.close = close
+except ModuleNotFoundError:
+    _HAVE_MAGIC = False
+
+
+try:
     import zstandard as zstd
 
     compress_errors = (
@@ -130,6 +153,13 @@ class FsDiffer:
         :type term_control: ``Optional[TermControl]``
         """
         options = options or DiffOptions()
+
+        if options.use_magic_file_type and not _HAVE_MAGIC:
+            raise SnapmNotFoundError(
+                "python-file-magic is not installed "
+                "(required for --file-type/use_magic_file_type)"
+            )
+
         #: Manager context for snapshot operations (used by future methods)
         self.manager: "Manager" = manager
         self.options: DiffOptions = options
@@ -152,6 +182,7 @@ class FsDiffer:
         :returns: The diff results for the comparison.
         :rtype: ``FsDiffResults``
         """
+
         try:
             _log_debug(
                 "Attempting to load diff cache for %s/%s (cache=%s, expiry=%d)",
