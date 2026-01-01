@@ -55,13 +55,17 @@ _HASH_TYPES = {
 #: Paths that are always excluded, no matter what the user says.
 _ALWAYS_EXCLUDE_PATTERNS = (
     # --- /proc (Process Information & Kernel Interfaces) ---
-    "/proc/kcore",  # Virtual alias for physical RAM (Can be Terabytes in size)
-    "/proc/kmsg",  # Blocks indefinitely waiting for kernel log messages
-    "/proc/*/mem",  # Raw memory of processes (Access errors / security alerts)
-    "/proc/*/fd/*",  # Recursion hazards: reading your own open file descriptors
-    "/proc/*/task/*/mem",  # Thread specific memory
-    "/proc/sysrq-trigger",  # Write-only trigger, but unsafe to touch
-    "/proc/acpi/event",  # Deprecated blocking event stream
+    "*/proc/kcore",  # Virtual alias for physical RAM (Can be Terabytes in size)
+    "*/proc/kmsg",  # Blocks indefinitely waiting for kernel log messages
+    "*/proc/*/mem",  # Raw memory of processes (Access errors / security alerts)
+    "*/proc/*/pagemap",  # Page mappings: blocks on read.
+    "*/proc/*/fd/*",  # Recursion hazards: reading your own open file descriptors
+    "*/proc/*/task/*/mem",  # Thread specific memory
+    "*/proc/*/clear_refs",  # Clear page bits API.
+    "*/proc/sys/fs/binfmt_misc/register",  # binfmt registration API
+    "*/proc/sys/net/ipv*/route/flush",  # IPv[46] route flush API
+    "*/proc/sysrq-trigger",  # Write-only trigger, but unsafe to touch
+    "*/proc/acpi/event",  # Deprecated blocking event stream
     # --- /dev (Device Nodes) ---
     # Infinite Data Streams (Will hang 'read()' loops or fill buffers)
     "/dev/zero",
@@ -88,9 +92,16 @@ _ALWAYS_EXCLUDE_PATTERNS = (
     "/dev/nst*",
     # --- /sys (Kernel Objects, DebugFS, TraceFS) ---
     # These contain dynamic infinite streams for kernel debugging
-    "/sys/kernel/debug/*",  # DebugFS: Generally unsafe for automated scanning
-    "/sys/kernel/tracing/trace_pipe",  # TraceFS: Blocks waiting for trace data
-    "/sys/fs/cgroup/*",  # Control Groups: Complex hierarchy, recursion risks
+    "*/sys/kernel/debug/*",  # DebugFS: Generally unsafe for automated scanning
+    "*/sys/kernel/tracing/trace_pipe",  # TraceFS: Blocks waiting for trace data
+    "*/sys/kernel/tracing/*/*/*_raw",  # Tracing snapshots: hangs on read.
+    "*/sys/kernel/tracing/*/*/trace_pipe",  # Tracing pipe: hangs on read.
+    "*/sys/fs/cgroup/*",  # Control Groups: Complex hierarchy, recursion risks
+    "*/sys/*/power/autosuspend_delay_ms",  # IOError on read.
+    "*/sys/devices/pci*/rescan",  # PCI rescan API.
+    "*/sys/*/bind",  # Driver binding API (write only).
+    "*/sys/*/unbind",  # Driver unbinding API (write only).
+    "*/sys/*/uevent",  # Driver model uevent channel (write only).
 )
 
 #: Default system directories to exclude
