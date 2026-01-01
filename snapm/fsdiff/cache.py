@@ -326,7 +326,8 @@ def load_cache(
         records = []
         start_time = datetime.now()
         try:
-            progress.start(candidate.count)
+            if candidate.count:
+                progress.start(candidate.count)
         except AttributeError as attr_err:
             _log_debug(
                 "Ignoring mismatched cache file version: %s",
@@ -344,16 +345,18 @@ def load_cache(
                 if len(records) == candidate.count:
                     break
                 _log_error("Detected truncated cache file %s", name)
+                progress.cancel("Error.")
                 raise
             except (OSError, pickle.UnpicklingError, *errors):
                 progress.cancel("Error.")
                 raise
 
         end_time = datetime.now()
-        progress.end(
-            f"Loaded {candidate.count} records from diffcache "
-            f"in {end_time - start_time}"
-        )
+        if candidate.count:
+            progress.end(
+                f"Loaded {candidate.count} records from diffcache "
+                f"in {end_time - start_time}"
+            )
         return FsDiffResults(records, candidate.options, candidate.timestamp)
 
     for file_name in os.listdir(_DIFF_CACHE_DIR):
@@ -502,7 +505,8 @@ def save_cache(
     cache_path += "." + _COMPRESSION_EXTENSIONS[compress]
 
     start_time = datetime.now()
-    progress.start(count)
+    if count:
+        progress.start(count)
 
     def _write_cache(results: FsDiffResults, writer: RawIOBase):
         """
@@ -518,6 +522,8 @@ def save_cache(
             [], results.options, results.timestamp, count=len(results)
         )
         pickle.dump(results_save, writer)
+        if not count:
+            return
         for i, record in enumerate(results):
             progress.progress(i, f"Saving record {i}")
             pickle.dump(record, writer)
@@ -537,17 +543,21 @@ def save_cache(
 
     except (OSError, pickle.PicklingError, *compress_errors) as err:
         _log_error("Error saving cache: %s", err)
-        progress.cancel("Error.")
+        if count:
+            progress.cancel("Error.")
         raise
     except KeyboardInterrupt:
-        progress.cancel("Quit!")
+        if count:
+            progress.cancel("Quit!")
         raise
     except SystemExit:
-        progress.cancel("Exiting.")
+        if count:
+            progress.cancel("Exiting.")
         raise
 
     end_time = datetime.now()
-    progress.end(f"Saved {count} records to diffcache in {end_time - start_time}")
+    if count:
+        progress.end(f"Saved {count} records to diffcache in {end_time - start_time}")
 
 
 __all__ = [
