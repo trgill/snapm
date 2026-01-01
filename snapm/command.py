@@ -2712,11 +2712,6 @@ def _add_diff_args(parser):
         help="Only consider content changes",
     )
     parser.add_argument(
-        "--include-system-dirs",
-        action="store_true",
-        help="Include system directories in diff comparisons",
-    )
-    parser.add_argument(
         "-C",
         "--no-content-diff",
         dest="include_content_diffs",

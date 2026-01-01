@@ -189,7 +189,6 @@ snapm \- Linux Snapshot Manager
 .  RB [ -p | --ignore-permissions ] " "\c
 .  RB [ -w | --ignore-ownership ] " "\c
 .  RB [ -c | --content-only ] " "\c
-.  RB [ --include-system-dirs ] " "\c
 .  RB [ -C | --no-content-diff ] " "\c
 .  RB [ -f | --file-types ] " "\c
 .  RB [ -F | --follow-symlinks ] " "\c
@@ -228,7 +227,6 @@ snapm \- Linux Snapshot Manager
 .  RB [ -p | --ignore-permissions ] " "\c
 .  RB [ -w | --ignore-ownership ] " "\c
 .  RB [ -c | --content-only ] " "\c
-.  RB [ --include-system-dirs ] " "\c
 .  RB [ -C | --no-content-diff ] " "\c
 .  RB [ -f | --file-types ] " "\c
 .  RB [ -F | --follow-symlinks ] " "\c
@@ -665,10 +663,6 @@ Display usage information and exit.
 .TP 8
 \fB-i | --include-pattern\fP \fIpattern\fP
 (Diff) File patterns to include in comparison (glob notation).
-.
-.TP 8
-.B --include-system-dirs
-(Diff) Include system directories in diff comparisons.
 .
 .TP 8
 .B --json
