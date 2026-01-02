@@ -142,3 +142,37 @@ class TestFsDiffer(unittest.TestCase):
         # Should not raise exception
         fsd.compare_roots(mount_a, mount_b)
         mock_save.assert_called()
+
+    @patch("snapm.fsdiff.fsdiffer.magic")
+    def test_magic_close_workaround(self, mock_magic):
+        """Test the magic.Magic.close workaround function."""
+        # This function is monkey-patched onto magic.Magic.close if magic exists
+        # We need to retrieve the function that was defined in fsdiffer.py
+        from snapm.fsdiff.fsdiffer import close as magic_close_fix
+
+        mock_instance = MagicMock()
+        # Mock the internal _magic_t and _close
+        mock_instance._magic_t = "pointer"
+        mock_magic._close = MagicMock()
+
+        magic_close_fix(mock_instance)
+
+        mock_magic._close.assert_called_with("pointer")
+
+    def test_should_diff_missing_memory_info(self):
+        """Test _should_diff when memory info is unavailable."""
+        from snapm.fsdiff.fsdiffer import _should_diff
+
+        with patch("snapm.fsdiff.fsdiffer.get_total_memory", return_value=0):
+            self.assertTrue(_should_diff(DiffOptions(include_content_diffs=True)))
+
+        with patch("snapm.fsdiff.fsdiffer.get_total_memory", return_value=1000), \
+             patch("snapm.fsdiff.fsdiffer.get_current_rss", return_value=0):
+            self.assertTrue(_should_diff(DiffOptions(include_content_diffs=True)))
+
+    def test_init_magic_missing_error(self):
+        """Test FsDiffer init raises if magic requested but missing."""
+        m = MockManager()
+        with patch("snapm.fsdiff.fsdiffer._HAVE_MAGIC", False):
+            with self.assertRaisesRegex(SnapmNotFoundError, "python-file-magic is not installed"):
+                FsDiffer(m, options=DiffOptions(use_magic_file_type=True))
