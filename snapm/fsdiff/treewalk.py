@@ -556,14 +556,17 @@ class TreeWalker:
         :rtype: ``Dict[str, FsEntry]``
         """
         if self.options.from_path is not None:
-            from_path = self.options.from_path.lstrip(os.sep)
-            start = os.path.join(mount.root, from_path)
+            if isinstance(self.options.from_path, str):
+                from_path = [self.options.from_path.lstrip(os.sep)]
+            else:
+                from_path = [path.lstrip(os.sep) for path in self.options.from_path]
+            start = [os.path.join(mount.root, path) for path in from_path]
         else:
-            from_path = ""
-            start = mount.root
+            from_path = [""]
+            start = [mount.root]
 
-        target_path = os.sep + from_path if from_path else os.sep
-        target = f"{mount.name} {target_path}"
+        target_paths = ", ".join(os.sep + path for path in from_path)
+        target = f"{mount.name} {target_paths}"
 
         _log_info(
             "Gathering paths to scan from %s (%s)", mount.name, self.options.from_path
@@ -586,11 +589,15 @@ class TreeWalker:
 
         throbber.start()
         try:
-            to_visit = [start] + [
-                _throb(os.path.join(root, name))
-                for root, dirs, files in os.walk(start)
-                for name in itertools.chain(files, dirs)
-            ]
+            to_visit = start.copy()
+            for start_path in start:
+                to_visit.extend(
+                    [
+                        _throb(os.path.join(root, name))
+                        for root, dirs, files in os.walk(start_path)
+                        for name in itertools.chain(files, dirs)
+                    ]
+                )
         except (KeyboardInterrupt, SystemExit):
             throbber.end("Quit!")
             raise

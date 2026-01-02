@@ -54,8 +54,8 @@ class DiffOptions:
     file_patterns: Tuple[str, ...] = field(default_factory=tuple)
     #: File patterns to exclude (glob notation)
     exclude_patterns: Tuple[str, ...] = field(default_factory=tuple)
-    #: Start path for file system comparison
-    from_path: Optional[str] = None
+    #: Start path(s) for file system comparison
+    from_path: Optional[Union[str, Tuple[str]]] = ("/",)
     #: Do not output progress or status updates
     quiet: bool = False
 

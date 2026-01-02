@@ -2778,9 +2778,14 @@ def _add_diff_args(parser):
         "-s",
         "--start-path",
         type=str,
+        action="append",
         metavar="PATH",
         dest="from_path",
-        help="Start traversal from PATH",
+        default=None,
+        help=(
+            "Start traversal from PATH: specify multiple times "
+            "to include different subtrees."
+        ),
     )
     parser.add_argument(
         "-q",

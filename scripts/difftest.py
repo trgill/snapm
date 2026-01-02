@@ -50,8 +50,10 @@ def main():
         "-s",
         "--start-path",
         type=str,
+        action="append",
         metavar="PATH",
         dest="from_path",
+        default=None,
         help="Start traversal from PATH",
     )
     parser.add_argument(
