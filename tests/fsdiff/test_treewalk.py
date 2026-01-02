@@ -459,3 +459,75 @@ class TestTreeWalkFull(unittest.TestCase):
             self.assertEqual(len(digest), 64) # sha256 hex length
         finally:
             os.unlink(fname)
+
+    def test_log_debug_fsdiff(self):
+        """Test the module level debug wrapper."""
+        from snapm.fsdiff.treewalk import _log_debug_fsdiff
+        with patch("snapm.fsdiff.treewalk._log.debug") as mock_log:
+            _log_debug_fsdiff("msg", "arg")
+            mock_log.assert_called()
+            args, kwargs = mock_log.call_args
+            self.assertIn("subsystem", kwargs.get("extra", {}))
+
+    def test_get_xattrs_getxattr_oserror(self):
+        """Cover OSError handling during getxattr in _get_xattrs."""
+        with patch("os.path.exists", return_value=True), \
+             patch("os.stat"), \
+             patch("os.listxattr", return_value=["user.attr"]), \
+             patch("os.getxattr", side_effect=OSError("Mock error")):
+
+            entry = FsEntry("/file", "", os.stat_result((0o644,)*10))
+            self.assertEqual(entry.xattrs, {})
+
+    def test_treewalk_throbber_interrupt(self):
+        """Test KeyboardInterrupt during the path gathering (throbber) phase."""
+        walker = TreeWalker(self.opts)
+        mount = MagicMock(spec=Mount)
+        mount.root = str(self.root)
+        mount.name = "test_mount"
+
+        with patch("snapm.fsdiff.treewalk.ProgressFactory.get_throbber") as mock_get_throb:
+            mock_throbber = MagicMock()
+            mock_get_throb.return_value = mock_throbber
+
+            # Raise interrupt during os.walk (gathering phase)
+            with patch("os.walk", side_effect=KeyboardInterrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    walker.walk_tree(mount)
+
+            # Verify throbber was ended with "Quit!"
+            mock_throbber.end.assert_called_with("Quit!")
+
+    def test_calculate_content_hash_errors(self):
+        """Test various error conditions during content hashing."""
+        walker = TreeWalker(self.opts)
+
+        # 1. PermissionError
+        with patch("builtins.open", side_effect=PermissionError("Denied")):
+            h = walker._calculate_content_hash("/foo")
+            self.assertEqual(h, "")
+
+        # 2. ProcessLookupError (kernel thread)
+        with patch("builtins.open", side_effect=ProcessLookupError):
+            h = walker._calculate_content_hash("/foo")
+            self.assertEqual(h, "")
+
+        # 3. OSError (general)
+        with patch("builtins.open", side_effect=OSError("Error")):
+            h = walker._calculate_content_hash("/foo")
+            self.assertEqual(h, "")
+
+        # 4. OSError during read (chunked)
+        mock_file = MagicMock()
+        mock_file.__enter__.return_value = mock_file
+        mock_file.read.side_effect = OSError("Read Error")
+        with patch("builtins.open", return_value=mock_file):
+            h = walker._calculate_content_hash("/foo")
+            self.assertEqual(h, "")
+
+        # 5. OSError during read (no_chunk /proc path)
+        # Force a path that matches _NO_CHUNK_PATHS
+        proc_path = "/proc/sys/fs/binfmt_misc/register"
+        with patch("builtins.open", return_value=mock_file):
+             h = walker._calculate_content_hash(proc_path)
+             self.assertEqual(h, "")
