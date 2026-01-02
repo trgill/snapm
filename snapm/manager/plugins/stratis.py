@@ -436,7 +436,7 @@ class Stratis(Plugin):
     """
 
     name = "stratis"
-    version = "0.1.0"
+    version = "0.2.0"
     snapshot_class = StratisSnapshot
 
     def __init__(self, logger, plugin_cfg):

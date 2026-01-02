@@ -1083,9 +1083,9 @@ the configured priority values:
 
    snapm plugin list
    PluginName PluginVersion PluginType       Priority
-   lvm2-cow   0.1.0         Lvm2CowSnapshot        10
-   lvm2-thin  0.1.0         Lvm2ThinSnapshot       15
-   stratis    0.1.0         StratisSnapshot        20
+   lvm2-cow   0.2.0         Lvm2CowSnapshot        10
+   lvm2-thin  0.2.0         Lvm2ThinSnapshot       15
+   stratis    0.2.0         StratisSnapshot        20
 
 Overriding Plugin Priority
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1111,9 +1111,9 @@ configuration files, verify the changes:
 
    snapm plugin list
    PluginName PluginVersion PluginType       Priority
-   lvm2-cow   0.1.0         Lvm2CowSnapshot        18
-   lvm2-thin  0.1.0         Lvm2ThinSnapshot       15
-   stratis    0.1.0         StratisSnapshot        20
+   lvm2-cow   0.2.0         Lvm2CowSnapshot        18
+   lvm2-thin  0.2.0         Lvm2ThinSnapshot       15
+   stratis    0.2.0         StratisSnapshot        20
 
 Plugin priority values must be positive integers. Setting a priority to 0 or
 a negative value will generate a warning message and cause the plugin to use

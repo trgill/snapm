@@ -46,7 +46,7 @@ class PluginTests(unittest.TestCase):
         cfg.plugin_conf_file = "concrete-test.conf"
         p = MockPlugin(log, cfg)
         info = p.info()
-        self.assertEqual(info, {"name": "plugin", "version": "0.1.0"})
+        self.assertEqual(info, {"name": "plugin", "version": "0.2.0"})
         self.assertEqual(p.priority, plugins.PLUGIN_NO_PRIORITY)
 
     def test_instantiate_base_raises(self):

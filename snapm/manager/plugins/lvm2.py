@@ -1059,7 +1059,7 @@ class Lvm2Cow(_Lvm2):
     """
 
     name = "lvm2-cow"
-    version = "0.1.0"
+    version = "0.2.0"
     snapshot_class = Lvm2CowSnapshot
 
     max_name_len = LVM_MAX_NAME_LEN - LVM_COW_SNAPSHOT_NAME_LEN
@@ -1373,7 +1373,7 @@ class Lvm2Thin(_Lvm2):
     """
 
     name = "lvm2-thin"
-    version = "0.1.0"
+    version = "0.2.0"
     snapshot_class = Lvm2ThinSnapshot
 
     max_name_len = LVM_MAX_NAME_LEN
