@@ -140,3 +140,49 @@ class TestFileTypeDetector(unittest.TestCase):
         self.assertEqual(info.category, FileTypeCategory.UNKNOWN)
         self.assertEqual(info.mime_type, "application/octet-stream")
 
+    def test_is_binary_log_detection(self):
+        """Test detection of binary log files via path patterns."""
+        # /var/log/wtmp should be detected as binary log, not text
+        # even though it is in /var/log (which is a text path)
+        path = Path("/var/log/wtmp")
+        info = self.detector.detect_file_type(path, use_magic=False)
+        self.assertEqual(info.category, FileTypeCategory.BINARY_LOG)
+        self.assertEqual(info.description, "binary log file")
+
+    def test_guess_binary_file_parent_path(self):
+        """Test guessing binary file based on parent directory."""
+        # /bin/unknown_binary matches BINARY_FILE_PATHS
+        path = Path("/bin/unknown_binary")
+        info = self.detector.detect_file_type(path, use_magic=False)
+        self.assertEqual(info.category, FileTypeCategory.EXECUTABLE)
+        self.assertEqual(info.mime_type, "application/x-executable")
+
+    def test_guess_binary_file_text_fallback(self):
+        """Test that binary paths still detect known text extensions."""
+        # /bin/script.sh should be text/source code, not binary executable
+        path = Path("/bin/script.sh")
+        info = self.detector.detect_file_type(path, use_magic=False)
+        self.assertEqual(info.category, FileTypeCategory.SOURCE_CODE)
+        self.assertEqual(info.mime_type, "application/x-sh")
+
+    def test_guess_file_unknown_fallback(self):
+        """Test fallback for files with no clues."""
+        # A file in a non-standard path with no extension
+        path = Path("/home/user/unknown_blob")
+        info = self.detector.detect_file_type(path, use_magic=False)
+        self.assertEqual(info.category, FileTypeCategory.BINARY)
+        self.assertEqual(info.mime_type, "application/octet-stream")
+
+    def test_detect_file_type_magic_not_installed(self):
+        """Test error when magic requested but not installed."""
+        from snapm import SnapmNotFoundError
+        with patch("snapm.fsdiff.filetypes._HAVE_MAGIC", False):
+             with self.assertRaises(SnapmNotFoundError):
+                 self.detector.detect_file_type(Path("/foo"), use_magic=True)
+
+    def test_log_debug_fsdiff_wrapper(self):
+        """Test the subsystem log wrapper."""
+        from snapm.fsdiff.filetypes import _log_debug_fsdiff
+        with patch("snapm.fsdiff.filetypes._log.debug") as mock_debug:
+            _log_debug_fsdiff("test message")
+            mock_debug.assert_called_with("test message", extra={"subsystem": "snapm.fsdiff"})
