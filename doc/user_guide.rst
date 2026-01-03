@@ -706,6 +706,7 @@ argument. To obtain a list of available fields run ``snapm snapset list
      bootable       - Configured for snapshot boot [str]
      bootentry      - Snapshot set boot entry [sha]
      revertentry    - Snapshot set revert boot entry [sha]
+     categories     - Snapshot set timeline categories [strlist]
 
 To specify custom fields pass a comma separated list to ``-o``:
 
@@ -1286,6 +1287,27 @@ the ``+`` character:
    backup       2024-12-05 19:26:28            3 Active   /, /home, /var 53514020-e88d-5f53-bf09-42c6ab6e325d
    userdata     2024-12-05 19:26:45            2 Inactive /data, /home   e8d58051-7a94-5802-8328-54661ab1a70f
 
+For example, to display timeline categories for each snapshot set, add the
+"categories" field to the field list with the ``+`` character:
+
+.. code-block:: bash
+
+   snapm snapset list -o+categories
+   SnapsetName    Time                 NrSnapshots Status  Sources  Mounted Categories
+   before-upgrade 2025-12-12 12:25:36            2 Active  /, /var  no      daily, hourly, monthly, yearly
+   just-now       2025-12-20 18:47:12            2 Invalid /, /var  no      daily, hourly
+   today          2026-01-02 20:53:21            2 Invalid /, /var  no      daily, hourly, monthly, quarterly, yearly
+
+Or, for a more compact display, specify the whole field list with ``-o``:
+
+.. code-block:: bash
+
+    snapm snapset list -oname,time,categories
+    SnapsetName    Time                 Categories
+    before-upgrade 2025-12-12 12:25:36  daily, hourly, monthly, yearly
+    just-now       2025-12-20 18:47:12  daily, hourly
+    today          2026-01-02 20:53:21  daily, hourly, monthly, quarterly, yearly
+
 To display the available fields for either report use the field name
 ``help``:
 
@@ -1312,6 +1334,7 @@ To display the available fields for either report use the field name
     bootable       - Configured for snapshot boot [str]
     bootentry      - Snapshot set boot entry [sha]
     revertentry    - Snapshot set revert boot entry [sha]
+    categories     - Snapshot set timeline categories [strlist]
 
 JSON Output
 -----------

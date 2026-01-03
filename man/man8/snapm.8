@@ -1664,21 +1664,25 @@ name \fIhelp\fP:
 # snapm snapset list -o help
 Snapshot set Fields
 -------------------
-  name         - Snapshot set name [str]
-  UUID         - Snapshot set UUID [UUID]
-  basename     - Snapshot set basename [str]
-  index        - Snapshot set index [idx]
-  timestamp    - Snapshot set creation time as a UNIX epoch value [num]
-  time         - Snapshot set creation time [time]
-  nr_snapshots - Number of snapshots [num]
-  sources      - Snapshot set sources [strlist]
-  mountpoints  - Snapshot set mount points [strlist]
-  devices      - Snapshot set devices [strlist]
-  status       - Snapshot set status [str]
-  autoactivate - Autoactivation status [str]
-  bootable     - Configured for snapshot boot [str]
-  bootentry    - Snapshot set boot entry [sha]
-  revertentry  - Snapshot set revert boot entry [sha]
+  name           - Snapshot set name [str]
+  uuid           - Snapshot set UUID [uuid]
+  basename       - Snapshot set basename [str]
+  index          - Snapshot set index [idx]
+  timestamp      - Snapshot set creation time as a UNIX epoch value [num]
+  time           - Snapshot set creation time [time]
+  nr_snapshots   - Number of snapshots [num]
+  sources        - Snapshot set sources [strlist]
+  mountpoints    - Snapshot set mount points [strlist]
+  devices        - Snapshot set devices [strlist]
+  status         - Snapshot set status [str]
+  autoactivate   - Autoactivation status [str]
+  mounted        - SnapshotSet mount status [str]
+  origin_mounted - SnapshotSet origin mount status [str]
+  mount_root     - SnapshotSet mount root directory path [str]
+  bootable       - Configured for snapshot boot [str]
+  bootentry      - Snapshot set boot entry [sha]
+  revertentry    - Snapshot set revert boot entry [sha]
+  categories     - Snapshot set timeline categories [strlist]
 .EE
 .
 .SH REPORT FIELDS
@@ -1695,7 +1699,7 @@ including the name, number of snapshots, mount points, status and UUID.
 .B name
 The name of this snapshot set.
 .TP 8
-.B UUID
+.B uuid
 The UUID of this snapshot set.
 .TP 8
 .B basename
@@ -1747,6 +1751,12 @@ snapshot set, or the empty string if no boot entry has been created.
 The \fBboot identifier\fP of the boot loader entry configured to revert
 this snapshot set following a merge operation, or the empty string if no
 revert boot entry has been created.
+.TP
+.B categories
+The timeline categories that this snapshot set belongs to: a list of strings
+from the set "yearly", "quarterly", "monthly", "weekly", "daily", "hourly".
+See the documentation for the \fItimeline\fP garbage collection policy for
+more information on timeline categories.
 .
 .SS Snapshots
 .

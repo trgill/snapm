@@ -46,6 +46,7 @@ from snapm import (
     SNAPSET_BOOTABLE,
     SNAPSET_SNAPSHOT_ENTRY,
     SNAPSET_REVERT_ENTRY,
+    SNAPSET_CATEGORIES,
     SNAPSHOT_NAME,
     SNAPSHOT_ORIGIN,
     SNAPSHOT_SOURCE,
@@ -318,6 +319,15 @@ _snapshot_set_fields = [
         13,
         REP_SHA,
         lambda f, d: f.report_sha("" if not d.revert_entry else d.revert_entry.boot_id),
+    ),
+    FieldType(
+        PR_SNAPSET,
+        "categories",
+        SNAPSET_CATEGORIES,
+        "Snapshot set timeline categories",
+        10,
+        REP_STR_LIST,
+        lambda f, d: f.report_str_list(d.categories),
     ),
 ]
 
