@@ -8,7 +8,7 @@
 """
 Snapshot set scheduling abstractions for Snapshot Manager.
 """
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from json import dumps, loads
@@ -24,6 +24,7 @@ from snapm import (
     SnapmSystemError,
     SnapmArgumentError,
     SnapshotSet,
+    SNAPSET_TIMELINE_CATEGORIES,
     SNAPM_SUBSYSTEM_SCHEDULE,
 )
 from ._boot import (
@@ -339,78 +340,18 @@ class GcPolicyParamsTimeline(GcPolicyParams):
         :returns: A list of ``SnapshotSet`` objects to garbage collect.
         :rtype: ``list[SnapshotSet]``
         """
-        categories = ["yearly", "quarterly", "monthly", "weekly", "daily", "hourly"]
-
-        def classify_snapshot_sets(
-            sets: List[SnapshotSet],
-        ) -> Tuple[Dict[str, List[SnapshotSet]], Dict[int, List[str]]]:
-            """
-            Classify snapshot sets into categories based on creation time.
-            Snapshots can belong to MULTIPLE categories:
-
-                * yearly (first snapshot set after midnight 1st Jan)
-                * quarterly (first snapshot set after midnight 1st Apr, Jul, Oct)
-                * monthly (first snapshot set after midnight 1st of month)
-                * weekly (first snapshot set after midnight Monday)
-                * daily (first snapshot set after midnight)
-                * hourly (first snapshot set after top of hour)
-
-            :param sets: The list of ``SnapshotSet`` objects to classify.
-            :type sets: ``List[SnapshotSet]``
-            :returns: A tuple of (classified dict, snapshot_categories dict)
-            :rtype: ``Tuple[Dict[str, List[SnapshotSet]], Dict[int, List[str]]]``
-            """
-            classified = {category: [] for category in categories}
-            seen_boundaries = {category: set() for category in categories}
-
-            _log_debug_schedule(
-                "%s: classifying %d snapshot sets", repr(self), len(sets)
-            )
-
-            # Track which categories each snapshot belongs to
-            snapshot_categories = {}
-
-            # pylint: disable=too-many-return-statements
-            def get_boundary(dt, category):
-                if category == "yearly":
-                    return datetime(dt.year, 1, 1)
-                if category == "quarterly":
-                    q_month = ((dt.month - 1) // 3) * 3 + 1
-                    return datetime(dt.year, q_month, 1)
-                if category == "monthly":
-                    return datetime(dt.year, dt.month, 1)
-                if category == "weekly":
-                    monday = dt - timedelta(days=dt.weekday())
-                    return datetime(monday.year, monday.month, monday.day)
-                if category == "daily":
-                    return datetime(dt.year, dt.month, dt.day)
-                if category == "hourly":
-                    return datetime(dt.year, dt.month, dt.day, dt.hour)
-                return None
-
-            for sset in sets:
-                dt = sset.datetime
-                sset_categories = []
-
-                for category in categories:
-                    if category == "quarterly" and dt.month not in (1, 4, 7, 10):
-                        continue
-                    if category == "weekly" and dt.weekday() != 0:
-                        continue
-
-                    boundary = get_boundary(dt, category)
-                    if dt >= boundary and boundary not in seen_boundaries[category]:
-                        classified[category].append(sset)
-                        seen_boundaries[category].add(boundary)
-                        sset_categories.append(category)
-                        # Continue checking other categories
-
-                snapshot_categories[id(sset)] = sset_categories
-
-            return classified, snapshot_categories
-
-        # Build lists of categorised snapshot sets
-        classified_sets, snapshot_categories = classify_snapshot_sets(sets)
+        # Lists of categorised snapshot sets
+        classified_sets: Dict[str, List[SnapshotSet]] = {
+            category: [] for category in SNAPSET_TIMELINE_CATEGORIES
+        }
+        snapshot_categories: Dict[int, List[str]] = {}
+        # Assign sets to their categories and build the id: categories map.
+        for snapshot_set in sets:
+            set_categories = snapshot_set.categories
+            snapshot_categories[id(snapshot_set)] = set_categories
+            for category in SNAPSET_TIMELINE_CATEGORIES:
+                if category in set_categories:
+                    classified_sets[category].append(snapshot_set)
 
         # Short cuts for each category
         yearly = classified_sets["yearly"]
@@ -420,7 +361,7 @@ class GcPolicyParamsTimeline(GcPolicyParams):
         daily = classified_sets["daily"]
         hourly = classified_sets["hourly"]
 
-        for category in categories:
+        for category in SNAPSET_TIMELINE_CATEGORIES:
             members = classified_sets[category]
             _log_debug_schedule(
                 "Classified %s: %s",
@@ -460,7 +401,7 @@ class GcPolicyParamsTimeline(GcPolicyParams):
             ),
         }
 
-        for category in categories:
+        for category in SNAPSET_TIMELINE_CATEGORIES:
             _log_debug_schedule(
                 "Selected %d sets for %s retention: %s",
                 len(kept_by_category[category]),

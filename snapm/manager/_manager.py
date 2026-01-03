@@ -10,6 +10,7 @@ Manager interface and plugin infrastructure.
 """
 from subprocess import run, CalledProcessError
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from configparser import ConfigParser
 from collections import defaultdict
 import logging
@@ -18,7 +19,7 @@ from math import floor
 from stat import S_ISBLK, S_ISDIR, S_ISLNK
 from os.path import exists, ismount, join, normpath, samefile
 from json import JSONDecodeError
-from typing import List, Union, TYPE_CHECKING
+from typing import Dict, List, Union, TYPE_CHECKING
 from functools import wraps
 import threading
 import fcntl
@@ -28,6 +29,7 @@ from snapm import (
     SNAPM_SUBSYSTEM_MANAGER,
     SNAPM_VALID_NAME_CHARS,
     SNAPM_RUNTIME_DIR,
+    SNAPSET_TIMELINE_CATEGORIES,
     SnapmError,
     SnapmSystemError,
     SnapmCalloutError,
@@ -530,6 +532,87 @@ def _check_mounts_dir() -> str:
     return _check_snapm_dir(
         _SNAPM_MOUNTS_DIR, _SNAPM_MOUNTS_DIR_MODE, "Mounts directory"
     )
+
+
+def _categorize_snapshot_sets(
+    sets: List[SnapshotSet],
+) -> Dict[int, List[str]]:
+    """
+    Classify snapshot sets into categories based on creation time.
+    Snapshots can belong to MULTIPLE categories:
+
+        * yearly (first snapshot set after midnight 1st Jan)
+        * quarterly (first snapshot set after midnight 1st Apr, Jul, Oct)
+        * monthly (first snapshot set after midnight 1st of month)
+        * weekly (first snapshot set after midnight Monday)
+        * daily (first snapshot set after midnight)
+        * hourly (first snapshot set after top of hour)
+
+    Snapshot sets can be classified into multiple categories (e.g., a snapshot
+    on Monday Jan 1 is yearly, quarterly, monthly, weekly, daily, and hourly).
+    A snapshot is only deleted if ALL of its applicable categories vote for
+    deletion. If ANY category wants to keep it, the snapshot is retained.
+
+    This function returns a dictionary that maps snapshot set objects (via the
+    python ``id()`` identifier) to lists of categories to which they belong.
+
+    :param sets: The list of ``SnapshotSet`` objects to classify.
+    :type sets: ``List[SnapshotSet]``
+    :returns: A dictionary of categorized snapshot sets indexed by
+              ``id(snapshot_set)``.
+    :rtype: ``Dict[int, List[str]]``
+    """
+    # Keep track of what boundaries we have already seen, so that only
+    # one snapshot set is put in the "yearly", "monthly" etc. for that
+    # calendar interval.
+    seen_boundaries = {category: set() for category in SNAPSET_TIMELINE_CATEGORIES}
+
+    # Copy snapshot set list before sorting.
+    sets = sets.copy()
+    sets.sort(key=lambda x: x.timestamp)
+
+    _log_debug_manager("Classifying %d snapshot sets", len(sets))
+
+    # Track which categories each snapshot belongs to
+    categorized = {}
+
+    # pylint: disable=too-many-return-statements
+    def get_boundary(dt, category):
+        if category == "yearly":
+            return datetime(dt.year, 1, 1)
+        if category == "quarterly":
+            q_month = ((dt.month - 1) // 3) * 3 + 1
+            return datetime(dt.year, q_month, 1)
+        if category == "monthly":
+            return datetime(dt.year, dt.month, 1)
+        if category == "weekly":
+            monday = dt - timedelta(days=dt.weekday())
+            return datetime(monday.year, monday.month, monday.day)
+        if category == "daily":
+            return datetime(dt.year, dt.month, dt.day)
+        if category == "hourly":
+            return datetime(dt.year, dt.month, dt.day, dt.hour)
+        return None
+
+    for snapshot_set in sets:
+        dt = snapshot_set.datetime
+        snapshot_set_categories = []
+
+        for category in SNAPSET_TIMELINE_CATEGORIES:
+            if category == "quarterly" and dt.month not in (1, 4, 7, 10):
+                continue
+            if category == "weekly" and dt.weekday() != 0:
+                continue
+
+            boundary = get_boundary(dt, category)
+            if dt >= boundary and boundary not in seen_boundaries[category]:
+                seen_boundaries[category].add(boundary)
+                snapshot_set_categories.append(category)
+                # Continue checking other categories
+
+        categorized[id(snapshot_set)] = snapshot_set_categories
+
+    return categorized
 
 
 class Scheduler:
@@ -1051,6 +1134,15 @@ class Manager:
                     f"{source} corresponds to snapshot device {device}"
                 )
 
+    def _recategorize_snapshot_sets(self):
+        """
+        Update the mapping of snapshot sets to "yearly", "monthly",
+        "quarterly", etc. categories.
+        """
+        categorized = _categorize_snapshot_sets(self.snapshot_sets)
+        for snapshot_set in self.snapshot_sets:
+            snapshot_set.set_categories(categorized[id(snapshot_set)])
+
     @suspend_signals
     def discover_snapshot_sets(self):
         """
@@ -1113,6 +1205,7 @@ class Manager:
                 snapshot.snapshot_set = snapset
 
         self.snapshot_sets.sort(key=lambda ss: ss.name)
+        self._recategorize_snapshot_sets()
         _log_debug("Discovered %d snapshot sets", len(self.snapshot_sets))
 
     def find_snapshot_sets(self, selection=None):
@@ -1350,6 +1443,7 @@ class Manager:
         self.by_name[snapset.name] = snapset
         self.by_uuid[snapset.uuid] = snapset
         self.snapshot_sets.append(snapset)
+        self._recategorize_snapshot_sets()
         return snapset
 
     @suspend_signals
@@ -1432,7 +1526,7 @@ class Manager:
 
     @suspend_signals
     @_with_manager_lock
-    def delete_snapshot_set(self, name=None, uuid=None):
+    def delete_snapshot_set(self, name=None, uuid=None, recategorize=True):
         """
         Remove snapshot sets by name or UUID.
 
@@ -1440,6 +1534,8 @@ class Manager:
         :type name: ``str``
         :param uuid: The UUID of the snapshot set to delete.
         :type uuid: ``UUID``
+        :param recategorize: Recategorize snapshot sets after deletion.
+        :type recategorize: ``bool``
         """
         snapset = self._snapset_from_name_or_uuid(name=name, uuid=uuid)
         delete_snapset_boot_entry(snapset)
@@ -1449,6 +1545,8 @@ class Manager:
         self.by_name.pop(snapset.name)
         self.by_uuid.pop(snapset.uuid)
         self._boot_cache.refresh_cache()
+        if recategorize:
+            self._recategorize_snapshot_sets()
 
     @suspend_signals
     def delete_snapshot_sets(self, selection):
@@ -1464,8 +1562,9 @@ class Manager:
                 f"Could not find snapshot sets matching {selection}"
             )
         for snapset in sets:
-            self.delete_snapshot_set(name=snapset.name)
+            self.delete_snapshot_set(name=snapset.name, recategorize=False)
             deleted += 1
+        self._recategorize_snapshot_sets()
         return deleted
 
     # pylint: disable=too-many-branches
@@ -1756,6 +1855,7 @@ class Manager:
         self.by_name[new_set.name] = new_set
         self.by_uuid[new_set.uuid] = new_set
         self.snapshot_sets.append(new_set)
+        self._recategorize_snapshot_sets()
 
         return new_set
 

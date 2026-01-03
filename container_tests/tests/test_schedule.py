@@ -18,6 +18,7 @@ from snapm.manager._schedule import (
     GcPolicyParamsTimeline,
 )
 from snapm.manager._calendar import CalendarSpec
+from snapm.manager._manager import _categorize_snapshot_sets
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class MockSnapshotSet:
         self.name = name
         self.timestamp = timestamp
         self.deleted = False
+        self.categories = []
 
     @property
     def datetime(self):
@@ -386,6 +388,11 @@ class GcPolicyTests(unittest.TestCase):
         eighteen_months = get_eighteen_months()
         count = len(eighteen_months)
 
+        # Set up categorization.
+        categorized = _categorize_snapshot_sets(eighteen_months)
+        for snapshot_set in eighteen_months:
+            snapshot_set.categories = categorized[id(snapshot_set)]
+
         to_delete = gcp.evaluate(eighteen_months)
 
         self.assertIn(count - len(to_delete), (6, 7))
@@ -395,6 +402,11 @@ class GcPolicyTests(unittest.TestCase):
         gcp = GcPolicy("test", GcPolicyType.TIMELINE, params)
         eighteen_months = get_eighteen_months()
         count = len(eighteen_months)
+
+        # Set up categorization.
+        categorized = _categorize_snapshot_sets(eighteen_months)
+        for snapshot_set in eighteen_months:
+            snapshot_set.categories = categorized[id(snapshot_set)]
 
         to_delete = gcp.evaluate(eighteen_months)
 
@@ -426,9 +438,13 @@ class GcPolicyTests(unittest.TestCase):
         gcp = GcPolicy("test", GcPolicyType.TIMELINE, params)
 
         # Single snapshot on Nov 12, 2025 (Wednesday)
-        snapshot = MockSnapshotSet("test.0", datetime(2025, 11, 12, 0, 0, 38).timestamp())
+        snapshot_set = MockSnapshotSet("test.0", datetime(2025, 11, 12, 0, 0, 38).timestamp())
 
-        to_delete = gcp.evaluate([snapshot])
+        # Set up categorization.
+        categorized = _categorize_snapshot_sets([snapshot_set])
+        snapshot_set.categories = categorized[id(snapshot_set)]
+
+        to_delete = gcp.evaluate([snapshot_set])
 
         # Should NOT be deleted - it's the first weekly/daily snapshot
         self.assertEqual(len(to_delete), 0,
@@ -454,6 +470,10 @@ class GcPolicyTests(unittest.TestCase):
 
         # Jan 1, 2024 is a Monday at midnight
         snapshot_set = MockSnapshotSet("test.0", datetime(2024, 1, 1, 0, 0, 0).timestamp())
+
+        # Set up categorization.
+        categorized = _categorize_snapshot_sets([snapshot_set])
+        snapshot_set.categories = categorized[id(snapshot_set)]
 
         to_delete = gcp.evaluate([snapshot_set])
 
@@ -486,6 +506,11 @@ class GcPolicyTests(unittest.TestCase):
             MockSnapshotSet(f"test.{index}", (base + timedelta(weeks=week)).timestamp())
             for index, week in enumerate(range(3))
         ]
+
+        # Set up categorization.
+        categorized = _categorize_snapshot_sets(snapshot_sets)
+        for snapshot_set in snapshot_sets:
+            snapshot_set.categories = categorized[id(snapshot_set)]
 
         to_delete = gcp.evaluate(snapshot_sets)
 
@@ -531,6 +556,12 @@ class GcPolicyTests(unittest.TestCase):
 
         for index, ts in enumerate(range(start_ts, start_ts + delta_ts, 3600)):
             snapshot_sets.append(MockSnapshotSet(f"hourly.{index}", ts))
+
+            # Set up categorization.
+            categorized = _categorize_snapshot_sets(snapshot_sets)
+            for snapshot_set in snapshot_sets:
+                snapshot_set.categories = categorized[id(snapshot_set)]
+
             to_delete = gcp.evaluate(snapshot_sets)
             for td in to_delete:
                 snapshot_sets.remove(td)

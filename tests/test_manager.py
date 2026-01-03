@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import unittest
 from unittest.mock import Mock, patch
+from datetime import datetime
 import logging
 import os
 import os.path
@@ -15,9 +16,9 @@ from json import loads
 import tempfile
 import errno
 
-
 import snapm
 import snapm.manager as manager
+import snapm.manager._manager as _manager
 import boom
 
 from tests import have_root, BOOT_ROOT_TEST, MockPlugin
@@ -148,6 +149,48 @@ class ManagerTestsSimple(unittest.TestCase):
             st = os.stat(_manager._SNAPM_MOUNTS_DIR)
             self.assertEqual(st.st_mode & 0o777, _manager._SNAPM_MOUNTS_DIR_MODE)
 
+    @patch("builtins.open", new_callable=unittest.mock.mock_open, read_data="/dev/sda1 /boot xfs rw 0 0\n/dev/mapper/vg-lv /home ext4 rw 0 0\n")
+    @patch("snapm.manager._manager.exists", return_value=True)
+    @patch("snapm.manager._manager.samefile", return_value=True)
+    def test_find_mount_point_for_devpath(self, mock_samefile, _mock_exists, _mock_open):
+        """Test resolving device path to mount point via /proc/mounts."""
+        mock_samefile.side_effect = lambda a, b: a == b
+
+        # Match found
+        mp = _manager._find_mount_point_for_devpath("/dev/mapper/vg-lv")
+        self.assertEqual(mp, "/home")
+
+        # No match found
+        mp = _manager._find_mount_point_for_devpath("/dev/sdb1")
+        self.assertEqual(mp, "")
+
+    @patch("snapm.manager._manager.SNAPM_RUNTIME_DIR", "/run/snapm_test")
+    @patch("snapm.manager._manager.exists")
+    @patch("os.lstat")
+    def test_check_snapm_runtime_dir(self, mock_lstat, mock_exists):
+        """Test validation of the runtime directory security."""
+        # Case 1: Directory exists and is secure (0700, root:root)
+        mock_exists.return_value = True
+
+        # lstat/stat returns dir, not symlink, correct perms
+        stat_res = Mock()
+        stat_res.st_mode = 0o40700 # S_IFDIR | 0700
+        stat_res.st_uid = 0
+        stat_res.st_gid = 0
+        mock_lstat.return_value = stat_res
+
+        _manager._check_snapm_runtime_dir() # Should not raise
+
+        # Case 2: Wrong permissions (e.g., world readable)
+        stat_res.st_mode = 0o40777
+        with self.assertRaises(snapm.SnapmSystemError):
+            _manager._check_snapm_runtime_dir()
+
+        # Case 3: Not owned by root
+        stat_res.st_mode = 0o40700
+        stat_res.st_uid = 1000
+        with self.assertRaises(snapm.SnapmSystemError):
+            _manager._check_snapm_runtime_dir()
 
 @unittest.skipIf(not have_root(), "requires root privileges")
 class ManagerTests(unittest.TestCase):
@@ -1098,3 +1141,171 @@ class ManagerTestsThin(unittest.TestCase):
         snap_devs = [snapshot.devpath for snapshot in sset.snapshots]
         with self.assertRaises(snapm.SnapmRecursionError) as cm:
             sset = self.manager.create_snapshot_set("testset1", snap_devs)
+
+
+class TestTimelineCategorization(unittest.TestCase):
+    """Tests for snapshot set timeline categorization logic."""
+
+    def test__categorize_snapshot_sets(self):
+        """Test classification of snapshots into timeline categories."""
+        # Helper to create a mock snapshot set
+        def make_set(ts_str):
+            dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+            m = Mock()
+            m.datetime = dt
+            m.timestamp = dt.timestamp()
+            # id() relies on object identity, so distinct mocks work
+            return m
+
+        # 1. Yearly/Quarterly/Monthly/Daily/Hourly (Jan 1 2023, Sunday)
+        # Note: Weekly requires Monday (weekday 0). Jan 1 2023 is Sunday (6).
+        s1 = make_set("2023-01-01 00:00:00")
+
+        # 2. Hourly later same day
+        s2 = make_set("2023-01-01 01:00:00")
+
+        # 3. Weekly (Monday Jan 2)
+        # Also Daily/Hourly for Jan 2
+        s3 = make_set("2023-01-02 00:00:00")
+
+        # 4. Monthly (Feb 1)
+        s4 = make_set("2023-02-01 00:00:00")
+
+        # 5. Quarterly (Apr 1)
+        s5 = make_set("2023-04-01 00:00:00")
+
+        sets = [s1, s2, s3, s4, s5]
+
+        categorized = _manager._categorize_snapshot_sets(sets)
+
+        # Check s1 (Jan 1)
+        self.assertIn("yearly", categorized[id(s1)])
+        self.assertIn("quarterly", categorized[id(s1)])
+        self.assertIn("monthly", categorized[id(s1)])
+        self.assertIn("daily", categorized[id(s1)])
+        self.assertIn("hourly", categorized[id(s1)])
+        self.assertNotIn("weekly", categorized[id(s1)]) # Sunday
+
+        # Check s2 (same day/month/year/quarter as s1, just later hour)
+        self.assertIn("hourly", categorized[id(s2)])
+        self.assertNotIn("daily", categorized[id(s2)])
+
+        # Check s3 (Monday)
+        self.assertIn("weekly", categorized[id(s3)])
+        self.assertIn("daily", categorized[id(s3)])
+        self.assertIn("hourly", categorized[id(s3)])
+
+        # Check s4 (Feb 1)
+        self.assertIn("monthly", categorized[id(s4)])
+        self.assertNotIn("quarterly", categorized[id(s4)]) # Feb is not start of quarter
+
+        # Check s5 (Apr 1)
+        self.assertIn("quarterly", categorized[id(s5)])
+        self.assertIn("monthly", categorized[id(s5)])
+
+        self.assertIn("yearly", categorized[id(s1)])
+        self.assertIn("hourly", categorized[id(s2)])
+        self.assertIn("weekly", categorized[id(s3)])
+
+
+class SchedulerTests(unittest.TestCase):
+    """Tests for the Scheduler class."""
+
+    def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.sched_path = self.tmp_dir.name
+        self.manager = Mock()
+        # We assume empty config dir initially
+        self.scheduler = _manager.Scheduler(self.manager, self.sched_path)
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()
+
+    @patch("snapm.manager._manager.Schedule")
+    def test_create_schedule(self, MockSchedule):
+        # Setup mock instance
+        sched_inst = MockSchedule.return_value
+        sched_inst.name = "sched1"
+
+        res = self.scheduler.create(
+            "sched1", ["/mnt"], "10%FREE", False, "daily", None
+        )
+
+        self.assertEqual(res, sched_inst)
+        sched_inst.write_config.assert_called_with(self.sched_path)
+        sched_inst.enable.assert_called()
+        sched_inst.start.assert_called()
+
+        # Check internal list update
+        self.assertIn(sched_inst, self.scheduler._schedules)
+        self.assertEqual(self.scheduler._get_schedule_by_name("sched1"), sched_inst)
+
+    @patch("snapm.manager._manager.Schedule")
+    def test_create_duplicate_raises(self, MockSchedule):
+        sched_inst = MockSchedule.return_value
+        sched_inst.name = "sched1"
+        self.scheduler.create("sched1", ["/mnt"], None, False, "daily", None)
+
+        with self.assertRaises(snapm.SnapmExistsError):
+            self.scheduler.create("sched1", ["/mnt"], None, False, "daily", None)
+
+    @patch("snapm.manager._manager.Schedule")
+    def test_edit_schedule(self, MockSchedule):
+        # Setup initial schedule
+        old_sched = Mock()
+        old_sched.name = "sched1"
+        self.scheduler._schedules.append(old_sched)
+        self.scheduler._schedules_by_name["sched1"] = old_sched
+
+        # Setup new schedule mock
+        new_sched = MockSchedule.return_value
+        new_sched.name = "sched1"
+
+        res = self.scheduler.edit(
+            "sched1", ["/mnt/new"], "10%FREE", False, "weekly", None
+        )
+
+        # Verify old schedule cleanup
+        old_sched.stop.assert_called()
+        old_sched.disable.assert_called()
+        self.assertNotIn(old_sched, self.scheduler._schedules)
+
+        # Verify new schedule setup
+        self.assertEqual(res, new_sched)
+        new_sched.write_config.assert_called_with(self.sched_path)
+        new_sched.enable.assert_called()
+        new_sched.start.assert_called()
+        self.assertIn(new_sched, self.scheduler._schedules)
+
+    def test_delete_schedule(self):
+        mock_sched = Mock()
+        mock_sched.name = "sched1"
+        self.scheduler._schedules.append(mock_sched)
+        self.scheduler._schedules_by_name["sched1"] = mock_sched
+
+        self.scheduler.delete("sched1")
+
+        mock_sched.stop.assert_called()
+        mock_sched.disable.assert_called()
+        mock_sched.delete_config.assert_called()
+        self.assertNotIn(mock_sched, self.scheduler._schedules)
+
+    def test_lifecycle_proxies(self):
+        """Test enable/disable/start/stop/gc pass-throughs."""
+        mock_sched = Mock()
+        mock_sched.name = "sched1"
+        self.scheduler._schedules.append(mock_sched)
+        self.scheduler._schedules_by_name["sched1"] = mock_sched
+
+        self.scheduler.enable("sched1", start=True)
+        mock_sched.enable.assert_called()
+        mock_sched.start.assert_called()
+
+        self.scheduler.stop("sched1")
+        mock_sched.stop.assert_called()
+
+        self.scheduler.disable("sched1")
+        mock_sched.disable.assert_called()
+
+        self.scheduler.gc("sched1")
+        mock_sched.gc.assert_called()

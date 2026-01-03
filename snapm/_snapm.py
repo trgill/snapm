@@ -8,7 +8,7 @@
 """
 Global definitions for the top-level snapm package.
 """
-from typing import Optional, TextIO, Union, TYPE_CHECKING
+from typing import List, Optional, TextIO, Union, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from uuid import UUID, uuid5
 from datetime import datetime
@@ -148,6 +148,15 @@ SNAPSHOT_DEV_PATH = "DevicePath"
 SNAPSET_INDEX_NONE = -1
 SNAPSHOT_INDEX_NONE = -1
 
+# Constant for snapshot set time categories
+SNAPSET_TIMELINE_CATEGORIES = (
+    "yearly",
+    "quarterly",
+    "monthly",
+    "weekly",
+    "daily",
+    "hourly",
+)
 
 # Constant for allow-listed name characters
 SNAPM_VALID_NAME_CHARS = set(
@@ -1024,6 +1033,7 @@ class SnapshotSet:
         self.boot_entry = None
         self.revert_entry = None
         self.mount_root = ""
+        self._categories = []
 
         if _has_index(name):
             self._basename = _parse_basename(name)
@@ -1283,6 +1293,30 @@ class SnapshotSet:
                   otherwise.
         """
         return self.snapshot_mounted or self.origin_mounted
+
+    @property
+    def categories(self) -> List[str]:
+        """
+        Return the time categories to which this ``SnapshotSet`` belongs as a
+        list of strings.
+
+        :returns: A list of human readable time category strings.
+        :rtype: ``List[str]``
+        """
+        return list(self._categories)
+
+    def set_categories(self, categories: List[str]):
+        """
+        Set the time categories to which this ``SnapshotSet`` belongs as a
+        list of strings. This should only be called by the ``Manager`` class
+        after running snapshot set recategorization: it is not intended to
+        be called from client code.
+
+        :param categories: The list of categories to set for this
+                           ``SnapshotSet``.
+        :type categories: ``List[str]``
+        """
+        self._categories = list(categories)
 
     def snapshot_by_mount_point(self, mount_point):
         """
@@ -2345,6 +2379,7 @@ __all__ = [
     "SNAPSHOT_AUTOACTIVATE",
     "SNAPSHOT_DEV_PATH",
     "SNAPSET_INDEX_NONE",
+    "SNAPSET_TIMELINE_CATEGORIES",
     "SNAPSHOT_INDEX_NONE",
     "SNAPM_VALID_NAME_CHARS",
     "SNAPM_DEBUG_MANAGER",
