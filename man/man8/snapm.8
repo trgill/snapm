@@ -999,6 +999,7 @@ NrSnapshots:      5
 Time:             2024-12-05 17:46:12
 UUID:             87c89914-51a5-5043-8513-667100213243
 Status:           Inactive
+Categories:       daily, hourly
 Autoactivate:     no
 Mounted:          no
 Bootable:         no
@@ -1012,27 +1013,19 @@ default or individually for each source path. To specify a default policy use
 the \fB--size-policy\fP argument.  To specify a per-source path size policy
 append the policy to the source path separated by the \fB:\fP character:
 .IP
-#
-.B snapm snapset create backup --size-policy 25%FREE /:4G /home /var
-.br
+.EX
+# snapm snapset create backup --size-policy 25%FREE /:4G /home /var
 SnapsetName:      backup
-.br
 Sources:          /, /home, /var
-.br
 NrSnapshots:      3
-.br
 Time:             2024-12-05 17:47:19
-.br
 UUID:             4106d5b5-b521-504d-8822-8826594debb5
-.br
 Status:           Inactive
-.br
+Categories:       daily, hourly
 Autoactivate:     no
-.br
 Mounted:          no
-.br
 Bootable:         no
-.br
+.EE
 .IP
 Snapshot providers that do not allocate a fixed size for snapshot data will
 check for available space according to the policy at creation time but do not
@@ -1053,6 +1046,7 @@ NrSnapshots:      2
 Time:             2025-03-26 14:17:18
 UUID:             ae082452-7995-5316-ac65-388eadd9879c
 Status:           Active
+Categories:       daily, hourly
 Autoactivate:     yes
 Mounted:          no
 Bootable:         no
@@ -1923,6 +1917,12 @@ the \fBsnapset\fP, \fBsnapshot\fP, and \fBschedule\fP \fBshow\fP subcommands:
         "Time": "2025-08-23 03:10:19",
         "UUID": "d9b63a58-333b-517a-b38d-7cc818040fab",
         "Status": "Active",
+        "Categories": [
+            "yearly",
+            "monthly",
+            "daily",
+            "hourly"
+        ],
         "Autoactivate": true,
         "Bootable": true,
         "BootEntries": {
@@ -1991,6 +1991,7 @@ NrSnapshots:      3
 Time:             2024-12-05 17:57:05
 UUID:             b9b4cd96-75a5-5826-a26b-b617c06bd877
 Status:           Active
+Categories:       daily, hourly
 Autoactivate:     no
 Mounted:          no
 Bootable:         no
@@ -2007,6 +2008,7 @@ NrSnapshots:      3
 Time:             2025-08-23 03:10:19
 UUID:             d9b63a58-333b-517a-b38d-7cc818040fab
 Status:           Active
+Categories:       daily, hourly
 Autoactivate:     yes
 Mounted:          no
 Bootable:         yes
@@ -2038,6 +2040,10 @@ with output formatted in JSON notation
     "Time": "2025-08-23 03:10:19",
     "UUID": "d9b63a58-333b-517a-b38d-7cc818040fab",
     "Status": "Active",
+    "Categories": [
+        "daily",
+        "hourly"
+    ],
     "Autoactivate": true,
     "Mounted": false,
     "Bootable": true,
@@ -2078,6 +2084,7 @@ NrSnapshots:      3
 Time:             2025-08-23 03:10:19
 UUID:             d9b63a58-333b-517a-b38d-7cc818040fab
 Status:           Active
+Categories:       daily, hourly
 Autoactivate:     yes
 Mounted:          no
 Bootable:         yes

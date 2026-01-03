@@ -376,6 +376,7 @@ created snapshot set on stdout:
    Time:             2024-12-05 19:10:44
    UUID:             d3f5e3cd-a383-5dba-b597-9134a2c426e9
    Status:           Active
+   Categories:       daily, hourly
    Autoactivate:     yes
    Bootable:         yes
    OriginMounted:    yes
@@ -400,6 +401,7 @@ can be used to take regular snapshots with a common name:
    Time:             2025-03-26 14:17:18
    UUID:             ae082452-7995-5316-ac65-388eadd9879c
    Status:           Active
+   Categories:       daily, hourly
    Autoactivate:     yes
    OriginMounted:    yes
    Mounted:          no
@@ -626,6 +628,7 @@ into a new snapshot set named "noupgrade":
    Time:             2025-03-31 20:21:29
    UUID:             30e69b86-5c48-5e5d-be1a-bf3d63aef8f7
    Status:           Inactive
+   Categories:       daily, hourly
    Autoactivate:     no
    Bootable:         no
 
@@ -789,6 +792,7 @@ By default the output is formatted in the same way as the output of the
    Time:             2024-12-05 19:14:09
    UUID:             87c6df8f-bd8c-5c9d-b081-4f6d6068cc07
    Status:           Active
+   Categories:       monthly, weekly, daily, hourly
    Autoactivate:     yes
    OriginMounted:    yes
    Mounted:          no
@@ -809,6 +813,7 @@ The individual snapshots making up each set are also displayed if
    Time:             2024-12-05 19:19:30
    UUID:             f0a46cde-9eed-5335-b239-66ed53e5b503
    Status:           Active
+   Categories:       daily, hourly
    Autoactivate:     yes
    OriginMounted:    yes
    Mounted:          no
@@ -872,6 +877,12 @@ argument:
           "Time": "2025-08-30 12:58:44",
           "UUID": "87e31113-75a5-5eb6-b016-762639a2c7ed",
           "Status": "Active",
+          "Categories": [
+              "yearly",
+              "monthly",
+              "daily",
+              "hourly"
+          ],
           "Autoactivate": true,
           "OriginMounted": true,
           "Mounted": false,
@@ -1397,6 +1408,12 @@ normal ``show`` output property names to JSON keys:
             "Time": "2025-09-08 18:43:57",
             "UUID": "6330328b-a9d0-5b41-ac96-53b371449965",
             "Status": "Active",
+            "Categories": [
+                "yearly",
+                "monthly",
+                "daily",
+                "hourly"
+            ],
             "Autoactivate": true,
             "OriginMounted": true,
             "Mounted": false,

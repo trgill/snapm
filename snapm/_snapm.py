@@ -125,6 +125,7 @@ SNAPSET_BOOTABLE = "Bootable"
 SNAPSET_BOOT_ENTRIES = "BootEntries"
 SNAPSET_SNAPSHOT_ENTRY = "SnapshotEntry"
 SNAPSET_REVERT_ENTRY = "RevertEntry"
+SNAPSET_CATEGORIES = "Categories"
 SNAPSET_SNAPSHOTS = "Snapshots"
 
 # Constants for Snapshot property names
@@ -1064,6 +1065,7 @@ class SnapshotSet:
             f"{SNAPSET_TIME}:             {datetime.fromtimestamp(self.timestamp)}\n"
             f"{SNAPSET_UUID}:             {self.uuid}\n"
             f"{SNAPSET_STATUS}:           {str(self.status)}\n"
+            f"{SNAPSET_CATEGORIES}:       {', '.join(self.categories)}\n"
             f"{SNAPSET_AUTOACTIVATE}:     {bool_to_yes_no(self.autoactivate)}\n"
             f"{SNAPSET_ORIGIN_MOUNTED}:    {bool_to_yes_no(self.origin_mounted)}\n"
             f"{SNAPSET_MOUNTED}:          {bool_to_yes_no(self.snapshot_mounted)}\n"
@@ -1099,6 +1101,7 @@ class SnapshotSet:
         pmap[SNAPSET_TIME] = self.time
         pmap[SNAPSET_UUID] = str(self.uuid)
         pmap[SNAPSET_STATUS] = str(self.status)
+        pmap[SNAPSET_CATEGORIES] = self.categories
         pmap[SNAPSET_AUTOACTIVATE] = self.autoactivate
         pmap[SNAPSET_ORIGIN_MOUNTED] = self.origin_mounted
         pmap[SNAPSET_MOUNTED] = self.snapshot_mounted
@@ -2362,6 +2365,7 @@ __all__ = [
     "SNAPSET_BOOT_ENTRIES",
     "SNAPSET_SNAPSHOT_ENTRY",
     "SNAPSET_REVERT_ENTRY",
+    "SNAPSET_CATEGORIES",
     "SNAPSET_SNAPSHOTS",
     "SNAPSHOT_NAME",
     "SNAPSHOT_BASENAME",
