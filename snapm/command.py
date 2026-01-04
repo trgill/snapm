@@ -327,7 +327,7 @@ _snapshot_set_fields = [
         "Snapshot set timeline categories",
         10,
         REP_STR_LIST,
-        lambda f, d: f.report_str_list(d.categories),
+        lambda f, d: f.report_str_list(d.categories, nosort=True),
     ),
 ]
 
