@@ -453,20 +453,23 @@ class Field:
             raise TypeError("Value for report_size() must be an int type.")
         self.set_value(value_str, sort_value=value)
 
-    def report_str_list(self, value):
+    def report_str_list(self, value, nosort=False):
         """
         Report a string list value for this Field object.
 
         Set the value for this field to the strings contained in ``value``.
 
         :param value: A list of strings
+        :param nosort: Disable sorting of the provided string list.
+        :type nosort: ``bool``
         :rtype: None
         """
         if not isinstance(value, list):
             raise TypeError("Value for report_str_list() must be a list type.")
         if not all(isinstance(v, string_types) for v in value):
             raise TypeError("Value for report_str_list() must be a list of strings.")
-        value = sorted(value)
+        if not nosort:
+            value = sorted(value)
         list_value = ", ".join(value)
         self.set_value(list_value, sort_value=list_value)
 
