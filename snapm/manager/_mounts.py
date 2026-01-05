@@ -63,6 +63,9 @@ _BIND_MOUNTS: List[str] = [
 #: Timeout for mount helper programs
 _SNAPM_MOUNT_HELPER_TIMEOUT = int(os.getenv("SNAPM_MOUNT_TIMEOUT", "60"))
 
+#: Path to container overlay bind mount
+_CONTAINERS_OVERLAY = "/var/lib/containers/storage/overlay"
+
 #: Taken from kernel source: fs/xfs/libxfs/xfs_log_format.h:
 _XFS_UQUOTA_ACCT = 0x0001  # user quota accounting ON
 _XFS_UQUOTA_ENFD = 0x0002  # user quota limits enforced
@@ -385,6 +388,9 @@ class MountBase(ABC):
         # Check device and API file system submounts
         checked = {mp: False for mp in mount_points if mp != "/"}
         bind_checked = {mp: False for mp in _BIND_MOUNTS}
+
+        # Don't try to check the overlay bind mount
+        checked.pop(_CONTAINERS_OVERLAY, None)
 
         for abs_mount_path in submounts:
             rel_mount_path = (
