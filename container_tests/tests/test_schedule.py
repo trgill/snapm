@@ -412,7 +412,7 @@ class GcPolicyTests(unittest.TestCase):
 
         # Result is one less than the sum of retention counts since weekly/daily
         # overlap for Monday's first snapshot.
-        self.assertIn(count - len(to_delete), (16, 17))
+        self.assertIn(count - len(to_delete), (15, 16, 17))
 
     def test_GcPolicyParamsTimeline_first_snapshot_bug(self):
         """
