@@ -239,19 +239,29 @@ class MountsTestsBase(unittest.TestCase):
 
     def cleanup_mounts(self):
         mount_path = os.path.join(self.mounts_root_dir, self.snapset_name)
-        if os.path.ismount(mount_path):
-            try:
-                run(
-                    ["umount", "-R", mount_path],
-                    check=True,
-                    capture_output=True,
-                    encoding="utf8",
-                )
-            except CalledProcessError as err:
-                pytest.exit(
-                    f"Emergency shutdown: mount cleanup failed for mount path {mount_path}: "
-                    f"(rc={err.returncode}: {err.stderr})"
-                )
+
+        # Try to get the mount manager to clean up first
+        try:
+            self.mounts.umount(self.snapset)
+        except snapm.SnapmError as err:
+            log.warning(
+                "Mount manager cleanup failed for %s: %s",
+                self.snapset_name,
+                err,
+            )
+            if os.path.ismount(mount_path):
+                try:
+                    run(
+                        ["umount", "-R", mount_path],
+                        check=True,
+                        capture_output=True,
+                        encoding="utf8",
+                    )
+                except CalledProcessError as err:
+                    pytest.exit(
+                        f"Emergency shutdown: mount cleanup failed for mount path {mount_path}: "
+                        f"(rc={err.returncode}: {err.stderr})"
+                    )
 
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)

@@ -646,11 +646,37 @@ class Mount(MountBase):
         pmr = ProcMountsReader()
         submounts = [mnt.where for mnt in pmr.submounts(self.root)]
         submounts.sort(key=lambda mnt: mnt.count("/"), reverse=True)
+
+        # Work around #586
+        failed_netns_mounts = []
+
         for submount in submounts:
             _log_debug_mounts(
                 "Attempting to unmount %s (%s)", submount, self.snapset.name
             )
-            _umount(submount)
+            try:
+                if submount == os.path.join(self.root, "run") and failed_netns_mounts:
+                    for netns_mount in failed_netns_mounts.copy():
+                        try:
+                            _umount(netns_mount)
+                            failed_netns_mounts.remove(netns_mount)
+                        except SnapmUmountError as err:
+                            _log_warn(
+                                "Unable to unmount %s after retry: %s", netns_mount, err
+                            )
+                _umount(submount)
+            except SnapmUmountError as err:
+                if "/run/netns/netns-" in submount and "not mounted" in err.stderr:
+                    failed_netns_mounts.append(submount)
+                else:
+                    raise
+
+        # 1b. Warn if any netns submounts failed to unmount
+        if failed_netns_mounts:
+            _log_warn(
+                "Failed to remove all netns submounts, manual cleanup required: %s",
+                ", ".join(failed_netns_mounts),
+            )  # pragma: no cover
 
         # 2. Unmount the root mount at self.root
         _log_debug_mounts("Attempting to unmount snapshot set root: %s", self.root)
