@@ -279,7 +279,7 @@ def _mount(
             f"Timed out calling mount for {what} -> {where}: {err}"
         ) from err
     except CalledProcessError as err:
-        raise SnapmMountError(what, where, err.returncode, err.stderr) from err
+        raise SnapmMountError(what, where, err.returncode, err.stderr.strip()) from err
 
 
 def _umount(where: str):
@@ -301,7 +301,7 @@ def _umount(where: str):
     except TimeoutExpired as err:
         raise SnapmCalloutError(f"Timed out calling umount for {where}: {err}") from err
     except CalledProcessError as err:
-        raise SnapmUmountError(where, err.returncode, err.stderr) from err
+        raise SnapmUmountError(where, err.returncode, err.stderr.strip()) from err
 
 
 class ProcMountsReader:
