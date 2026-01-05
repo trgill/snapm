@@ -78,6 +78,39 @@ _XFS_PQUOTA_ENFD = 0x0200  # project quota limits enforced
 _QFLAGS_PREFIX = "qflags = "
 
 
+def _sanitize_environment():
+    """
+    Sanitize the environment for callouts.
+
+    :returns: An environment dictionary stripped of locale related keys
+              and with "LC_ALL=C".
+    :rtype: ``Dict[str, str]``
+    """
+    _env_filter_keys = (
+        "LANG",
+        "LC_CTYPE",
+        "LC_NUMERIC",
+        "LC_TIME",
+        "LC_COLLATE",
+        "LC_MONETARY",
+        "LC_MESSAGES",
+        "LC_PAPER",
+        "LC_NAME",
+        "LC_ADDRESS",
+        "LC_TELEPHONE",
+        "LC_MEASUREMENT",
+        "LC_IDENTIFICATION",
+        "LC_ALL",
+    )
+    return {"LC_ALL": "C"} | {
+        k: v for k, v in os.environ.items() if k not in _env_filter_keys
+    }
+
+
+#: Environment for mount callouts
+_CALLOUT_ENV = _sanitize_environment()
+
+
 # pylint: disable=too-many-branches
 def _get_xfs_quota_options(devpath: str) -> str:
     """
@@ -97,6 +130,7 @@ def _get_xfs_quota_options(devpath: str) -> str:
     try:
         result = run(
             xfs_db_cmd,
+            env=_CALLOUT_ENV,
             check=True,
             capture_output=True,
             encoding="utf8",
@@ -269,6 +303,7 @@ def _mount(
     try:
         run(
             mount_cmd,
+            env=_CALLOUT_ENV,
             check=True,
             capture_output=True,
             encoding="utf8",
@@ -293,6 +328,7 @@ def _umount(where: str):
     try:
         run(
             umount_cmd,
+            env=_CALLOUT_ENV,
             check=True,
             capture_output=True,
             encoding="utf8",
