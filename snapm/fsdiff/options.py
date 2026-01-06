@@ -58,6 +58,8 @@ class DiffOptions:
     from_path: Optional[Union[str, Tuple[str]]] = ("/",)
     #: Do not output progress or status updates
     quiet: bool = False
+    #: Disable RSS memory pressure safety checks
+    no_mem_check: bool = False
 
     def __str__(self):
         """

@@ -88,7 +88,7 @@ def _should_diff(options: DiffOptions) -> bool:
     :returns: ``True`` if diffing should be attempted or ``False`` otherwise.
     :rtype: ``bool``
     """
-    if not options.include_content_diffs:
+    if not options.include_content_diffs or options.no_mem_check:
         return True
 
     memtotal = get_total_memory()
@@ -159,6 +159,9 @@ class FsDiffer:
                 "python-file-magic is not installed "
                 "(required for --file-type/use_magic_file_type)"
             )
+
+        if options.no_mem_check:
+            _log_warn("RSS memory pressure safety checks disabled")
 
         #: Manager context for snapshot operations (used by future methods)
         self.manager: "Manager" = manager

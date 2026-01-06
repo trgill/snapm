@@ -82,14 +82,18 @@ _COMPRESSION_EXTENSIONS: Dict[str, str] = {
 }
 
 
-def _should_cache() -> bool:
+def _should_cache(options: DiffOptions) -> bool:
     """
     Determine whether it is safe to attempt writing the cache given system
     memory constraints and current state.
 
+    :param options: Change detection options including ``no_mem_check``.
+    :type options: ``DiffOptions``
     :returns: ``True`` if caching should be attempted or ``False`` otherwise.
     :rtype: ``bool``
     """
+    if not options.include_content_diffs or options.no_mem_check:
+        return True
 
     memtotal = get_total_memory()
     rss = get_current_rss()
@@ -487,7 +491,7 @@ def save_cache(
     cache_name = _cache_name(mount_a, mount_b, results)
     cache_path = os.path.join(_DIFF_CACHE_DIR, cache_name)
 
-    if not _should_cache():
+    if not _should_cache(results.options):
         return
 
     term_control = term_control or TermControl(color=color)

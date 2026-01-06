@@ -271,15 +271,42 @@ class TestCache(unittest.TestCase):
         # Case 1: Safe usage (10%)
         mock_total.return_value = 1000
         mock_rss.return_value = 100
-        self.assertTrue(cache._should_cache())
+        self.assertTrue(cache._should_cache(self.results.options))
 
         # Case 2: Unsafe usage (70% > 0.6 threshold)
         mock_rss.return_value = 700
-        self.assertFalse(cache._should_cache())
+        self.assertFalse(cache._should_cache(self.results.options))
 
         # Case 3: Unknown memory
         mock_total.return_value = 0
-        self.assertFalse(cache._should_cache())
+        self.assertFalse(cache._should_cache(self.results.options))
+
+    @patch("snapm.fsdiff.cache.get_current_rss")
+    @patch("snapm.fsdiff.cache.get_total_memory")
+    def test_should_cache_bypasses_check_when_no_mem_check_enabled(self, mock_total, mock_rss):
+        """Test that no_mem_check bypasses memory pressure checks."""
+        # High memory usage that would normally prevent caching
+        mock_total.return_value = 1000
+        mock_rss.return_value = 700  # 70% > threshold
+
+        # Create options with no_mem_check enabled
+        options = DiffOptions(no_mem_check=True)
+
+        # Should return True despite high memory usage
+        self.assertTrue(cache._should_cache(options))
+
+    @patch("snapm.fsdiff.cache.get_current_rss")
+    @patch("snapm.fsdiff.cache.get_total_memory")
+    def test_should_cache_bypasses_check_when_content_diffs_disabled(self, mock_total, mock_rss):
+        """Test that disabling content diffs bypasses memory checks."""
+        # High memory usage
+        mock_total.return_value = 1000
+        mock_rss.return_value = 700
+
+        options = DiffOptions(include_content_diffs=False)
+
+        # Should return True when content diffs disabled
+        self.assertTrue(cache._should_cache(options))
 
     @patch("snapm.fsdiff.cache._HAVE_ZSTD", False)
     def test_compress_type_fallback(self):
