@@ -618,7 +618,10 @@ value is 900 seconds (15 minutes). This option is mutually exclusive with
 .TP 8
 \fB-C | --calendarspec\fP \fIcalendarspec\fP
 Calendar event expression used to trigger scheduled creation of snapshot sets.
-See \fBsystemd.time(7)\fP for the expression syntax.
+See \fBsystemd.time(7)\fP for the expression syntax. Calendar expressions that
+include whitespace (for example, "Mon *-*-* 00:00:00") must be quoted in the
+shell with single or double quotes to prevent the argument from being
+incorrectly parsed as a schedule name or source.
 .
 .TP 8
 \fB--color\fP \fImode\fP
@@ -1448,6 +1451,18 @@ automatically delete snapshot sets that are no longer required.
 Newly created schedules are automatically enabled and will begin
 creating snapshot sets at the first expiry of the configured calendar
 expression.
+.IP
+The names of schedules must be valid \fBsystemd\fP unit names since a systemd
+timer unit named for the schedule is created to trigger snapshot set creation.
+Valid characters for schedule names are:
+.BR a \(en z
+.BR A \(en Z
+.BR 0 \(en 9
+.B - .
+.IP
+Since snapshot sets created by a schedule take the name of the schedule,
+schedule names must also be valid snapshot set names: see \fBSNAPSHOT SETS AND
+SNAPSHOTS\fP for further information on snapshot set naming requirements.
 .IP
 .EX
 # snapm schedule create --policy-type count --keep-count 2 --bootable \

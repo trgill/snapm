@@ -159,10 +159,14 @@ SNAPSET_TIMELINE_CATEGORIES = (
     "hourly",
 )
 
-# Constant for allow-listed name characters
-SNAPM_VALID_NAME_CHARS = set(
-    string.ascii_lowercase + string.ascii_uppercase + string.digits + "+_.-"
+_ASCII_LETTERS_AND_DIGITS = (
+    string.ascii_lowercase + string.ascii_uppercase + string.digits
 )
+
+# Constant for allow-listed name characters
+SNAPM_VALID_NAME_CHARS = set(_ASCII_LETTERS_AND_DIGITS + "+_.-")
+
+SNAPM_SCHEDULE_VALID_NAME_CHARS = set(_ASCII_LETTERS_AND_DIGITS + r"\:-_.")
 
 #: Location of the meminfo file in procfs
 _PROC_MEMINFO: str = "/proc/meminfo"
@@ -2388,6 +2392,7 @@ __all__ = [
     "SNAPSET_TIMELINE_CATEGORIES",
     "SNAPSHOT_INDEX_NONE",
     "SNAPM_VALID_NAME_CHARS",
+    "SNAPM_SCHEDULE_VALID_NAME_CHARS",
     "SNAPM_DEBUG_MANAGER",
     "SNAPM_DEBUG_COMMAND",
     "SNAPM_DEBUG_REPORT",

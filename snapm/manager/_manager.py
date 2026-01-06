@@ -28,6 +28,7 @@ import os
 from snapm import (
     SNAPM_SUBSYSTEM_MANAGER,
     SNAPM_VALID_NAME_CHARS,
+    SNAPM_SCHEDULE_VALID_NAME_CHARS,
     SNAPM_RUNTIME_DIR,
     SNAPSET_TIMELINE_CATEGORIES,
     SnapmError,
@@ -117,6 +118,9 @@ _SNAPM_LOCK_DIR = join(SNAPM_RUNTIME_DIR, "lock")
 
 #: Permissions for lock directory
 _SNAPM_LOCK_DIR_MODE = 0o700
+
+#: Maximum length for a systemd unit name
+_SYSTEMD_UNIT_NAME_LEN = 255
 
 
 @dataclass
@@ -732,6 +736,31 @@ class Scheduler:
         :returns: The new ``Schedule`` instance.
         :rtype: ``Schedule``
         """
+
+        def _validate_schedule_name(name: str):
+            """
+            Validate that ``name`` is an acceptable schedule name, conforming
+            to systemd unit name requirements.
+            """
+            for char in name:
+                if char not in SNAPM_SCHEDULE_VALID_NAME_CHARS:
+                    raise SnapmInvalidIdentifierError(
+                        f"Schedule name cannot include '{char}'"
+                    )
+            # The create timer drop-in dir is our longest name.
+            fixed = len("snapm-create@.timer.d")
+            max_len = _SYSTEMD_UNIT_NAME_LEN - fixed
+            if len(name) > max_len:
+                raise SnapmInvalidIdentifierError(
+                    f"Schedule name too long ({len(name)}>{max_len}): {name}"
+                )
+
+        # Schedule names must conform to systemd unit name requirements.
+        _validate_schedule_name(name)
+
+        # Valid schedule names must also be valid snapset names.
+        self._manager._validate_snapset_name(name)
+
         if name in self._schedules_by_name:
             raise SnapmExistsError(f"Schedule named '{name}' already exists")
 
