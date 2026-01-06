@@ -2828,6 +2828,14 @@ def _add_diff_args(parser):
         help="Specify cache expiry time in seconds (0 to disable expiry)",
     )
     parser.add_argument(
+        "--no-mem-check",
+        action="store_true",
+        help=(
+            "Disable RSS memory pressure safety checks "
+            "(may allow OOM kills with large content diffs)"
+        ),
+    )
+    parser.add_argument(
         "diff_from",
         type=str,
         metavar="FROM",
