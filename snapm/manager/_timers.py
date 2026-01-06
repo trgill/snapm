@@ -129,7 +129,7 @@ def _write_drop_in(drop_in_dir: str, drop_in_file: str, calendarspec: CalendarSp
             ) from err
     except OSError as err:  # pragma: no cover
         raise SnapmSystemError(
-            f"Filesystem error writing drop-in temporary file '{tmp_path}': {err}"
+            f"Filesystem error writing drop-in temporary file for '{drop_in_file}': {err}"
         ) from err
 
 
