@@ -56,7 +56,7 @@ class TreeNode:
         """
         self.name: str = name
         self.record: "Optional[FsDiffRecord]" = record  # None for intermediate dirs
-        self.children: Dict[str, TreeNode] = {}
+        self.children: Dict[str, List[TreeNode]] = defaultdict(list)
 
         if record is not None:
             if record.diff_type != DiffType.MOVED and to_or_from is not None:
@@ -229,7 +229,11 @@ class DiffTree:
         child_prefix = prefix + extension
 
         # Recurse to children
-        children = sorted(node.children.values(), key=lambda n: n.name)
+        children = []
+        for child_list in node.children.values():
+            children.extend(child_list)
+        children = sorted(children, key=lambda n: n.name)
+
         for i, child in enumerate(children):
             child_is_last = i == len(children) - 1
             self.render(
@@ -299,7 +303,7 @@ class DiffTree:
                         orphan.name,
                         path,
                     )
-                    node.children[orphan.name] = orphan
+                    node.children[orphan.name].append(orphan)
 
         def _reparent_all_orphans(parent: TreeNode, path: str):
             """
@@ -307,8 +311,9 @@ class DiffTree:
             proper parent directory.
             """
             _adopt_orphans(parent, path)
-            for child_path, child in parent.children.items():
-                _reparent_all_orphans(child, os.path.join(path, child_path))
+            for child_path, children in parent.children.items():
+                for child in children:
+                    _reparent_all_orphans(child, os.path.join(path, child_path))
 
         try:
             progress.start(total_records)
@@ -335,15 +340,15 @@ class DiffTree:
                 node = root
                 for part in parts[:-1]:
                     _log_debug_fsdiff("Processing path part: %s", part)
-                    if part not in node.children:
+                    if not node.children[part]:
                         _log_debug_fsdiff(
                             "Adding child to %s[%s] = TreeNode(%s)",
                             node.name,
                             part,
                             part,
                         )
-                        node.children[part] = TreeNode(part)
-                    node = node.children[part]
+                        node.children[part].append(TreeNode(part))
+                    node = node.children[part][0]
 
                 # Optimistic pass
                 parent_path = (
@@ -356,7 +361,7 @@ class DiffTree:
                     _log_debug_fsdiff(
                         "Adding leaf node: %s, %s", parts[-1], record.diff_type.value
                     )
-                    node.children[parts[-1]] = TreeNode(parts[-1], record)
+                    node.children[parts[-1]].append(TreeNode(parts[-1], record))
                     node_count += 1
                 else:
                     if not record.moved_from or not record.moved_to:
@@ -376,15 +381,15 @@ class DiffTree:
                         moved_to,
                     )
 
-                    node.children[moved_from] = TreeNode(
-                        moved_from, record, to_or_from="from"
+                    node.children[moved_from].append(
+                        TreeNode(moved_from, record, to_or_from="from")
                     )
                     node_count += 1
 
                     # Rename within directory?
                     if moved_from_parts[:-1] == moved_to_parts[:-1]:
-                        node.children[moved_to] = TreeNode(
-                            moved_to, record, to_or_from="to"
+                        node.children[moved_to].append(
+                            TreeNode(moved_to, record, to_or_from="to")
                         )
                         node_count += 1
                     else:
