@@ -579,14 +579,16 @@ def _guess_text_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
     if guess is not None:
         return guess
 
+    if _is_binary_log(file_path):
+        return ("application/octet-stream", "binary log file", "binary")
+
     # Walk up the directory structure checking for parents paths that typically
     # hold text like files.
     for abs_parent_path in file_path.absolute().parents:
         abs_parent_str = str(abs_parent_path)
-        if abs_parent_str in TEXT_FILE_PATHS:
-            if _is_binary_log(file_path):
-                return ("application/octet-stream", "binary log file", "binary")
-            return (*TEXT_FILE_PATHS[abs_parent_str], "utf-8")
+        for text_file_path, type_tuple in TEXT_FILE_PATHS.items():
+            if abs_parent_str.endswith(text_file_path):
+                return (*type_tuple, "utf-8")
     return None
 
 
@@ -608,16 +610,18 @@ def _guess_binary_file(file_path: Path) -> Optional[Tuple[str, str, str]]:
     if guess is not None:
         return guess
 
+    # Honour known text-like patterns even under binary-heavy directories.
+    text_guess = _guess_text_file(file_path)
+    if text_guess is not None:
+        return text_guess
+
     # Walk up the directory structure checking for parents paths that typically
     # hold binary files.
     for abs_parent_path in file_path.absolute().parents:
         abs_parent_str = str(abs_parent_path)
-        if abs_parent_str in BINARY_FILE_PATHS:
-            # Honour known text-like patterns even under binary-heavy directories.
-            text_guess = _guess_text_file(file_path)
-            if text_guess is not None:
-                return text_guess
-            return (*BINARY_FILE_PATHS[abs_parent_str], "binary")
+        for binary_file_path, type_tuple in BINARY_FILE_PATHS.items():
+            if abs_parent_str.endswith(binary_file_path):
+                return (*type_tuple, "binary")
     return None
 
 
