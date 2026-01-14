@@ -167,8 +167,8 @@ def select_schedule(select: Selection, schedule: Schedule):
     in ``select`` and return ``True`` if it passes, or ``False``
     otherwise.
 
-    :param s: The selection criteria
-    :param be: The Schedule to test
+    :param select: The selection criteria
+    :param schedule: The Schedule to test
     :rtype: bool
     :returns: True if Schedule passes selection or ``False``
               otherwise.

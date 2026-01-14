@@ -868,10 +868,11 @@ def resize_snapset(manager, sources, name=None, uuid=None, default_size_policy=N
 
 def revert_snapset(manager, name=None, uuid=None):
     """
-    Revert snapshot set matching selection criteria.
+    Revert snapshot set by name or UUID.
 
     :param manager: The manager context to use
-    :param selection: Selection criteria for the snapshot set to revert.
+    :param name: The name of the snapshot set to revert
+    :param uuid: The UUID of the snapshot set to revert
     """
     return manager.revert_snapshot_set(name=name, uuid=uuid)
 
@@ -1108,11 +1109,12 @@ def create_schedule(
     :param name: The name of the new schedule.
     :param sources: A list of mount point or block devices to snapshot.
     :param default_size_policy: The default size policy for this snapshot set.
-    :param autoindex: Enable autoindex names for this schedule.
-    :param boot: Create a boot entry for this snapshot set.
-    :param revert: Create a revert boot entry for this snapshot set.
     :param autoindex: Treat `name` as the basename of a recurring snapshot set
                       and generate and append an appropriate index value.
+    :param calendarspec: The calendar trigger expression for this schedule.
+    :param policy: The garbage collection policy for this schedule.
+    :param boot: Create a boot entry for this snapshot set.
+    :param revert: Create a revert boot entry for this snapshot set.
     """
     return manager.scheduler.create(
         name,
@@ -1153,14 +1155,15 @@ def edit_schedule(
     source paths.
 
     :param manager: The manager context to use.
-    :param name: The name of the new schedule.
+    :param name: The name of the schedule to edit.
     :param sources: A list of mount point or block devices to snapshot.
     :param default_size_policy: The default size policy for this snapshot set.
-    :param autoindex: Enable autoindex names for this schedule.
-    :param boot: Create a boot entry for this snapshot set.
-    :param revert: Create a revert boot entry for this snapshot set.
     :param autoindex: Treat `name` as the basename of a recurring snapshot set
                       and generate and append an appropriate index value.
+    :param calendarspec: The calendar trigger expression for this schedule.
+    :param policy: The garbage collection policy for this schedule.
+    :param boot: Create a boot entry for this snapshot set.
+    :param revert: Create a revert boot entry for this snapshot set.
     """
     schedules = manager.scheduler.find_schedules(Selection(sched_name=name))
     if len(schedules) != 1:
