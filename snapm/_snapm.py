@@ -238,6 +238,17 @@ class SubsystemFilter(logging.Filter):
         self.enabled_subsystems = set(_debug_subsystems)
 
     def filter(self, record):
+        """
+        Filter log records based on subsystem and debug level.
+
+        Always passes non-DEBUG records. DEBUG records are filtered
+        based on whether their subsystem is in the enabled subsystems set.
+
+        :param record: The log record to filter.
+        :type record: ``logging.LogRecord``
+        :returns: ``True`` if the record should be logged, ``False`` otherwise.
+        :rtype: ``bool``
+        """
         # Always pass non-DEBUG messages.
         if record.levelno != logging.DEBUG:
             return True
@@ -345,6 +356,16 @@ class ProgressAwareHandler(logging.StreamHandler):
         super().__init__(stream=stream or sys.stderr, **kwargs)
 
     def emit(self, record):
+        """
+        Emit a log record with progress coordination.
+
+        Notifies active progress indicators before emitting the record
+        so they can update their output to avoid being overwritten.
+
+        :param record: The log record to emit.
+        :type record: ``logging.LogRecord``
+        :rtype: None
+        """
         try:
             # Notify before logging so that the progress subsystem can erase
             # its last output before the logging message is printed.
