@@ -1085,6 +1085,10 @@ class DiffEngine:
             if not path_a or not path_b:
                 return 0.0
 
+            # Same path? (shouldn't happen for moves, but if it does let's return asap).
+            if path_a == path_b:
+                return 1.0
+
             # Same directory?
             dir_a = os.path.dirname(path_a)
             dir_b = os.path.dirname(path_b)
