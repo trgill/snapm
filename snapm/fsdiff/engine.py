@@ -1075,11 +1075,22 @@ class DiffEngine:
             Quick and cheap similarity metric based on string matching and
             token overlap.
 
+            If either path is ``None`` or empty the similarity is 0.0.
+
+            If the paths are identical, in the same directory, or substrings of
+            one another the similarity is 1.0.
+
+            If none of these conditions are met the value returned is the
+            Jaccard index of the two strings:
+
+               https://en.wikipedia.org/wiki/Jaccard_index
+
             :param path_a: The first path to compare.
             :type path_a: ``str``
             :param path_b: The second path to compare.
             :type path_b: ``str``
-            :returns: A value 0..1 indicating the approximate similarity of the paths.
+            :returns: A value 0.0..1.0 indicating the approximate similarity of
+                      the paths.
             :rtype: ``float``
             """
             if not path_a or not path_b:
