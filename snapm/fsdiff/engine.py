@@ -1102,8 +1102,8 @@ class DiffEngine:
                 return 1.0
 
             # Token overlap for compound names
-            tokens_a = set(_SIBLING_REGEX.split(path_a))
-            tokens_b = set(_SIBLING_REGEX.split(path_b))
+            tokens_a = frozenset(_SIBLING_REGEX.split(path_a))
+            tokens_b = frozenset(_SIBLING_REGEX.split(path_b))
             overlap = len(tokens_a & tokens_b) / len(tokens_a | tokens_b)
             return overlap
 
