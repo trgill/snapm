@@ -36,6 +36,8 @@ _log_error = _log.error
 
 ENGINE_LOG_ME_HARDER = False
 
+_SIBLING_REGEX = re.compile("[-_.,:@ ]+")
+
 
 def _log_debug_fsdiff(msg, *args, **kwargs):
     """A wrapper for fsdiff subsystem debug logs."""
@@ -1096,8 +1098,8 @@ class DiffEngine:
                 return 1.0
 
             # Token overlap for compound names
-            tokens_a = set(re.split(r"[-_.,:@ ]", path_a))
-            tokens_b = set(re.split(r"[-_.,:@ ]", path_b))
+            tokens_a = set(_SIBLING_REGEX.split(path_a))
+            tokens_b = set(_SIBLING_REGEX.split(path_b))
             overlap = len(tokens_a & tokens_b) / len(tokens_a | tokens_b)
             return overlap
 
