@@ -93,9 +93,9 @@ lint our code.
     formatting).
   * **pylint**: Your code should pass a `pylint` check using the
     `.pylintrc` file in the root of the repository.
-  * **pycodestyle/bandit**: We also use `pycodestyle` and `bandit` for
+  * **pycodestyle**: We also use `pycodestyle` for
     additional style and security checks. Check out the `snapm.yml`
-    GitHub Actions workflow for tips on running these locally.
+    GitHub Actions workflow for tips on running this locally.
   * **Sphinx Docstrings**: All functions and methods should have a
     docstring in Sphinx format. You can find a good guide
 [here](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html).

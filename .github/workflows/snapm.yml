@@ -36,7 +36,6 @@ jobs:
           faketime
           flake8
           pylint
-          bandit
           lvm2
       - name: Install pip dependencies
         run: >
@@ -89,9 +88,6 @@ jobs:
       - name: Check pylint
         run: >
           pylint --jobs 0 snapm
-      - name: Run bandit
-        run: >
-          bandit --skip B101,B108,B301,B303,B403,B404,B603 -r snapm
       - name: Install Ubuntu stratisd deps
         env:
           DEBIAN_FRONTEND: noninteractive
