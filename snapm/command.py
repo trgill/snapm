@@ -1108,13 +1108,16 @@ def create_schedule(
     :param manager: The manager context to use.
     :param name: The name of the new schedule.
     :param sources: A list of mount point or block devices to snapshot.
-    :param default_size_policy: The default size policy for this snapshot set.
-    :param autoindex: Treat `name` as the basename of a recurring snapshot set
-                      and generate and append an appropriate index value.
+    :param default_size_policy: The default size policy for this schedule.
+    :param autoindex: Treat ``name`` as the basename of a recurring scheduled
+                      snapshot set and generate and append an appropriate index
+                      value.
     :param calendarspec: The calendar trigger expression for this schedule.
     :param policy: The garbage collection policy for this schedule.
-    :param boot: Create a boot entry for this snapshot set.
-    :param revert: Create a revert boot entry for this snapshot set.
+    :param boot: Create a boot entry for snapshot sets created by this
+                 schedule.
+    :param revert: Create a revert boot entry for snapshot sets created
+                   by this schedule.
     """
     return manager.scheduler.create(
         name,
@@ -1157,13 +1160,16 @@ def edit_schedule(
     :param manager: The manager context to use.
     :param name: The name of the schedule to edit.
     :param sources: A list of mount point or block devices to snapshot.
-    :param default_size_policy: The default size policy for this snapshot set.
-    :param autoindex: Treat `name` as the basename of a recurring snapshot set
-                      and generate and append an appropriate index value.
+    :param default_size_policy: The default size policy for this schedule.
+    :param autoindex: Treat ``name`` as the basename of a recurring scheduled
+                      snapshot set and generate and append an appropriate index
+                      value.
     :param calendarspec: The calendar trigger expression for this schedule.
     :param policy: The garbage collection policy for this schedule.
-    :param boot: Create a boot entry for this snapshot set.
-    :param revert: Create a revert boot entry for this snapshot set.
+    :param boot: Create a boot entry for snapshot sets created by this
+                 schedule.
+    :param revert: Create a revert boot entry for snapshot sets created
+                   by this schedule.
     """
     schedules = manager.scheduler.find_schedules(Selection(sched_name=name))
     if len(schedules) != 1:
