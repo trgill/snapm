@@ -329,11 +329,11 @@ def unregister_progress(progress: Union["ProgressBase", "ThrobberBase"]):
 
 def notify_log_output(stream: TextIO):
     """
-    Notify progress instances that log output occurred on stream.
+    Notify progress instances that log output is about to occur on ``stream``.
 
-    Called by ProgressAwareHandler after emitting a record.
+    Called by ``ProgressAwareHandler`` before emitting a record.
 
-    :param stream: The stream that received output.
+    :param stream: The stream that will receive output.
     :type stream: ``TextIO``
     """
     if stream not in (sys.stdout, sys.stderr):
