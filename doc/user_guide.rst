@@ -924,9 +924,9 @@ Mount the members of an existing snapshot set.
 
 .. code-block:: bash
 
-   snapm snapset mount <snapset_name>
+   snapm snapset mount [--mount-root PATH] <snapset_name>
 
-The snapshot set's root volume is mounted at
+By default, the snapshot set's root volume is mounted at
 ``/run/snapm/mounts/<snapset_name>``. Additional snapshot volumes are
 mounted from their corresponding snapshot devices to the appropriate
 paths within this hierarchy. API and runtime file systems, along with
@@ -937,6 +937,21 @@ the host system.
 
    snapm snapset mount backup
    ls /run/snapm/mounts/backup/
+
+Alternatively, you can specify a custom mount root directory using the
+``--mount-root`` option. This allows you to mount snapshot sets at
+arbitrary filesystem paths, which is useful for making snapshots
+accessible to backup tools or other applications:
+
+.. code-block:: bash
+
+   snapm snapset mount --mount-root /mnt/snapshots backup
+   ls /mnt/snapshots/backup/
+
+When using custom mount paths, the administrator is responsible for
+setting appropriate permissions on the mount root directory. The default
+``/run/snapm/mounts`` directory uses mode 0700 for security, but custom
+mount roots are created with mode 0755 to allow flexibility.
 
 Once mounted, the snapshot set contents can be accessed directly
 through the mount point, or via ``snapset exec`` and ``snapset shell``
