@@ -1816,7 +1816,7 @@ def _mount_cmd(cmd_args):
     Mount snapshot set command handler.
 
     Mount the specified snapshot set (by default snapshot set mounts appear
-    under /run/snapm/mounts/<name>).
+    under /run/snapm/mounts/<name>, or at a custom path if --mount-root is specified).
 
     :param cmd_args: Command line arguments for the command
     :returns: integer status code returned from ``main()``
@@ -1828,7 +1828,8 @@ def _mount_cmd(cmd_args):
         _log_error("Cannot find snapshot set matching name=%s", cmd_args.name)
         return 1
     snapset = matches[0]
-    manager.mounts.mount(snapset)
+    mount_root = getattr(cmd_args, "mount_root", None)
+    manager.mounts.mount(snapset, mount_root=mount_root)
     return 0
 
 
@@ -3107,6 +3108,14 @@ def _add_snapset_subparser(type_subparser):
         type=str,
         action="store",
         help="The name of the snapshot set to be mounted",
+    )
+    snapset_mount_parser.add_argument(
+        "--mount-root",
+        metavar="PATH",
+        type=str,
+        action="store",
+        default=None,
+        help="Custom mount root path (default: /run/snapm/mounts)",
     )
     snapset_mount_parser.set_defaults(func=_mount_cmd)
 
