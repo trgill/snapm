@@ -804,11 +804,13 @@ class Mounts:
         self._mounts_by_name.update({mount.snapset.name: mount for mount in mounts})
         _log_info("Found %d snapshot set mounts", len(self._mounts))
 
-    def mount(self, snapset: SnapshotSet) -> Mount:
+    def mount(self, snapset: SnapshotSet, mount_root: Optional[str] = None) -> Mount:
         """
         Mount the snapshot set `snapset`.
 
         :param snapset: The snapshot set to operate on.
+        :param mount_root: Optional custom mount root directory. If not specified,
+                          uses the default mounts directory.
         """
         if snapset.name in self._mounts_by_name:
             existing = self._mounts_by_name[snapset.name]
@@ -828,7 +830,32 @@ class Mounts:
         # Ensure the snapshot set's volumes are active
         snapset.activate()
 
-        mount_path = os.path.join(self._root, snapset.name)
+        # Use custom mount root if provided, otherwise use default
+        if mount_root is not None:
+            # Validate custom mount root
+            mount_root = os.path.abspath(mount_root)
+            if not os.path.exists(mount_root):
+                try:
+                    os.makedirs(mount_root, mode=0o755, exist_ok=True)
+                    _log_info("Created custom mount root directory: %s", mount_root)
+                except OSError as err:
+                    raise SnapmPathError(
+                        f"Failed to create mount root directory {mount_root}: {err}"
+                    ) from err
+            elif not os.path.isdir(mount_root):
+                raise SnapmPathError(
+                    f"Mount root path exists but is not a directory: {mount_root}"
+                )
+
+            mount_path = os.path.join(mount_root, snapset.name)
+            _log_info(
+                "Mounting snapshot set %s at custom path: %s",
+                snapset.name,
+                mount_path,
+            )
+        else:
+            mount_path = os.path.join(self._root, snapset.name)
+
         os.makedirs(mount_path, exist_ok=True)
 
         mount = Mount(snapset, mount_path)
