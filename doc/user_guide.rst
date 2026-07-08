@@ -924,7 +924,7 @@ Mount the members of an existing snapshot set.
 
 .. code-block:: bash
 
-   snapm snapset mount [--mount-root PATH] <snapset_name>
+   snapm snapset mount [--mount-root PATH] [--mount-point ORIG=CUSTOM ...] <snapset_name>
 
 By default, the snapshot set's root volume is mounted at
 ``/run/snapm/mounts/<snapset_name>``. Additional snapshot volumes are
@@ -938,20 +938,58 @@ the host system.
    snapm snapset mount backup
    ls /run/snapm/mounts/backup/
 
-Alternatively, you can specify a custom mount root directory using the
-``--mount-root`` option. This allows you to mount snapshot sets at
-arbitrary filesystem paths, which is useful for making snapshots
-accessible to backup tools or other applications:
+Custom Mount Root
+^^^^^^^^^^^^^^^^^
+
+You can specify a custom mount root directory using the ``--mount-root``
+option. This allows you to mount the entire snapshot set at an arbitrary
+filesystem path:
 
 .. code-block:: bash
 
    snapm snapset mount --mount-root /mnt/snapshots backup
    ls /mnt/snapshots/backup/
 
+Per-Member Mount Point Overrides
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more granular control, you can override the mount point for individual
+snapshot set members using ``--mount-point`` (which can be specified multiple
+times). This allows you to mount different filesystems from the snapshot set
+to completely separate locations:
+
+.. code-block:: bash
+
+   # Mount /home to /backup/home and /var to /backup/var
+   snapm snapset mount --mount-point /home=/backup/home \
+                       --mount-point /var=/backup/var \
+                       backup
+
+   # Access the overridden mount points
+   ls /backup/home/
+   ls /backup/var/
+
+This is particularly useful for:
+
+- Selective data access (mounting only specific filesystems)
+- Backup scenarios (mounting user data separately from system data)
+- Data recovery (accessing specific directories without full mount)
+
+Mount Point Format: ``ORIG=CUSTOM`` where ``ORIG`` is the original mount
+point in the snapshot set (e.g., ``/home``) and ``CUSTOM`` is the desired
+mount location (e.g., ``/backup/home``). Both paths must be absolute.
+
+Permissions
+^^^^^^^^^^^
+
 When using custom mount paths, the administrator is responsible for
 setting appropriate permissions on the mount root directory. The default
 ``/run/snapm/mounts`` directory uses mode 0700 for security, but custom
-mount roots are created with mode 0755 to allow flexibility.
+mount roots and per-member mount points are created with mode 0755 to
+allow flexibility.
+
+Access
+^^^^^^
 
 Once mounted, the snapshot set contents can be accessed directly
 through the mount point, or via ``snapset exec`` and ``snapset shell``
