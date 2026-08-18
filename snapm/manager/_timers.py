@@ -1,6 +1,6 @@
 # Copyright Red Hat
 #
-# snapm/manager/_systemd.py - Snapshot Manager systemd interface
+# snapm/manager/_timers.py - Snapshot Manager systemd timer interface
 #
 # This file is part of the snapm project.
 #
@@ -9,13 +9,10 @@
 Systemd timer integration for Snapshot Manager.
 """
 import os
-import time
 import logging
 import tempfile
 from enum import Enum
 from typing import Union
-
-import dbus
 
 from snapm import (
     SnapmSystemError,
@@ -25,6 +22,14 @@ from snapm import (
 )
 
 from ._calendar import CalendarSpec
+from ._systemd import (
+    UnitStatus,
+    _enable_unit,
+    _start_unit,
+    _stop_unit,
+    _disable_unit,
+    _unit_status,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -64,13 +69,7 @@ _UNIT_FORMATS = {
 }
 
 # Constants for systemd paths
-_LIB_SYSTEMD_SYSTEM = "/lib/systemd/system"
 _ETC_SYSTEMD_SYSTEM = "/etc/systemd/system"
-
-# Constants for systemd DBus interface
-_SYSTEMD_TOP_OBJECT = "org.freedesktop.systemd1"
-_SYSTEMD_TOP_PATH = "/org/freedesktop/systemd1"
-_ORG_FREEDESTOP_DBUS_PROPS = "org.freedesktop.DBus.Properties"
 
 # Constants for timer unit drop-in file
 _10_ON_CALENDAR_CONF = "10-oncalendar.conf"
@@ -84,6 +83,9 @@ _DROP_IN_CONTENT_FMT = (
     "# Configure OnCalendar for this template instance.\n"
     "OnCalendar=%s\n"
 )
+
+# Mapping from UnitStatus to TimerStatus values
+_UNIT_TO_TIMER_STATUS = {}
 
 
 def _write_drop_in(drop_in_dir: str, drop_in_file: str, calendarspec: CalendarSpec):
@@ -174,71 +176,19 @@ def _enable_timer(unit_fmt: str, instance: str, calendarspec: CalendarSpec):
     drop_in_file = os.path.join(drop_in_dir, _10_ON_CALENDAR_CONF)
 
     _write_drop_in(drop_in_dir, drop_in_file, calendarspec)
-
-    try:
-        # Connect to the systemd DBus interface
-        bus = dbus.SystemBus()
-        systemd = bus.get_object(
-            _SYSTEMD_TOP_OBJECT,
-            _SYSTEMD_TOP_PATH,
-        )
-        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
-
-        # Load the unit explicitly
-        manager.LoadUnit(unit_name)
-
-        # Enable the timer unit
-        manager.EnableUnitFiles([unit_name], False, True)
-
-        # Reload systemd to register the new unit
-        manager.Reload()
-
-    except dbus.DBusException as err:  # pragma: no cover
-        raise SnapmTimerError(f"DBus error: {err}") from err
+    _enable_unit(unit_name)
 
 
 def _start_timer(unit_fmt: str, instance: str):
     """
     Start an ``instance`` of the timer unit represented by ``unit_fmt``
-    after a previous call to ``enable_timer()``.
+    after a previous call to ``_enable_timer()``.
 
     :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
     """
     unit_name = unit_fmt % instance
-
-    try:
-        # Connect to the systemd DBus interface
-        bus = dbus.SystemBus()
-        systemd = bus.get_object(
-            _SYSTEMD_TOP_OBJECT,
-            _SYSTEMD_TOP_PATH,
-        )
-        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
-
-        # Start the timer unit
-        manager.StartUnit(unit_name, "replace")
-
-        # Poll for unit activation
-        for _ in range(10):  # Try for ~1 seconds (10 * 0.1s)
-            try:
-                unit_obj_path = manager.GetUnit(unit_name)
-                unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
-                unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
-                active_state = unit_props.Get(
-                    f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
-                )
-                if active_state == "active":
-                    _log_info("%s is active.", unit_name)
-                    return
-            except dbus.DBusException:  # pragma: no cover
-                pass
-            time.sleep(0.1)  # pragma: no cover
-
-        raise SnapmTimerError(f"Failed to activate {unit_name}.")  # pragma: no cover
-
-    except dbus.DBusException as err:  # pragma: no cover
-        raise SnapmTimerError(f"DBus error: {err}") from err
+    _start_unit(unit_name)
 
 
 def _stop_timer(unit_fmt: str, instance: str):
@@ -246,27 +196,11 @@ def _stop_timer(unit_fmt: str, instance: str):
     Stop an ``instance`` of the timer unit represented by ``unit_fmt``
     previously started by calling ``_start_timer(unit_fmt, instance)``.
 
+    :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
     """
     unit_name = unit_fmt % instance
-
-    try:
-        # Connect to the systemd DBus interface
-        bus = dbus.SystemBus()
-        systemd = bus.get_object(
-            _SYSTEMD_TOP_OBJECT,
-            _SYSTEMD_TOP_PATH,
-        )
-        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
-
-        # Stop the timer unit
-        manager.StopUnit(unit_name, "replace")
-
-        _log_info("%s has been stopped.", unit_name)
-
-    except dbus.DBusException as err:  # pragma: no cover
-        _log_error("DBus error: %s", err)
-        raise SnapmTimerError(f"DBus error: {err}") from err
+    _stop_unit(unit_name)
 
 
 def _disable_timer(unit_fmt: str, instance: str):
@@ -274,6 +208,7 @@ def _disable_timer(unit_fmt: str, instance: str):
     Disable an ``instance`` of the timer unit represented by ``unit_fmt``
     previously enabled by calling ``_enable_timer(unit_fmt, instance)``.
 
+    :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
     """
     unit_name = unit_fmt % instance
@@ -281,26 +216,7 @@ def _disable_timer(unit_fmt: str, instance: str):
     drop_in_file = os.path.join(drop_in_dir, _10_ON_CALENDAR_CONF)
 
     try:
-        # Connect to the systemd DBus interface
-        bus = dbus.SystemBus()
-        systemd = bus.get_object(
-            _SYSTEMD_TOP_OBJECT,
-            _SYSTEMD_TOP_PATH,
-        )
-        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
-
-        # Stop and disable the timer unit
-        manager.StopUnit(unit_name, "replace")
-        manager.DisableUnitFiles([unit_name], False)
-
-        # Reload systemd to register the new unit
-        manager.Reload()
-
-        _log_info("%s has been disabled and stopped.", unit_name)
-
-    except dbus.DBusException as err:  # pragma: no cover
-        _log_error("DBus error disabling timer: %s", err)
-        raise SnapmTimerError(f"Failed to disable timer unit: {err}") from err
+        _disable_unit(unit_name)
     finally:
         _remove_drop_in(drop_in_dir, drop_in_file)
 
@@ -309,54 +225,15 @@ def _status_timer(unit_fmt: str, instance: str):
     """
     Obtain status of timer ``instance``. Returns an instance of ``TimerStatus``
     reflecting the current state of the timer unit.
+
+    :param unit_fmt: A format string specifying the template unit.
+    :param instance: A string naming the timer unit instance.
+    :returns: The current status of the timer unit.
+    :rtype: ``TimerStatus``
     """
     unit_name = unit_fmt % instance
-
-    try:
-        # Connect to the systemd DBus interface
-        bus = dbus.SystemBus()
-        systemd = bus.get_object(
-            _SYSTEMD_TOP_OBJECT,
-            _SYSTEMD_TOP_PATH,
-        )
-        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
-
-        try:
-            unit_obj_path = manager.GetUnit(unit_name)
-        except dbus.DBusException as err:  # pragma: no cover
-            if err.get_dbus_name() != "org.freedesktop.systemd1.NoSuchUnit":
-                raise err
-            return TimerStatus.DISABLED
-
-        unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
-        unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
-
-        load_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "LoadState")
-        active_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState")
-        sub_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "SubState")
-
-        _log_debug(
-            "timer(%s) unit state load: %s, active: %s, sub: %s",
-            unit_name,
-            load_state,
-            active_state,
-            sub_state,
-        )
-
-        if load_state == "loaded":
-            if active_state == "active":
-                if sub_state == "waiting":
-                    return TimerStatus.RUNNING
-                return TimerStatus.INVALID  # pragma: no cover
-            if active_state == "inactive":
-                if sub_state == "dead":
-                    return TimerStatus.ENABLED
-                return TimerStatus.INVALID  # pragma: no cover
-        return TimerStatus.INVALID  # pragma: no cover
-
-    except dbus.DBusException as err:  # pragma: no cover
-        _log_error("DBus error getting status for timer: %s", err)
-        raise SnapmTimerError(f"Failed to get timer unit status: {err}") from err
+    status = _unit_status(unit_name)
+    return _UNIT_TO_TIMER_STATUS[status]
 
 
 _OP_FNS = {
@@ -450,6 +327,18 @@ class TimerStatus(Enum):
     RUNNING = "running"
     STOPPED = "stopped"
     INVALID = "invalid"
+
+
+# Populate the UnitStatus -> TimerStatus mapping now that TimerStatus is defined
+_UNIT_TO_TIMER_STATUS.update(
+    {
+        UnitStatus.DISABLED: TimerStatus.DISABLED,
+        UnitStatus.ENABLED: TimerStatus.ENABLED,
+        UnitStatus.RUNNING: TimerStatus.RUNNING,
+        UnitStatus.STOPPED: TimerStatus.STOPPED,
+        UnitStatus.INVALID: TimerStatus.INVALID,
+    }
+)
 
 
 class Timer:
