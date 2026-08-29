@@ -120,6 +120,10 @@ _SNAPM_LOCK_DIR = join(SNAPM_RUNTIME_DIR, "lock")
 #: Permissions for lock directory
 _SNAPM_LOCK_DIR_MODE = 0o700
 
+#: Marker file created by ostree when booted into an ostree/Image Mode
+#: deployment (this includes bootc based Image Mode systems).
+_OSTREE_BOOTED_PATH = "/run/ostree-booted"
+
 #: Maximum length for a systemd unit name
 _SYSTEMD_UNIT_NAME_LEN = 255
 
@@ -359,6 +363,24 @@ def _check_snapm_runtime_dir():
         raise SnapmSystemError(
             f"Failed to verify runtime directory {runtime_root}: {err}"
         ) from err
+
+
+def _check_image_mode():
+    """
+    Reject operation on Image Mode / ostree deployments.
+
+    snapm cannot manage snapshots on Image Mode (bootc) or ostree based
+    systems: these deployments use a read-only ``/boot`` filesystem and a
+    different boot management model that snapm and boom do not currently
+    support. Detect such systems early and fail with a clear message rather
+    than allowing operations to fail later with confusing errors (for
+    example when boom attempts to generate a default configuration on the
+    read-only ``/boot`` filesystem).
+
+    :raises SnapmSystemError: If an ostree / Image Mode deployment is detected.
+    """
+    if exists(_OSTREE_BOOTED_PATH):
+        raise SnapmSystemError("Image Mode deployments are currently unsupported")
 
 
 def _check_lock_dir() -> str:
