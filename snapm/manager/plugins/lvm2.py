@@ -8,6 +8,9 @@
 """
 LVM2 snapshot manager plugins
 """
+import logging
+import shlex
+
 from os.path import exists as path_exists, join as path_join, isabs as path_isabs
 from os import stat, major as dev_major, environ
 from subprocess import run, CalledProcessError
@@ -18,6 +21,8 @@ from time import time
 from shutil import which
 
 from snapm import (
+    SNAPM_SUBSYSTEM_LVM2,
+    SNAPM_SUBSYSTEM_LVM2ERR,
     SnapmInvalidIdentifierError,
     SnapmSizePolicyError,
     SnapmCalloutError,
@@ -47,6 +52,24 @@ from snapm.manager.plugins import (
     format_snapshot_name,
     encode_mount_point,
 )
+
+_log = logging.getLogger(__name__)
+
+_log_debug = _log.debug
+_log_info = _log.info
+_log_warn = _log.warning
+_log_error = _log.error
+
+
+def _log_debug_lvm2(msg, *args, **kwargs):
+    """A wrapper for LVM2 command subsystem debug logs."""
+    _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_LVM2}, **kwargs)
+
+
+def _log_debug_lvm2err(msg, *args, **kwargs):
+    """A wrapper for LVM2 command error subsystem debug logs."""
+    _log.debug(msg, *args, extra={"subsystem": SNAPM_SUBSYSTEM_LVM2ERR}, **kwargs)
+
 
 #: Maximum length for LVM2 LV names
 LVM_MAX_NAME_LEN = 127
@@ -265,6 +288,22 @@ def _round_up_extents(size_bytes: int, extent_size: int) -> int:
     return ((size_bytes + extent_size - 1) // extent_size) * extent_size
 
 
+def _decode_output(output):
+    """
+    Decode and strip command output that may be ``bytes`` or ``str`` and
+    return the result as a string.
+
+    :param output: The captured stdout or stderr of a command, or ``None``.
+    :returns: A stripped string representation of the output, or the empty
+              string if ``output`` is ``None``.
+    """
+    if output is None:
+        return ""
+    if isinstance(output, bytes):
+        output = output.decode("utf8")
+    return output.strip()
+
+
 def _decode_stderr(err):
     """
     Decode and strip the stderr member of a ``CalledProcessError`` and
@@ -274,7 +313,24 @@ def _decode_stderr(err):
     :returns: A stripped string representation of the exception's stderr
               member.
     """
-    return err.stderr.decode("utf8").strip()
+    return _decode_output(err.stderr)
+
+
+def _format_command(popenargs):
+    """
+    Format the positional arguments passed to ``_Lvm2._run()`` as a single
+    shell-quoted command line for logging.
+
+    :param popenargs: The positional arguments forwarded to
+                      ``subprocess.run()``.
+    :returns: A shell-quoted string representation of the command line.
+    """
+    if not popenargs:
+        return ""
+    args = popenargs[0]
+    if isinstance(args, str):
+        return args
+    return shlex.join(str(arg) for arg in args)
 
 
 def _check_lvm_present():
@@ -516,16 +572,41 @@ class _Lvm2(Plugin):
         caller's ``env`` value is merged with the dictionary passed to the
         underlying ``run()`` call, potentially overriding the values contained
         in ``self._env``.
+
+        Every command line executed is logged to the ``snapm.lvm2`` debug
+        subsystem, along with any captured stdout. The stderr of failed
+        commands is logged to the ``snapm.lvm2err`` debug subsystem.
         """
         kwargs["env"] = self._env | kwargs["env"] if "env" in kwargs else self._env
-        return run(
-            *popenargs,
-            input=input,
-            capture_output=capture_output,
-            timeout=timeout,
-            check=check,
-            **kwargs,
-        )
+        cmd_str = _format_command(popenargs)
+        _log_debug_lvm2("Running LVM2 command: %s", cmd_str)
+        try:
+            proc = run(
+                *popenargs,
+                input=input,
+                capture_output=capture_output,
+                timeout=timeout,
+                check=check,
+                **kwargs,
+            )
+        except CalledProcessError as err:
+            _log_debug_lvm2err(
+                "LVM2 command failed (%d): %s: %s",
+                err.returncode,
+                cmd_str,
+                _decode_stderr(err),
+            )
+            raise
+        if proc.returncode:
+            _log_debug_lvm2err(
+                "LVM2 command failed (%d): %s: %s",
+                proc.returncode,
+                cmd_str,
+                _decode_output(proc.stderr),
+            )
+        elif proc.stdout:
+            _log_debug_lvm2("LVM2 command output: %s", _decode_output(proc.stdout))
+        return proc
 
     def _is_lvm_device(self, device):
         """
