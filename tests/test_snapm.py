@@ -63,6 +63,12 @@ class SnapmTestsSimple(unittest.TestCase):
         self.assertIn(snapm.SNAPM_SUBSYSTEM_COMMAND, sf2.enabled_subsystems)
         self.assertIn(snapm.SNAPM_SUBSYSTEM_MANAGER, sf2.enabled_subsystems)
 
+    def test_set_debug_mask_lvm2(self):
+        snapm.set_debug_mask(snapm.SNAPM_DEBUG_LVM2 | snapm.SNAPM_DEBUG_LVM2ERR)
+        sf = snapm.SubsystemFilter("snapm")
+        self.assertIn(snapm.SNAPM_SUBSYSTEM_LVM2, sf.enabled_subsystems)
+        self.assertIn(snapm.SNAPM_SUBSYSTEM_LVM2ERR, sf.enabled_subsystems)
+
     def test_Selection_is_null(self):
         s = snapm.Selection()
         self.assertTrue(s.is_null())

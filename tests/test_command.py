@@ -206,9 +206,17 @@ class CommandTestsSimple(CommandTestsBase):
         from snapm import get_debug_mask, SNAPM_DEBUG_ALL
 
         args = MockArgs()
-        args.debug = "manager,command,report,schedule,mounts,fsdiff,plugin"
+        args.debug = "manager,command,report,schedule,mounts,fsdiff,plugin,lvm2,lvm2err"
         command.set_debug(args.debug)
         self.assertEqual(get_debug_mask(), SNAPM_DEBUG_ALL)
+
+    def test_set_debug_lvm2(self):
+        from snapm import get_debug_mask, SNAPM_DEBUG_LVM2, SNAPM_DEBUG_LVM2ERR
+
+        args = MockArgs()
+        args.debug = "lvm2,lvm2err"
+        command.set_debug(args.debug)
+        self.assertEqual(get_debug_mask(), SNAPM_DEBUG_LVM2 | SNAPM_DEBUG_LVM2ERR)
 
     def test_set_debug_all(self):
         from snapm import get_debug_mask, SNAPM_DEBUG_ALL

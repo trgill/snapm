@@ -85,6 +85,70 @@ class Lvm2TestsSimple(unittest.TestCase):
         with self.assertRaises(ValueError):
             lvm2._round_up_extents(-4096, 1048576)
 
+    def test__decode_output(self):
+        # (value, expected)
+        test_values = (
+            (None, ""),
+            (b"", ""),
+            (b"  output  \n", "output"),
+            ("  output  \n", "output"),
+            (b"line1\nline2\n", "line1\nline2"),
+        )
+        for value, expected in test_values:
+            with self.subTest(value=value, expected=expected):
+                self.assertEqual(lvm2._decode_output(value), expected)
+
+    def test__format_command(self):
+        # (popenargs, expected)
+        test_values = (
+            ((), ""),
+            (("lvs --all",), "lvs --all"),
+            ((["lvs", "--all"],), "lvs --all"),
+            ((["lvs", "--all", "vg/lv name"],), "lvs --all 'vg/lv name'"),
+            ((["lvcreate", "--size", 512],), "lvcreate --size 512"),
+        )
+        for popenargs, expected in test_values:
+            with self.subTest(popenargs=popenargs, expected=expected):
+                self.assertEqual(lvm2._format_command(popenargs), expected)
+
+    def test__run_logs_command_and_output(self):
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
+        with self.assertLogs("snapm.manager.plugins.lvm2", level="DEBUG") as cm:
+            proc = lvm2cow._run(["echo", "snapm-test"], capture_output=True)
+        self.assertEqual(proc.returncode, 0)
+        subsystems = {getattr(r, "subsystem", None) for r in cm.records}
+        self.assertIn(lvm2.SNAPM_SUBSYSTEM_LVM2, subsystems)
+        self.assertNotIn(lvm2.SNAPM_SUBSYSTEM_LVM2ERR, subsystems)
+        messages = "\n".join(r.getMessage() for r in cm.records)
+        self.assertIn("echo snapm-test", messages)
+        self.assertIn("snapm-test", messages)
+
+    def test__run_logs_failed_command(self):
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
+        with self.assertLogs("snapm.manager.plugins.lvm2", level="DEBUG") as cm:
+            proc = lvm2cow._run(["cat", "/snapm/no/such/path"], capture_output=True)
+        self.assertNotEqual(proc.returncode, 0)
+        err_records = [
+            r
+            for r in cm.records
+            if getattr(r, "subsystem", None) == lvm2.SNAPM_SUBSYSTEM_LVM2ERR
+        ]
+        self.assertTrue(err_records)
+
+    def test__run_logs_checked_failure(self):
+        lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
+        with self.assertLogs("snapm.manager.plugins.lvm2", level="DEBUG") as cm:
+            with self.assertRaises(lvm2.CalledProcessError):
+                lvm2cow._run(
+                    ["cat", "/snapm/no/such/path"], capture_output=True, check=True
+                )
+        err_records = [
+            r
+            for r in cm.records
+            if getattr(r, "subsystem", None) == lvm2.SNAPM_SUBSYSTEM_LVM2ERR
+        ]
+        self.assertTrue(err_records)
+
     def test_lvm2cow_is_lvm_device(self):
         lvm2cow = lvm2.Lvm2Cow(log, ConfigParser())
         devs = {
