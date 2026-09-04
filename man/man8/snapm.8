@@ -644,7 +644,9 @@ The name of a configured schedule.
 \fB-d | --debug\fP \fIdebug_flags\fP
 A comma-separated list of subsystem names to enable debugging output
 for, or 'all' to enable all debugging. The available debug classes
-are: manager, command, report, schedule, mounts, fsdiff, plugin.
+are: manager, command, report, schedule, mounts, fsdiff, plugin, lvm2,
+lvm2err. The lvm2 class traces all LVM2 command lines and their output,
+while lvm2err traces the stderr of failed LVM2 commands.
 .
 .TP 8
 \fB-D | --desc\fP \fImode\fP

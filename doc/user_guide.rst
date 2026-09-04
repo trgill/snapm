@@ -1958,6 +1958,16 @@ Enable specific debug categories with very verbose output:
 
    snapm -vv -d command,plugin snapset list
 
+The available debug categories are ``manager``, ``command``, ``report``,
+``schedule``, ``mounts``, ``fsdiff``, ``plugin``, ``lvm2`` and
+``lvm2err``. The ``lvm2`` category traces all LVM2 command lines and
+their output, while ``lvm2err`` traces the stderr of failed LVM2
+commands:
+
+.. code-block:: bash
+
+   snapm -vv -d lvm2,lvm2err snapset create debug-test /home
+
 Basic verbose output:
 
 .. code-block:: bash
