@@ -88,6 +88,7 @@ class SystemdUnitTests(unittest.TestCase):
         """
         unit_name = _UNIT_FORMATS[unit_type] % instance
         drop_in_dir, drop_in_file = self._setup_drop_in(unit_name, calendarspec)
+        enabled = False
 
         try:
             # Verify unit starts as disabled
@@ -95,6 +96,7 @@ class SystemdUnitTests(unittest.TestCase):
 
             # Enable and verify
             _enable_unit(unit_name)
+            enabled = True
             self.assertEqual(_unit_status(unit_name), UnitStatus.ENABLED)
 
             # Start and verify
@@ -107,9 +109,14 @@ class SystemdUnitTests(unittest.TestCase):
 
             # Disable and verify
             _disable_unit(unit_name)
+            enabled = False
             self.assertEqual(_unit_status(unit_name), UnitStatus.DISABLED)
         finally:
-            self._cleanup_drop_in(drop_in_dir, drop_in_file)
+            try:
+                if enabled:
+                    _disable_unit(unit_name)
+            finally:
+                self._cleanup_drop_in(drop_in_dir, drop_in_file)
 
     def test_create_unit_lifecycle_hourly(self):
         """
