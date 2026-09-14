@@ -1,6 +1,7 @@
 import unittest
 import logging
 import os.path
+from unittest.mock import patch
 
 import snapm
 from snapm.manager._timers import (
@@ -10,6 +11,7 @@ from snapm.manager._timers import (
     _TIMER_DISABLE,
     _TIMER_START,
     _TIMER_STOP,
+    _TIMER_STATUS,
     _UNIT_CREATE,
     _UNIT_GC,
     # public interface
@@ -205,3 +207,63 @@ class TimerTests(unittest.TestCase):
     def test_Timer_GC_enable_start_stop_disable_monthly(self):
         t = Timer(TimerType.GC, "monthly", "monthly")
         self.timer_assert_enable_start_stop_disable(t)
+
+
+class TimerSystemdErrorTests(unittest.TestCase):
+    """
+    Verify that ``SnapmSystemdError`` raised by the general systemd unit
+    handling functions is re-raised as ``SnapmTimerError`` by the timer
+    interface.
+    """
+
+    def assert_systemd_error_becomes_timer_error(self, unit_fn, op, message):
+        """
+        Patch the systemd unit function ``unit_fn`` to raise a
+        ``SnapmSystemdError`` and verify that ``op`` raises a
+        ``SnapmTimerError`` including ``message`` and chaining the original
+        exception.
+        """
+        err = snapm.SnapmSystemdError("DBus error: test")
+        with patch(f"snapm.manager._timers.{unit_fn}", side_effect=err):
+            with self.assertRaises(snapm.SnapmTimerError) as cm:
+                op()
+        self.assertIn(message, str(cm.exception))
+        self.assertIs(cm.exception.__cause__, err)
+
+    def test_timer_ENABLE_systemd_error_raises_timer_error(self):
+        with patch("snapm.manager._timers._write_drop_in"):
+            self.assert_systemd_error_becomes_timer_error(
+                "_enable_unit",
+                lambda: _timer(
+                    _TIMER_ENABLE, _UNIT_CREATE, "hourly", calendarspec="hourly"
+                ),
+                "Failed to enable timer 'snapm-create@hourly.timer'",
+            )
+
+    def test_timer_START_systemd_error_raises_timer_error(self):
+        self.assert_systemd_error_becomes_timer_error(
+            "_start_unit",
+            lambda: _timer(_TIMER_START, _UNIT_CREATE, "hourly"),
+            "Failed to start timer 'snapm-create@hourly.timer'",
+        )
+
+    def test_timer_STOP_systemd_error_raises_timer_error(self):
+        self.assert_systemd_error_becomes_timer_error(
+            "_stop_unit",
+            lambda: _timer(_TIMER_STOP, _UNIT_CREATE, "hourly"),
+            "Failed to stop timer 'snapm-create@hourly.timer'",
+        )
+
+    def test_timer_DISABLE_systemd_error_raises_timer_error(self):
+        self.assert_systemd_error_becomes_timer_error(
+            "_disable_unit",
+            lambda: _timer(_TIMER_DISABLE, _UNIT_GC, "hourly"),
+            "Failed to disable timer 'snapm-gc@hourly.timer'",
+        )
+
+    def test_timer_STATUS_systemd_error_raises_timer_error(self):
+        self.assert_systemd_error_becomes_timer_error(
+            "_unit_status",
+            lambda: _timer(_TIMER_STATUS, _UNIT_GC, "hourly"),
+            "Failed to get status for timer 'snapm-gc@hourly.timer'",
+        )

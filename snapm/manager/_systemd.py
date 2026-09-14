@@ -14,7 +14,7 @@ from enum import Enum
 
 import dbus
 
-from snapm import SnapmTimerError
+from snapm import SnapmSystemdError
 
 _log = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ def _enable_unit(unit_name: str):
     This must be called before attempting to start the unit.
 
     :param unit_name: A string specifying the unit name.
+    :raises: ``SnapmSystemdError`` if the unit could not be enabled.
     """
     try:
         bus = dbus.SystemBus()
@@ -62,7 +63,7 @@ def _enable_unit(unit_name: str):
         manager.Reload()
 
     except dbus.DBusException as err:  # pragma: no cover
-        raise SnapmTimerError(f"DBus error: {err}") from err
+        raise SnapmSystemdError(f"DBus error: {err}") from err
 
 
 def _start_unit(unit_name: str):
@@ -71,6 +72,7 @@ def _start_unit(unit_name: str):
     ``_enable_unit()``.
 
     :param unit_name: A string specifying the unit name.
+    :raises: ``SnapmSystemdError`` if the unit could not be started.
     """
     try:
         bus = dbus.SystemBus()
@@ -97,10 +99,10 @@ def _start_unit(unit_name: str):
                 pass
             time.sleep(0.1)  # pragma: no cover
 
-        raise SnapmTimerError(f"Failed to activate {unit_name}.")  # pragma: no cover
+        raise SnapmSystemdError(f"Failed to activate {unit_name}.")  # pragma: no cover
 
     except dbus.DBusException as err:  # pragma: no cover
-        raise SnapmTimerError(f"DBus error: {err}") from err
+        raise SnapmSystemdError(f"DBus error: {err}") from err
 
 
 def _stop_unit(unit_name: str):
@@ -108,6 +110,7 @@ def _stop_unit(unit_name: str):
     Stop a unit represented by ``unit_name``.
 
     :param unit_name: A string naming the unit.
+    :raises: ``SnapmSystemdError`` if the unit could not be stopped.
     """
     try:
         bus = dbus.SystemBus()
@@ -137,11 +140,13 @@ def _stop_unit(unit_name: str):
                 raise
             time.sleep(0.1)  # pragma: no cover
 
-        raise SnapmTimerError(f"Failed to deactivate {unit_name}.")  # pragma: no cover
+        raise SnapmSystemdError(  # pragma: no cover
+            f"Failed to deactivate {unit_name}."
+        )
 
     except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error: %s", err)
-        raise SnapmTimerError(f"DBus error: {err}") from err
+        raise SnapmSystemdError(f"DBus error: {err}") from err
 
 
 def _disable_unit(unit_name: str):
@@ -149,6 +154,7 @@ def _disable_unit(unit_name: str):
     Disable the unit represented by ``unit_name``.
 
     :param unit_name: A string naming the unit.
+    :raises: ``SnapmSystemdError`` if the unit could not be disabled.
     """
     try:
         bus = dbus.SystemBus()
@@ -166,7 +172,7 @@ def _disable_unit(unit_name: str):
 
     except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error disabling unit: %s", err)
-        raise SnapmTimerError(f"Failed to disable unit: {err}") from err
+        raise SnapmSystemdError(f"Failed to disable unit: {err}") from err
 
 
 def _unit_status(unit_name: str):
@@ -177,6 +183,7 @@ def _unit_status(unit_name: str):
     :param unit_name: A string naming the unit.
     :returns: The current status of the unit.
     :rtype: ``UnitStatus``
+    :raises: ``SnapmSystemdError`` if the unit status could not be obtained.
     """
     try:
         bus = dbus.SystemBus()
@@ -230,7 +237,7 @@ def _unit_status(unit_name: str):
 
     except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error getting status for unit: %s", err)
-        raise SnapmTimerError(f"Failed to get unit status: {err}") from err
+        raise SnapmSystemdError(f"Failed to get unit status: {err}") from err
 
 
 __all__ = [

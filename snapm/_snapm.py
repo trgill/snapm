@@ -481,6 +481,12 @@ class SnapmArgumentError(SnapmError):
     """
 
 
+class SnapmSystemdError(SnapmError):
+    """
+    An error manipulating systemd units.
+    """
+
+
 class SnapmTimerError(SnapmError):
     """
     An error manipulating systemd timers.
@@ -2592,6 +2598,7 @@ __all__ = [
     "SnapmStateError",
     "SnapmRecursionError",
     "SnapmArgumentError",
+    "SnapmSystemdError",
     "SnapmTimerError",
     "SnapmLimitError",
     "SnapmMountError",

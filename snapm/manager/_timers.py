@@ -17,6 +17,7 @@ from typing import Union
 from snapm import (
     SnapmSystemError,
     SnapmArgumentError,
+    SnapmSystemdError,
     SnapmTimerError,
     SnapmCalloutError,
 )
@@ -170,13 +171,17 @@ def _enable_timer(unit_fmt: str, instance: str, calendarspec: CalendarSpec):
     :param instance: A string naming the timer unit instance.
     :param calendarspec: A ``CalendarSpec`` object initialised with the
            desired OnCalendar expression.
+    :raises: ``SnapmTimerError`` if the timer unit could not be enabled.
     """
     unit_name = unit_fmt % instance
     drop_in_dir = _DROP_IN_DIR_FMT % unit_name
     drop_in_file = os.path.join(drop_in_dir, _10_ON_CALENDAR_CONF)
 
     _write_drop_in(drop_in_dir, drop_in_file, calendarspec)
-    _enable_unit(unit_name)
+    try:
+        _enable_unit(unit_name)
+    except SnapmSystemdError as err:
+        raise SnapmTimerError(f"Failed to enable timer '{unit_name}': {err}") from err
 
 
 def _start_timer(unit_fmt: str, instance: str):
@@ -186,9 +191,13 @@ def _start_timer(unit_fmt: str, instance: str):
 
     :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
+    :raises: ``SnapmTimerError`` if the timer unit could not be started.
     """
     unit_name = unit_fmt % instance
-    _start_unit(unit_name)
+    try:
+        _start_unit(unit_name)
+    except SnapmSystemdError as err:
+        raise SnapmTimerError(f"Failed to start timer '{unit_name}': {err}") from err
 
 
 def _stop_timer(unit_fmt: str, instance: str):
@@ -198,9 +207,13 @@ def _stop_timer(unit_fmt: str, instance: str):
 
     :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
+    :raises: ``SnapmTimerError`` if the timer unit could not be stopped.
     """
     unit_name = unit_fmt % instance
-    _stop_unit(unit_name)
+    try:
+        _stop_unit(unit_name)
+    except SnapmSystemdError as err:
+        raise SnapmTimerError(f"Failed to stop timer '{unit_name}': {err}") from err
 
 
 def _disable_timer(unit_fmt: str, instance: str):
@@ -210,6 +223,7 @@ def _disable_timer(unit_fmt: str, instance: str):
 
     :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
+    :raises: ``SnapmTimerError`` if the timer unit could not be disabled.
     """
     unit_name = unit_fmt % instance
     drop_in_dir = _DROP_IN_DIR_FMT % unit_name
@@ -217,6 +231,8 @@ def _disable_timer(unit_fmt: str, instance: str):
 
     try:
         _disable_unit(unit_name)
+    except SnapmSystemdError as err:
+        raise SnapmTimerError(f"Failed to disable timer '{unit_name}': {err}") from err
     finally:
         _remove_drop_in(drop_in_dir, drop_in_file)
 
@@ -230,9 +246,16 @@ def _status_timer(unit_fmt: str, instance: str):
     :param instance: A string naming the timer unit instance.
     :returns: The current status of the timer unit.
     :rtype: ``TimerStatus``
+    :raises: ``SnapmTimerError`` if the timer unit status could not be
+             obtained.
     """
     unit_name = unit_fmt % instance
-    status = _unit_status(unit_name)
+    try:
+        status = _unit_status(unit_name)
+    except SnapmSystemdError as err:
+        raise SnapmTimerError(
+            f"Failed to get status for timer '{unit_name}': {err}"
+        ) from err
     return _UNIT_TO_TIMER_STATUS[status]
 
 

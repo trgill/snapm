@@ -2,7 +2,7 @@ IMAGE = container-tests
 CONTAINER = container-tests
 TEST_DIR = $(CURDIR)/tests
 
-COVERAGE_INCLUDE = /src/snapm/manager/_schedule.py,/src/snapm/manager/_timers.py
+COVERAGE_INCLUDE = /src/snapm/manager/_schedule.py,/src/snapm/manager/_timers.py,/src/snapm/manager/_systemd.py
 
 .PHONY: all prep build run install test clean shell
 
