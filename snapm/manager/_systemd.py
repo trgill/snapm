@@ -191,6 +191,16 @@ def _unit_status(unit_name: str):
         except dbus.DBusException as err:  # pragma: no cover
             if err.get_dbus_name() != "org.freedesktop.systemd1.NoSuchUnit":
                 raise err
+            try:
+                unit_file_state = manager.GetUnitFileState(unit_name)
+                if unit_file_state == "enabled":
+                    return UnitStatus.ENABLED
+            except dbus.DBusException as err2:
+                if err2.get_dbus_name() not in (
+                    "org.freedesktop.DBus.Error.FileNotFound",
+                    "org.freedesktop.systemd1.NoSuchUnit",
+                ):
+                    raise
             return UnitStatus.DISABLED
 
         unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
@@ -210,7 +220,12 @@ def _unit_status(unit_name: str):
             if active_state == "active":
                 return UnitStatus.RUNNING
             if active_state == "inactive":
-                return UnitStatus.ENABLED
+                unit_file_state = unit_props.Get(
+                    f"{_SYSTEMD_TOP_OBJECT}.Unit", "UnitFileState"
+                )
+                if unit_file_state == "enabled":
+                    return UnitStatus.ENABLED
+                return UnitStatus.DISABLED
         return UnitStatus.INVALID  # pragma: no cover
 
     except dbus.DBusException as err:  # pragma: no cover
