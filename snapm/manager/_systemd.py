@@ -119,7 +119,25 @@ def _stop_unit(unit_name: str):
 
         manager.StopUnit(unit_name, "replace")
 
-        _log_info("%s has been stopped.", unit_name)
+        for _ in range(10):
+            try:
+                unit_obj_path = manager.GetUnit(unit_name)
+                unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
+                unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
+                active_state = unit_props.Get(
+                    f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
+                )
+                if active_state == "inactive":
+                    _log_info("%s has been stopped.", unit_name)
+                    return
+            except dbus.DBusException as err:  # pragma: no cover
+                if err.get_dbus_name() == "org.freedesktop.systemd1.NoSuchUnit":
+                    _log_info("%s has been stopped.", unit_name)
+                    return
+                raise
+            time.sleep(0.1)  # pragma: no cover
+
+        raise SnapmTimerError(f"Failed to deactivate {unit_name}.")  # pragma: no cover
 
     except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error: %s", err)
@@ -179,9 +197,7 @@ def _unit_status(unit_name: str):
         unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
 
         load_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "LoadState")
-        active_state = unit_props.Get(
-            f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
-        )
+        active_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState")
 
         _log_debug(
             "unit(%s) state load: %s, active: %s",
