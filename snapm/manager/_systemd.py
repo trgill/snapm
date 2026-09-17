@@ -28,6 +28,12 @@ _SYSTEMD_TOP_OBJECT = "org.freedesktop.systemd1"
 _SYSTEMD_TOP_PATH = "/org/freedesktop/systemd1"
 _ORG_FREEDESTOP_DBUS_PROPS = "org.freedesktop.DBus.Properties"
 
+# Unit properties naming units that this unit is ordered after.
+_UNIT_DEPENDS_PROPERTIES = ("After",)
+
+# Unit properties naming units that this unit is ordered before.
+_UNIT_DEPENDED_PROPERTIES = ("Before",)
+
 
 class UnitStatus(Enum):
     """
@@ -240,6 +246,133 @@ def unit_status(unit_name: str):
         raise SnapmSystemdError(f"Failed to get unit status: {err}") from err
 
 
+def _unit_dependencies(unit_name: str):
+    """
+    Obtain the dependencies of the unit ``unit_name``.
+
+    Two sets of unit names are returned: units ordered before ``unit_name``
+    by ``After``, and units ordered after it by ``Before``.
+
+    A unit that cannot be loaded, for example because no corresponding unit
+    file exists, has no dependencies: a pair of empty sets is returned in this
+    case.
+
+    :param unit_name: A string naming the unit.
+    :returns: A tuple of two sets of unit names, ``(depends, depended)``.
+    :rtype: tuple
+    :raises: ``SnapmSystemdError`` if the unit dependencies could not be
+             obtained.
+    """
+    try:
+        bus = dbus.SystemBus()
+        systemd = bus.get_object(
+            _SYSTEMD_TOP_OBJECT,
+            _SYSTEMD_TOP_PATH,
+        )
+        manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
+
+        try:
+            unit_obj_path = manager.LoadUnit(unit_name)
+        except dbus.DBusException as err:
+            _log_debug("Could not load unit %s: %s", unit_name, err)
+            if err.get_dbus_name() not in (
+                "org.freedesktop.systemd1.NoSuchUnit",
+                "org.freedesktop.DBus.Error.InvalidArgs",
+            ):
+                raise
+            return (set(), set())
+
+        unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
+        unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
+        props = unit_props.GetAll(f"{_SYSTEMD_TOP_OBJECT}.Unit")
+
+        depends = set()
+        for prop in _UNIT_DEPENDS_PROPERTIES:
+            depends.update(str(name) for name in props.get(prop, []))
+
+        depended = set()
+        for prop in _UNIT_DEPENDED_PROPERTIES:
+            depended.update(str(name) for name in props.get(prop, []))
+
+        _log_debug(
+            "unit(%s) depends on: %s, depended on by: %s",
+            unit_name,
+            ",".join(sorted(depends)) or "-",
+            ",".join(sorted(depended)) or "-",
+        )
+
+        return (depends, depended)
+
+    except dbus.DBusException as err:  # pragma: no cover
+        _log_error("DBus error getting dependencies for unit: %s", err)
+        raise SnapmSystemdError(f"Failed to get unit dependencies: {err}") from err
+
+
+def sort_units(unit_names: list):
+    """
+    Sort the units named by ``unit_names`` into systemd dependency order.
+
+    The returned list is ordered so that each unit precedes the units that it
+    depends upon: a caller may stop the units by iterating over the list in
+    order, stopping each unit in turn, and may reverse the operation by
+    walking the list backwards, starting each unit in turn.
+
+    Only dependencies between members of ``unit_names`` are considered:
+    dependencies on units that are not named in the list are ignored.
+    Duplicate names are removed and units with no dependency relationship
+    retain their relative order from ``unit_names``.
+
+    A dependency loop cannot be ordered: the loop is broken at the first
+    remaining unit in list order and a warning is logged.
+
+    :param unit_names: A list of strings naming the units to sort.
+    :returns: A new list naming the units in dependency order.
+    :rtype: list
+    :raises: ``SnapmSystemdError`` if the unit dependencies could not be
+             obtained.
+    """
+    # Remove duplicate names while preserving the caller's ordering
+    units = list(dict.fromkeys(unit_names))
+    if len(units) < 2:
+        return units
+
+    unit_set = set(units)
+
+    # Map each unit to the set of units that must be stopped after it
+    precedes = {unit: set() for unit in units}
+    for unit in units:
+        (depends, depended) = _unit_dependencies(unit)
+        # This unit must be stopped before the units that it depends upon
+        precedes[unit].update(depends & unit_set)
+        # Units that depend upon this unit must be stopped before it
+        for other in depended & unit_set:
+            precedes[other].add(unit)
+        precedes[unit].discard(unit)
+
+    in_degree = {unit: 0 for unit in units}
+    for others in precedes.values():
+        for other in others:
+            in_degree[other] += 1
+
+    ordered = []
+    remaining = list(units)
+    while remaining:
+        ready = next((unit for unit in remaining if not in_degree[unit]), None)
+        if ready is None:
+            ready = remaining[0]
+            _log_warn(
+                "Dependency loop sorting units: breaking loop at unit '%s'", ready
+            )
+        remaining.remove(ready)
+        ordered.append(ready)
+        for other in precedes[ready]:
+            in_degree[other] -= 1
+
+    _log_debug("Sorted units into dependency order: %s", ",".join(ordered))
+
+    return ordered
+
+
 __all__ = [
     "UnitStatus",
     "enable_unit",
@@ -247,4 +380,5 @@ __all__ = [
     "stop_unit",
     "disable_unit",
     "unit_status",
+    "sort_units",
 ]
