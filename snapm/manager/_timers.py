@@ -25,11 +25,11 @@ from snapm import (
 from ._calendar import CalendarSpec
 from ._systemd import (
     UnitStatus,
-    _enable_unit,
-    _start_unit,
-    _stop_unit,
-    _disable_unit,
-    _unit_status,
+    enable_unit,
+    start_unit,
+    stop_unit,
+    disable_unit,
+    unit_status,
 )
 
 _log = logging.getLogger(__name__)
@@ -179,7 +179,7 @@ def _enable_timer(unit_fmt: str, instance: str, calendarspec: CalendarSpec):
 
     _write_drop_in(drop_in_dir, drop_in_file, calendarspec)
     try:
-        _enable_unit(unit_name)
+        enable_unit(unit_name)
     except SnapmSystemdError as err:
         raise SnapmTimerError(f"Failed to enable timer '{unit_name}': {err}") from err
 
@@ -195,7 +195,7 @@ def _start_timer(unit_fmt: str, instance: str):
     """
     unit_name = unit_fmt % instance
     try:
-        _start_unit(unit_name)
+        start_unit(unit_name)
     except SnapmSystemdError as err:
         raise SnapmTimerError(f"Failed to start timer '{unit_name}': {err}") from err
 
@@ -211,7 +211,7 @@ def _stop_timer(unit_fmt: str, instance: str):
     """
     unit_name = unit_fmt % instance
     try:
-        _stop_unit(unit_name)
+        stop_unit(unit_name)
     except SnapmSystemdError as err:
         raise SnapmTimerError(f"Failed to stop timer '{unit_name}': {err}") from err
 
@@ -230,7 +230,7 @@ def _disable_timer(unit_fmt: str, instance: str):
     drop_in_file = os.path.join(drop_in_dir, _10_ON_CALENDAR_CONF)
 
     try:
-        _disable_unit(unit_name)
+        disable_unit(unit_name)
     except SnapmSystemdError as err:
         raise SnapmTimerError(f"Failed to disable timer '{unit_name}': {err}") from err
     finally:
@@ -251,7 +251,7 @@ def _status_timer(unit_fmt: str, instance: str):
     """
     unit_name = unit_fmt % instance
     try:
-        status = _unit_status(unit_name)
+        status = unit_status(unit_name)
     except SnapmSystemdError as err:
         raise SnapmTimerError(
             f"Failed to get status for timer '{unit_name}': {err}"

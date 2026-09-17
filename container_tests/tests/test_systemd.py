@@ -5,11 +5,11 @@ import os.path
 
 from snapm.manager._systemd import (
     UnitStatus,
-    _enable_unit,
-    _start_unit,
-    _stop_unit,
-    _disable_unit,
-    _unit_status,
+    enable_unit,
+    start_unit,
+    stop_unit,
+    disable_unit,
+    unit_status,
 )
 from snapm.manager._timers import (
     TimerStatus,
@@ -92,29 +92,29 @@ class SystemdUnitTests(unittest.TestCase):
 
         try:
             # Verify unit starts as disabled
-            self.assertEqual(_unit_status(unit_name), UnitStatus.DISABLED)
+            self.assertEqual(unit_status(unit_name), UnitStatus.DISABLED)
 
             # Enable and verify
-            _enable_unit(unit_name)
+            enable_unit(unit_name)
             enabled = True
-            self.assertEqual(_unit_status(unit_name), UnitStatus.ENABLED)
+            self.assertEqual(unit_status(unit_name), UnitStatus.ENABLED)
 
             # Start and verify
-            _start_unit(unit_name)
-            self.assertEqual(_unit_status(unit_name), UnitStatus.RUNNING)
+            start_unit(unit_name)
+            self.assertEqual(unit_status(unit_name), UnitStatus.RUNNING)
 
             # Stop and verify
-            _stop_unit(unit_name)
-            self.assertEqual(_unit_status(unit_name), UnitStatus.ENABLED)
+            stop_unit(unit_name)
+            self.assertEqual(unit_status(unit_name), UnitStatus.ENABLED)
 
             # Disable and verify
-            _disable_unit(unit_name)
+            disable_unit(unit_name)
             enabled = False
-            self.assertEqual(_unit_status(unit_name), UnitStatus.DISABLED)
+            self.assertEqual(unit_status(unit_name), UnitStatus.DISABLED)
         finally:
             try:
                 if enabled:
-                    _disable_unit(unit_name)
+                    disable_unit(unit_name)
             finally:
                 self._cleanup_drop_in(drop_in_dir, drop_in_file)
 

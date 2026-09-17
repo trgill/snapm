@@ -41,7 +41,7 @@ class UnitStatus(Enum):
     INVALID = "invalid"
 
 
-def _enable_unit(unit_name: str):
+def enable_unit(unit_name: str):
     """
     Enable a systemd unit.
 
@@ -66,10 +66,10 @@ def _enable_unit(unit_name: str):
         raise SnapmSystemdError(f"DBus error: {err}") from err
 
 
-def _start_unit(unit_name: str):
+def start_unit(unit_name: str):
     """
     Start a unit represented by ``unit_name`` after a previous call to
-    ``_enable_unit()``.
+    ``enable_unit()``.
 
     :param unit_name: A string specifying the unit name.
     :raises: ``SnapmSystemdError`` if the unit could not be started.
@@ -105,7 +105,7 @@ def _start_unit(unit_name: str):
         raise SnapmSystemdError(f"DBus error: {err}") from err
 
 
-def _stop_unit(unit_name: str):
+def stop_unit(unit_name: str):
     """
     Stop a unit represented by ``unit_name``.
 
@@ -149,7 +149,7 @@ def _stop_unit(unit_name: str):
         raise SnapmSystemdError(f"DBus error: {err}") from err
 
 
-def _disable_unit(unit_name: str):
+def disable_unit(unit_name: str):
     """
     Disable the unit represented by ``unit_name``.
 
@@ -164,7 +164,7 @@ def _disable_unit(unit_name: str):
         )
         manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
 
-        _stop_unit(unit_name)
+        stop_unit(unit_name)
         manager.DisableUnitFiles([unit_name], False)
         manager.Reload()
 
@@ -175,7 +175,7 @@ def _disable_unit(unit_name: str):
         raise SnapmSystemdError(f"Failed to disable unit: {err}") from err
 
 
-def _unit_status(unit_name: str):
+def unit_status(unit_name: str):
     """
     Obtain status of unit ``unit_name``. Returns an instance of ``UnitStatus``
     reflecting the current state of the unit.
@@ -242,9 +242,9 @@ def _unit_status(unit_name: str):
 
 __all__ = [
     "UnitStatus",
-    "_enable_unit",
-    "_start_unit",
-    "_stop_unit",
-    "_disable_unit",
-    "_unit_status",
+    "enable_unit",
+    "start_unit",
+    "stop_unit",
+    "disable_unit",
+    "unit_status",
 ]

@@ -233,7 +233,7 @@ class TimerSystemdErrorTests(unittest.TestCase):
     def test_timer_ENABLE_systemd_error_raises_timer_error(self):
         with patch("snapm.manager._timers._write_drop_in"):
             self.assert_systemd_error_becomes_timer_error(
-                "_enable_unit",
+                "enable_unit",
                 lambda: _timer(
                     _TIMER_ENABLE, _UNIT_CREATE, "hourly", calendarspec="hourly"
                 ),
@@ -242,28 +242,28 @@ class TimerSystemdErrorTests(unittest.TestCase):
 
     def test_timer_START_systemd_error_raises_timer_error(self):
         self.assert_systemd_error_becomes_timer_error(
-            "_start_unit",
+            "start_unit",
             lambda: _timer(_TIMER_START, _UNIT_CREATE, "hourly"),
             "Failed to start timer 'snapm-create@hourly.timer'",
         )
 
     def test_timer_STOP_systemd_error_raises_timer_error(self):
         self.assert_systemd_error_becomes_timer_error(
-            "_stop_unit",
+            "stop_unit",
             lambda: _timer(_TIMER_STOP, _UNIT_CREATE, "hourly"),
             "Failed to stop timer 'snapm-create@hourly.timer'",
         )
 
     def test_timer_DISABLE_systemd_error_raises_timer_error(self):
         self.assert_systemd_error_becomes_timer_error(
-            "_disable_unit",
+            "disable_unit",
             lambda: _timer(_TIMER_DISABLE, _UNIT_GC, "hourly"),
             "Failed to disable timer 'snapm-gc@hourly.timer'",
         )
 
     def test_timer_STATUS_systemd_error_raises_timer_error(self):
         self.assert_systemd_error_becomes_timer_error(
-            "_unit_status",
+            "unit_status",
             lambda: _timer(_TIMER_STATUS, _UNIT_GC, "hourly"),
             "Failed to get status for timer 'snapm-gc@hourly.timer'",
         )
