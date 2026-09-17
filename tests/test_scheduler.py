@@ -204,6 +204,7 @@ class SchedulerTests(unittest.TestCase):
             fp.write(sched_json % (mount_points[0], mount_points[1]))
 
         self.manager = manager.Manager()
+        self.manager.scheduler.enable("hourly", True)
 
         self.assertTrue(exists(sched_file))
         self.manager.scheduler.delete("hourly")

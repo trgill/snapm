@@ -601,13 +601,15 @@ class GcPolicy:
         """
         Stop the timer for this ``GcPolicy``.
         """
-        self._timer.stop()
+        if self._timer.status == TimerStatus.RUNNING:
+            self._timer.stop()
 
     def disable(self):
         """
         Disable this ``GcPolicy`` and its corresponding timer.
         """
-        self._timer.disable()
+        if self._timer.enabled:
+            self._timer.disable()
 
     @classmethod
     def from_dict(cls, data):
@@ -933,16 +935,17 @@ class Schedule:
         """
         Stop the timer for this ``Schedule``.
         """
-        self._timer.stop()
+        if self._timer.status == TimerStatus.RUNNING:
+            self._timer.stop()
         self.gc_policy.stop()
 
     def disable(self):
         """
         Disable this ``Schedule`` and its corresponding timer.
         """
-        self._timer.stop()
-        self._timer.disable()
-        self.gc_policy.stop()
+        self.stop()
+        if self._timer.enabled:
+            self._timer.disable()
         self.gc_policy.disable()
 
     def gc(self, sets: List[SnapshotSet]) -> List[str]:
