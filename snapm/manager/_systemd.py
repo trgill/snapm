@@ -91,18 +91,15 @@ def start_unit(unit_name: str):
         manager.StartUnit(unit_name, "replace")
 
         for _ in range(10):
-            try:
-                unit_obj_path = manager.GetUnit(unit_name)
-                unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
-                unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
-                active_state = unit_props.Get(
-                    f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
-                )
-                if active_state == "active":
-                    _log_info("%s is active.", unit_name)
-                    return
-            except dbus.DBusException:  # pragma: no cover
-                pass
+            unit_obj_path = manager.GetUnit(unit_name)
+            unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
+            unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
+            active_state = unit_props.Get(
+                f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
+            )
+            if active_state == "active":
+                _log_info("%s is active.", unit_name)
+                return
             time.sleep(0.1)  # pragma: no cover
 
         raise SnapmSystemdError(f"Failed to activate {unit_name}.")  # pragma: no cover
