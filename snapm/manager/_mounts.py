@@ -811,11 +811,16 @@ class Mounts:
         self._mounts_by_name.update({mount.snapset.name: mount for mount in mounts})
         _log_info("Found %d snapshot set mounts", len(self._mounts))
 
-    def mount(self, snapset: SnapshotSet) -> Mount:
+    def mount(
+        self,
+        snapset: SnapshotSet,
+        mount_root: Optional[str] = None,
+    ) -> Mount:
         """
         Mount the snapshot set `snapset`.
 
         :param snapset: The snapshot set to operate on.
+        :param mount_root: Optional custom root directory for the mount tree.
         """
         if snapset.name in self._mounts_by_name:
             existing = self._mounts_by_name[snapset.name]
@@ -835,7 +840,15 @@ class Mounts:
         # Ensure the snapshot set's volumes are active
         snapset.activate()
 
-        mount_path = os.path.join(self._root, snapset.name)
+        if mount_root is not None:
+            mount_root = os.path.abspath(mount_root)
+            if not os.path.isdir(mount_root):
+                raise SnapmPathError(
+                    f"Mount root path does not exist or is not a directory: {mount_root}"
+                )
+            mount_path = os.path.join(mount_root, snapset.name)
+        else:
+            mount_path = os.path.join(self._root, snapset.name)
         os.makedirs(mount_path, exist_ok=True)
 
         mount = Mount(snapset, mount_path)
