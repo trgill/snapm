@@ -17,7 +17,7 @@ import logging
 from time import time
 from math import floor
 from stat import S_ISBLK, S_ISDIR, S_ISLNK
-from os.path import exists, ismount, join, normpath, samefile
+from os.path import basename, exists, ismount, join, normpath, samefile
 from json import JSONDecodeError
 from typing import Dict, List, Union, TYPE_CHECKING
 from functools import wraps
@@ -69,6 +69,7 @@ from ._loader import load_plugins
 from ._signals import suspend_signals
 from ._schedule import Schedule, GcPolicy
 from ._mounts import Mounts
+from ._systemd import UnitStatus, unit_status
 
 
 if TYPE_CHECKING:
@@ -107,6 +108,9 @@ _PLUGINS_D_PATH = join(_SNAPM_CFG_DIR, "plugins.d")
 
 #: Path to directory for Schedule configuration files
 _SCHEDULE_D_PATH = join(_SNAPM_CFG_DIR, "schedule.d")
+
+#: Path to directory for service configuration files
+_SERVICES_D_PATH = join(_SNAPM_CFG_DIR, "services.d")
 
 #: Path to snapm snapshot set mount directory
 _SNAPM_MOUNTS_DIR = join(SNAPM_RUNTIME_DIR, "mounts")
@@ -965,6 +969,7 @@ class Manager:
         self.discover_snapshot_sets()
         self.scheduler = Scheduler(self, _SCHEDULE_D_PATH)
         self.mounts = Mounts(self, self._mounts_dir)
+        self.services = self._load_services()
 
     def _load_plugin_config(self, plugin_name: str) -> ConfigParser:
         """
@@ -986,6 +991,32 @@ class Manager:
             cfg.read([plugin_conf_path])
 
         return cfg
+
+    def _load_services(self):
+        """
+        Load service list from disk.
+        """
+        services = []
+        if not exists(_SERVICES_D_PATH):
+            _log_warn(
+                "Service configuration directory '%s' not found.",
+                _SERVICES_D_PATH,
+            )
+            return services
+
+        for service_file in os.listdir(_SERVICES_D_PATH):
+            service = basename(service_file)
+            try:
+                status = unit_status(service)
+            except SnapmNotFoundError:
+                _log_warn("Service unit '%s' does not exist: ignoring.", service)
+                continue
+
+            if status != UnitStatus.RUNNING:
+                _log_warn("Service unit '%s' is not running: ignoring.", service)
+                continue
+            services.append(service)
+        return services
 
     def _find_and_verify_plugins(
         self,
