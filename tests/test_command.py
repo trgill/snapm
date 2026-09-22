@@ -275,6 +275,7 @@ class CommandTestsSimple(CommandTestsBase):
         mock_manager.mounts.mount.assert_called_once_with(
             mock_snapset,
             mount_root=None,
+            mount_points=None,
         )
 
     @patch("snapm.command.Manager")
@@ -292,6 +293,7 @@ class CommandTestsSimple(CommandTestsBase):
         mock_manager.mounts.mount.assert_called_once_with(
             mock_snapset,
             mount_root="/custom/root",
+            mount_points=None,
         )
 
     @patch("snapm.command.Manager")
