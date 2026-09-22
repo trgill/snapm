@@ -267,3 +267,16 @@ class TimerSystemdErrorTests(unittest.TestCase):
             lambda: _timer(_TIMER_STATUS, _UNIT_GC, "hourly"),
             "Failed to get status for timer 'snapm-gc@hourly.timer'",
         )
+
+    def test_timer_STATUS_not_found_error_is_disabled(self):
+        """
+        Verify that a timer unit with no unit file installed is reported as
+        TimerStatus.DISABLED.
+        """
+        err = snapm.SnapmNotFoundError(
+            "Unknown service unit: snapm-gc@hourly.timer"
+        )
+        with patch("snapm.manager._timers.unit_status", side_effect=err):
+            with self.assertLogs("snapm.manager._timers", level="WARNING"):
+                status = _timer(_TIMER_STATUS, _UNIT_GC, "hourly")
+        self.assertEqual(status, TimerStatus.DISABLED)

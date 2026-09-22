@@ -5,6 +5,7 @@ import os.path
 from unittest.mock import patch
 from subprocess import run
 
+from snapm import SnapmNotFoundError
 from snapm.manager._systemd import (
     UnitStatus,
     enable_unit,
@@ -150,13 +151,30 @@ class SystemdUnitTests(unittest.TestCase):
         """
         self._unit_enable_start_stop_disable(_UNIT_GC, "daily", "daily")
 
-    def test_unit_status_nonexistent_unit(self):
+    def test_unit_status_uninstantiated_template_instance(self):
         """
-        Verify that querying status of a non-existent unit returns
-        UnitStatus.DISABLED.
+        Verify that querying status of an instance of an installed template
+        unit that has not been enabled returns UnitStatus.DISABLED.
         """
         status = unit_status("snapm-create@nonexistent.timer")
         self.assertEqual(status, UnitStatus.DISABLED)
+
+    def test_unit_status_nonexistent_unit(self):
+        """
+        Verify that querying status of a unit with no unit file raises
+        SnapmNotFoundError.
+        """
+        with self.assertRaises(SnapmNotFoundError) as cm:
+            unit_status("snapm-no-such-unit.service")
+        self.assertIn("snapm-no-such-unit.service", str(cm.exception))
+
+    def test_unit_status_invalid_unit_name(self):
+        """
+        Verify that querying status of an invalid unit name raises
+        SnapmNotFoundError.
+        """
+        with self.assertRaises(SnapmNotFoundError):
+            unit_status("not a unit name")
 
 
 class SortUnitsTests(unittest.TestCase):

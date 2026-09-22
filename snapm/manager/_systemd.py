@@ -14,7 +14,7 @@ from enum import Enum
 
 import dbus
 
-from snapm import SnapmSystemdError
+from snapm import SnapmNotFoundError, SnapmSystemdError
 
 _log = logging.getLogger(__name__)
 
@@ -33,6 +33,24 @@ _UNIT_DEPENDS_PROPERTIES = ("After",)
 
 # Unit properties naming units that this unit is ordered before.
 _UNIT_DEPENDED_PROPERTIES = ("Before",)
+
+# DBus error names returned when a unit is not currently loaded, or when the
+# unit name itself is not a valid systemd unit name.
+_UNIT_NOT_LOADED_ERRORS = (
+    "org.freedesktop.systemd1.NoSuchUnit",
+    "org.freedesktop.DBus.Error.InvalidArgs",
+)
+
+# DBus error names returned when no unit file exists for a unit name, or when
+# the unit name itself is not a valid systemd unit name.
+_NO_UNIT_FILE_ERRORS = (
+    "org.freedesktop.systemd1.NoSuchUnit",
+    "org.freedesktop.DBus.Error.FileNotFound",
+    "org.freedesktop.DBus.Error.InvalidArgs",
+)
+
+# Unit LoadState value for a unit that has no corresponding unit file.
+_LOAD_STATE_NOT_FOUND = "not-found"
 
 
 class UnitStatus(Enum):
@@ -94,9 +112,7 @@ def start_unit(unit_name: str):
             unit_obj_path = manager.GetUnit(unit_name)
             unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
             unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
-            active_state = unit_props.Get(
-                f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
-            )
+            active_state = unit_props.Get(f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState")
             if active_state == "active":
                 _log_info("%s is active.", unit_name)
                 return
@@ -178,14 +194,43 @@ def disable_unit(unit_name: str):
         raise SnapmSystemdError(f"Failed to disable unit: {err}") from err
 
 
+def _unit_file_state(manager, unit_name: str):
+    """
+    Obtain the unit file state of the unit named by ``unit_name``.
+
+    A unit name for which no unit file exists, including a name that is not a
+    valid systemd unit name, has no unit file state: ``None`` is returned in
+    this case.
+
+    :param manager: The systemd manager DBus interface to query.
+    :param unit_name: A string naming the unit.
+    :returns: The unit file state of the unit, or ``None`` if no unit file
+              exists for ``unit_name``.
+    :rtype: str or None
+    """
+    try:
+        return str(manager.GetUnitFileState(unit_name))
+    except dbus.DBusException as err:
+        if err.get_dbus_name() not in _NO_UNIT_FILE_ERRORS:
+            raise
+        _log_debug("No unit file for unit %s: %s", unit_name, err)
+        return None
+
+
 def unit_status(unit_name: str):
     """
     Obtain status of unit ``unit_name``. Returns an instance of ``UnitStatus``
     reflecting the current state of the unit.
 
+    A unit that is known to systemd but that is neither enabled nor active is
+    reported as ``UnitStatus.DISABLED``. A unit name for which no unit file
+    exists, including a name that is not a valid systemd unit name, is not a
+    known unit and raises ``SnapmNotFoundError``.
+
     :param unit_name: A string naming the unit.
     :returns: The current status of the unit.
     :rtype: ``UnitStatus``
+    :raises: ``SnapmNotFoundError`` if no unit named ``unit_name`` exists.
     :raises: ``SnapmSystemdError`` if the unit status could not be obtained.
     """
     try:
@@ -198,19 +243,17 @@ def unit_status(unit_name: str):
 
         try:
             unit_obj_path = manager.GetUnit(unit_name)
-        except dbus.DBusException as err:  # pragma: no cover
-            if err.get_dbus_name() != "org.freedesktop.systemd1.NoSuchUnit":
+        except dbus.DBusException as err:
+            if err.get_dbus_name() not in _UNIT_NOT_LOADED_ERRORS:
                 raise err
-            try:
-                unit_file_state = manager.GetUnitFileState(unit_name)
-                if unit_file_state == "enabled":
-                    return UnitStatus.ENABLED
-            except dbus.DBusException as err2:
-                if err2.get_dbus_name() not in (
-                    "org.freedesktop.DBus.Error.FileNotFound",
-                    "org.freedesktop.systemd1.NoSuchUnit",
-                ):
-                    raise
+            # The unit is not loaded: fall back to the unit file state to
+            # distinguish a disabled unit from a unit that does not exist.
+            unit_file_state = _unit_file_state(manager, unit_name)
+            if unit_file_state is None:
+                raise SnapmNotFoundError(f"Unknown service unit: {unit_name}") from err
+            _log_debug("unit(%s) state file: %s", unit_name, unit_file_state)
+            if unit_file_state == "enabled":
+                return UnitStatus.ENABLED
             return UnitStatus.DISABLED
 
         unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
@@ -225,6 +268,12 @@ def unit_status(unit_name: str):
             load_state,
             active_state,
         )
+
+        # A unit may be loaded with no unit file, for example when it is
+        # referenced as a dependency of another unit: this is not a unit that
+        # can be enabled, started, or stopped.
+        if load_state == _LOAD_STATE_NOT_FOUND:  # pragma: no cover
+            raise SnapmNotFoundError(f"Unknown service unit: {unit_name}")
 
         if load_state == "loaded":
             if active_state == "active":

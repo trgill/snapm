@@ -17,6 +17,7 @@ from typing import Union
 from snapm import (
     SnapmSystemError,
     SnapmArgumentError,
+    SnapmNotFoundError,
     SnapmSystemdError,
     SnapmTimerError,
     SnapmCalloutError,
@@ -242,6 +243,9 @@ def _status_timer(unit_fmt: str, instance: str):
     Obtain status of timer ``instance``. Returns an instance of ``TimerStatus``
     reflecting the current state of the timer unit.
 
+    A timer unit for which no unit file is installed is reported as
+    ``TimerStatus.DISABLED``.
+
     :param unit_fmt: A format string specifying the template unit.
     :param instance: A string naming the timer unit instance.
     :returns: The current status of the timer unit.
@@ -252,6 +256,9 @@ def _status_timer(unit_fmt: str, instance: str):
     unit_name = unit_fmt % instance
     try:
         status = unit_status(unit_name)
+    except SnapmNotFoundError:
+        _log_warn("No unit file found for timer '%s'", unit_name)
+        return TimerStatus.DISABLED
     except SnapmSystemdError as err:
         raise SnapmTimerError(
             f"Failed to get status for timer '{unit_name}': {err}"
