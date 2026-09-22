@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import logging
 import os
+import tempfile
 
 log = logging.getLogger()
 
@@ -258,6 +259,93 @@ class CommandTestsSimple(CommandTestsBase):
         with self.assertRaises(SystemExit) as cm:
             command.main(args)
         self.assertEqual(cm.exception.code, 2)
+
+    @patch("snapm.command.Manager")
+    def test_mount_cmd_no_mount_root_passes_none(self, MockManager):
+        """Test that omitting --mount-root passes None to mounts.mount()."""
+        mock_manager = MockManager.return_value
+        mock_snapset = MagicMock()
+        mock_manager.find_snapshot_sets.return_value = [mock_snapset]
+
+        args = MockArgs()
+        args.name = "testset0"
+        args.mount_root = None
+
+        command._mount_cmd(args)
+        mock_manager.mounts.mount.assert_called_once_with(
+            mock_snapset,
+            mount_root=None,
+        )
+
+    @patch("snapm.command.Manager")
+    def test_mount_cmd_mount_root_passes_through(self, MockManager):
+        """Test that --mount-root value is passed through to mounts.mount()."""
+        mock_manager = MockManager.return_value
+        mock_snapset = MagicMock()
+        mock_manager.find_snapshot_sets.return_value = [mock_snapset]
+
+        args = MockArgs()
+        args.name = "testset0"
+        args.mount_root = "/custom/root"
+
+        command._mount_cmd(args)
+        mock_manager.mounts.mount.assert_called_once_with(
+            mock_snapset,
+            mount_root="/custom/root",
+        )
+
+    @patch("snapm.command.Manager")
+    def test_umount_cmd_with_mount_root(self, MockManager):
+        """Test that umount command handles --mount-root option."""
+        mock_manager = MockManager.return_value
+        mock_snapset = MagicMock()
+        mock_snapset.name = "testset0"
+        mock_manager.find_snapshot_sets.return_value = [mock_snapset]
+
+        # Create a temp directory to simulate mount location
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mount_path = os.path.join(tmpdir, "testset0")
+            os.makedirs(mount_path)
+
+            args = MockArgs()
+            args.name = "testset0"
+            args.mount_root = tmpdir
+
+            # Mock the Mount class to avoid actual mounting
+            with patch("snapm.command.Mount") as MockMount:
+                mock_mount = MockMount.return_value
+                mock_mount.mounted = True
+                mock_mount.umount = MagicMock()
+
+                ret = command._umount_cmd(args)
+                self.assertEqual(ret, 0)
+                MockMount.assert_called_once()
+                mock_mount.umount.assert_called_once()
+
+    @patch("snapm.command.Manager")
+    def test_umount_cmd_with_mount_root_not_mounted(self, MockManager):
+        """Test that umount command returns error when path not mounted."""
+        mock_manager = MockManager.return_value
+        mock_snapset = MagicMock()
+        mock_snapset.name = "testset0"
+        mock_manager.find_snapshot_sets.return_value = [mock_snapset]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mount_path = os.path.join(tmpdir, "testset0")
+            os.makedirs(mount_path)
+
+            args = MockArgs()
+            args.name = "testset0"
+            args.mount_root = tmpdir
+
+            # Mount(discover=True) rejects a path that is not a mount point.
+            with patch("snapm.command.Mount") as MockMount:
+                MockMount.side_effect = snapm.SnapmPathError(
+                    f"Mount path {mount_path} is not a mount point."
+                )
+
+                ret = command._umount_cmd(args)
+                self.assertEqual(ret, 1)
 
 
 @unittest.skipIf(not have_root(), "requires root privileges")
