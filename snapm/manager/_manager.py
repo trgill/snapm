@@ -1239,15 +1239,15 @@ class Manager:
         _log_debug("Found %d snapshots", len(matches))
         return matches
 
-    def _find_next_index(self, basename):
+    def _find_next_index(self, set_basename):
         """
         Find the next index value for the recurring snapset with basename
-        ``basename``.
+        ``set_basename``.
 
         :param basename: The basename of the recurring snapset
         :returns: An integer index value
         """
-        sets = self.find_snapshot_sets(selection=Selection(basename=basename))
+        sets = self.find_snapshot_sets(selection=Selection(basename=set_basename))
         sets.sort(key=lambda x: x.index)
         return (sets[-1].index + 1) if sets else 0
 
