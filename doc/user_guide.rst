@@ -247,6 +247,46 @@ ownership and permissions are those of the snapshot's own file system
 content, so the snapshot set is visible to ``auser`` exactly as the
 origin file system was.
 
+Per-Member Mount Point Overrides
+--------------------------------
+
+The ``--mount-point`` option allows individual snapshot set members to
+be mounted at arbitrary absolute paths instead of their default
+locations within the mount tree. This is useful when you need direct
+access to specific parts of the snapshot without navigating the full
+hierarchy.
+
+The option takes an ``ORIG=CUSTOM`` argument, where ``ORIG`` is the
+original mount point of the snapshot set member (e.g. ``/home``) and
+``CUSTOM`` is the desired mount location. The option can be repeated to
+override multiple members:
+
+.. code-block:: bash
+
+   # Create the custom mount point directory
+   sudo mkdir -p /mnt/recovery
+
+   # Mount /home from the snapshot to /mnt/recovery
+   sudo snapm snapset mount --mount-point /home=/mnt/recovery backup
+
+   # Override multiple members
+   sudo mkdir -p /mnt/home-recovery /mnt/var-investigation
+   sudo snapm snapset mount \
+       --mount-point /home=/mnt/home-recovery \
+       --mount-point /var=/mnt/var-investigation \
+       backup
+
+Both the original and custom paths must be absolute. Custom mount point
+directories are created automatically if they do not exist, with mode
+``0755``. Note that once the filesystem is mounted, the permissions and
+ownership visible within the mount reflect those of the snapshot's
+filesystem content, not the mount directory's initial permissions.
+
+The ``--mount-root`` and ``--mount-point`` options can be combined:
+``--mount-root`` controls where the main mount tree is placed, while
+``--mount-point`` overrides redirect specific members to entirely
+separate locations outside the mount tree.
+
 Security and Permissions
 -------------------------
 
