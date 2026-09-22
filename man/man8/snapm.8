@@ -360,6 +360,8 @@ snapm \- Linux Snapshot Manager
 .  B mount
 .  RB [--mount-root\ \c
 .  IR path] " "\c
+.  RB [--mount-point\ \c
+.  IR orig=custom] " "\c
 .  ARG_NAME
 ..
 .CMD_SNAPSET_MOUNT
@@ -1323,6 +1325,12 @@ file systems are created automatically.
 The \fB--mount-root\fP option specifies an alternative base directory for the
 mount tree. The directory must exist and have appropriate permissions set by
 the administrator before mounting.
+.sp
+The \fB--mount-point\fP option redirects individual snapshot set members to
+arbitrary absolute paths instead of their default locations within the mount
+tree. This option may be specified multiple times to override different mount
+points. The format is \fIorig=custom\fP where \fIorig\fP is the original mount
+point (e.g., /home) and \fIcustom\fP is the desired mount location.
 .
 .TP
 .B snapm
