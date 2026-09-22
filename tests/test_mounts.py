@@ -603,6 +603,63 @@ class MountsTests(MountsTestsBase):
             ):
                 self.mounts.mount(self.snapset, mount_root=tmp.name)
 
+    def test_mount_with_mount_point_override(self):
+        """
+        Tests that a per-member mount point override redirects the mount
+        to the specified custom path instead of under the snapshot root.
+        """
+        custom_mp_obj = tempfile.TemporaryDirectory(prefix="snapm_custom_mp_")
+
+        def cleanup_custom_mp():
+            custom_opt = os.path.join(custom_mp_obj.name, "opt_override")
+            if os.path.exists(custom_opt) and os.path.ismount(custom_opt):
+                mounts._umount(custom_opt)
+            custom_mp_obj.cleanup()
+        self.addCleanup(cleanup_custom_mp)
+
+        custom_opt = os.path.join(custom_mp_obj.name, "opt_override")
+        mount_obj = self.mounts.mount(
+            self.snapset,
+            mount_points={"/opt": custom_opt},
+        )
+
+        self.assertTrue(mount_obj.mounted)
+        self.assertTrue(os.path.ismount(custom_opt))
+        self.assertFalse(os.path.ismount(os.path.join(mount_obj.root, "opt")))
+
+        self.mounts.umount(self.snapset)
+
+    def test_mount_with_mount_root_and_mount_point_override(self):
+        """
+        Tests that --mount-root and --mount-point can be used together.
+        """
+        custom_root_obj = tempfile.TemporaryDirectory(prefix="snapm_custom_root_")
+        custom_mp_obj = tempfile.TemporaryDirectory(prefix="snapm_custom_mp_")
+
+        def cleanup_custom():
+            custom_opt = os.path.join(custom_mp_obj.name, "opt_override")
+            if os.path.exists(custom_opt) and os.path.ismount(custom_opt):
+                mounts._umount(custom_opt)
+            custom_mp_obj.cleanup()
+            custom_root_obj.cleanup()
+        self.addCleanup(cleanup_custom)
+
+        custom_opt = os.path.join(custom_mp_obj.name, "opt_override")
+        mount_obj = self.mounts.mount(
+            self.snapset,
+            mount_root=custom_root_obj.name,
+            mount_points={"/opt": custom_opt},
+        )
+
+        expected_root = os.path.join(custom_root_obj.name, self.snapset_name)
+        self.assertEqual(mount_obj.root, expected_root)
+        self.assertTrue(mount_obj.mounted)
+        self.assertTrue(os.path.ismount(expected_root))
+        self.assertTrue(os.path.ismount(custom_opt))
+        self.assertFalse(os.path.ismount(os.path.join(mount_obj.root, "opt")))
+
+        self.mounts.umount(self.snapset)
+
     def test_discover_mounts_with_custom_root(self):
         """
         Tests that discover_mounts() finds mounts created with custom mount_root
