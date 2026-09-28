@@ -52,6 +52,12 @@ _NO_UNIT_FILE_ERRORS = (
 # Unit LoadState value for a unit that has no corresponding unit file.
 _LOAD_STATE_NOT_FOUND = "not-found"
 
+# D-Bus polling delay in seconds
+_POLL_DELAY = 0.1
+
+# Maximuim D-Bus polling iterations
+_POLL_MAX = 300
+
 
 class UnitStatus(Enum):
     """
@@ -108,7 +114,7 @@ def start_unit(unit_name: str):
 
         manager.StartUnit(unit_name, "replace")
 
-        for _ in range(10):
+        for _ in range(_POLL_MAX):
             unit_obj_path = manager.GetUnit(unit_name)
             unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
             unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
@@ -116,9 +122,11 @@ def start_unit(unit_name: str):
             if active_state == "active":
                 _log_info("%s is active.", unit_name)
                 return
-            time.sleep(0.1)  # pragma: no cover
+            time.sleep(_POLL_DELAY)  # pragma: no cover
 
-        raise SnapmSystemdError(f"Failed to activate {unit_name}.")  # pragma: no cover
+        raise SnapmSystemdError(
+            f"Timed out attempting to activate {unit_name}."
+        )  # pragma: no cover
 
     except dbus.DBusException as err:  # pragma: no cover
         raise SnapmSystemdError(f"DBus error: {err}") from err
@@ -141,7 +149,7 @@ def stop_unit(unit_name: str):
 
         manager.StopUnit(unit_name, "replace")
 
-        for _ in range(10):
+        for _ in range(_POLL_MAX):
             try:
                 unit_obj_path = manager.GetUnit(unit_name)
                 unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
@@ -157,10 +165,10 @@ def stop_unit(unit_name: str):
                     _log_info("%s has been stopped.", unit_name)
                     return
                 raise
-            time.sleep(0.1)  # pragma: no cover
+            time.sleep(_POLL_DELAY)  # pragma: no cover
 
         raise SnapmSystemdError(  # pragma: no cover
-            f"Failed to deactivate {unit_name}."
+            f"Timed out attempting to deactivate {unit_name}."
         )
 
     except dbus.DBusException as err:  # pragma: no cover
