@@ -45,6 +45,7 @@ from snapm import (
     SnapmStateError,
     SnapmRecursionError,
     SnapmArgumentError,
+    SnapmSystemdError,
     SnapmTimerError,
     Selection,
     bool_to_yes_no,
@@ -69,7 +70,7 @@ from ._loader import load_plugins
 from ._signals import suspend_signals
 from ._schedule import Schedule, GcPolicy
 from ._mounts import Mounts
-from ._systemd import UnitStatus, unit_status
+from ._systemd import UnitStatus, start_unit, stop_unit, unit_status, sort_units
 
 
 if TYPE_CHECKING:
@@ -1005,6 +1006,12 @@ class Manager:
             return services
 
         for service_file in os.listdir(_SERVICES_D_PATH):
+            if service_file.startswith("."):
+                continue
+            if not service_file.endswith(".service"):
+                _log_warn("Skipping non-service unit: '%s'", service_file)
+                continue
+
             service = basename(service_file)
             try:
                 status = unit_status(service)
@@ -1304,6 +1311,44 @@ class Manager:
         if name == ".":
             raise SnapmInvalidIdentifierError("Snapshot set name cannot be '.'")
 
+    def _stop_services(self, services: List[str]):
+        """
+        Stop systemd service units before snapshot creation.
+
+        :param services: The list of service unit names to stop.
+        :type services: ``List[str]``
+        :raises: ``SnapmSystemdError`` if any service unit fails to stop.
+        """
+        _log_info("Running service stop hooks for %s", ", ".join(services))
+        stopped = []
+        for service in services:
+            _log_debug("Stopping service unit '%s'...", service)
+            try:
+                stop_unit(service)
+                stopped.append(service)
+            except SnapmSystemdError as err:
+                _log_warn("Error stopping service unit '%s': %s", service, err)
+                for restart in reversed(stopped):
+                    _log_debug("Re-starting service unit '%s'", restart)
+                    start_unit(restart)
+                raise err
+
+    def _start_services(self, services: List[str]):
+        """
+        Start systemd service units after snapshot creation.
+
+        :param services: The list of service unit names to start.
+        :type services: ``List[str]``
+        :raises: ``SnapmSystemdError`` if any service unit fails to stop.
+        """
+        _log_info("Running service start hooks for %s", ", ".join(services))
+        for service in reversed(services):
+            try:
+                _log_debug("Starting service unit '%s'...", service)
+                start_unit(service)
+            except SnapmSystemdError as err:
+                _log_warn("Failed to re-start service unit '%s': %s", service, err)
+
     # pylint: disable=too-many-branches,too-many-locals,too-many-statements
     @suspend_signals
     @_with_manager_lock
@@ -1365,6 +1410,7 @@ class Manager:
         origins = {}
         mounts = {}
 
+        # 1. Check sources against provider plugins
         for source, provider in provider_map.items():
             if S_ISBLK(os.stat(source).st_mode):
                 mounts[source] = _find_mount_point_for_devpath(source)
@@ -1400,8 +1446,18 @@ class Manager:
         for provider in set(provider_map.values()):
             _log_debug("%s transaction size map: %s", provider.name, provider.size_map)
 
-        _suspend_journal()
+        # Stop configured services
+        services = sort_units(self.services)
+        self._stop_services(services)
 
+        try:
+            _suspend_journal()
+        except SnapmCalloutError:
+            # Roll back service state change
+            self._start_services(services)
+            raise
+
+        # 2. Create snapshots and build SnapshotSet
         snapshots = []
         for source, provider in provider_map.items():
             if S_ISBLK(os.stat(source).st_mode):
@@ -1416,14 +1472,28 @@ class Manager:
                 )
             except SnapmError as err:  # pragma: no cover
                 _log_error("Error creating snapshot set member %s: %s", name, err)
-                _resume_journal()
+
+                try:
+                    _resume_journal()
+                except SnapmCalloutError as err2:
+                    _log_warn("Failed to resume journal: %s", err2)
+                # Roll back service state change
+                self._start_services(services)
+
+                # Roll back snapshot creation
                 for snapshot in snapshots:
                     snapshot.delete()
                 raise SnapmPluginError(
                     f"Could not create all snapshots for set {name}"
                 ) from err
 
-        _resume_journal()
+        try:
+            _resume_journal()
+        except SnapmCalloutError as err:
+            _log_warn("Failed to resume journal: %s", err)
+
+        # Re-start configured services
+        self._start_services(services)
 
         for provider in set(provider_map.values()):
             provider.end_transaction()
