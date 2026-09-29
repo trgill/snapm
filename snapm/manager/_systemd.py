@@ -11,6 +11,7 @@ General systemd unit management for Snapshot Manager.
 import time
 import logging
 from enum import Enum
+from math import ceil
 
 import dbus
 
@@ -61,8 +62,31 @@ _STOPPED_ACTIVE_STATES = ("inactive", "failed")
 # D-Bus polling delay in seconds
 _POLL_DELAY = 0.1
 
-# Maximuim D-Bus polling iterations
-_POLL_MAX = 300
+# Default D-Bus polling timeout in seconds, applied to a unit that declares
+# no job timeout of its own.
+_POLL_TIMEOUT = 30.0
+
+# Upper bound on the D-Bus polling timeout in seconds. A unit may declare an
+# unbounded, or simply very long, job timeout: snapm waits for service units
+# with the system live and cannot wait indefinitely for any one of them.
+_POLL_TIMEOUT_MAX = 300.0
+
+# Time allowed beyond a unit's own job timeout, in seconds. systemd kills a
+# job that exceeds its timeout, so a unit that has not reached the expected
+# state by then has genuinely failed rather than merely being slow.
+_POLL_TIMEOUT_SLACK = 5.0
+
+# The systemd Service interface, which carries the per-unit job timeouts.
+_SYSTEMD_SERVICE_IFACE = f"{_SYSTEMD_TOP_OBJECT}.Service"
+
+# Unit property giving the time systemd allows for a unit to start.
+_TIMEOUT_START_PROPERTY = "TimeoutStartUSec"
+
+# Unit property giving the time systemd allows for a unit to stop.
+_TIMEOUT_STOP_PROPERTY = "TimeoutStopUSec"
+
+# The systemd USEC_INFINITY value, used for an unbounded job timeout.
+_USEC_INFINITY = 2**64 - 1
 
 
 class UnitStatus(Enum):
@@ -75,6 +99,55 @@ class UnitStatus(Enum):
     RUNNING = "running"
     STOPPED = "stopped"
     INVALID = "invalid"
+
+
+def _unit_job_timeout(bus, manager, unit_name: str, prop: str) -> float:
+    """
+    Obtain the job timeout given by the unit property ``prop`` for the unit
+    named by ``unit_name``, in seconds.
+
+    Only service units declare job timeouts: a unit that has no ``prop``
+    property, or that cannot be loaded, takes the default timeout. An
+    unbounded timeout is reported as ``_POLL_TIMEOUT_MAX``.
+
+    :param bus: The system bus to query.
+    :param manager: The systemd manager DBus interface to query.
+    :param unit_name: A string naming the unit.
+    :param prop: The name of the unit timeout property to obtain.
+    :returns: The job timeout of the unit in seconds.
+    :rtype: float
+    """
+    try:
+        unit_obj_path = manager.GetUnit(unit_name)
+        unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
+        unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
+        usec = int(unit_props.Get(_SYSTEMD_SERVICE_IFACE, prop))
+    except (dbus.DBusException, ValueError, TypeError) as err:
+        _log_debug("No %s property for unit %s: %s", prop, unit_name, err)
+        return _POLL_TIMEOUT
+
+    if usec >= _USEC_INFINITY:
+        _log_debug("Unit %s declares an unbounded %s", unit_name, prop)
+        return _POLL_TIMEOUT_MAX
+
+    return usec / 1000000
+
+
+def _poll_iterations(timeout: float) -> int:
+    """
+    Return the number of ``_POLL_DELAY`` iterations needed to wait for
+    ``timeout`` seconds, plus an allowance for systemd to act on a job that
+    has exceeded its own timeout.
+
+    The result is clamped to at least one iteration and to no more than
+    ``_POLL_TIMEOUT_MAX`` seconds worth of iterations.
+
+    :param timeout: The job timeout to wait for, in seconds.
+    :returns: The number of polling iterations to carry out.
+    :rtype: int
+    """
+    timeout = min(timeout + _POLL_TIMEOUT_SLACK, _POLL_TIMEOUT_MAX)
+    return max(1, ceil(timeout / _POLL_DELAY))
 
 
 def enable_unit(unit_name: str):
@@ -120,7 +193,13 @@ def start_unit(unit_name: str):
 
         manager.StartUnit(unit_name, "replace")
 
-        for _ in range(_POLL_MAX):
+        # The unit is loaded once the start job has been queued: wait for it
+        # for as long as systemd allows the unit itself to take to start.
+        poll_max = _poll_iterations(
+            _unit_job_timeout(bus, manager, unit_name, _TIMEOUT_START_PROPERTY)
+        )
+
+        for _ in range(poll_max):
             unit_obj_path = manager.GetUnit(unit_name)
             unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))
             unit_props = dbus.Interface(unit, _ORG_FREEDESTOP_DBUS_PROPS)
@@ -161,6 +240,12 @@ def stop_unit(unit_name: str):
         )
         manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
 
+        # Read the unit's own stop timeout while the unit is still loaded:
+        # once it has stopped it may no longer be possible to query.
+        poll_max = _poll_iterations(
+            _unit_job_timeout(bus, manager, unit_name, _TIMEOUT_STOP_PROPERTY)
+        )
+
         job = manager.StopUnit(unit_name, "replace")
     except dbus.DBusException as err:  # pragma: no cover
         # The request was rejected: no stop job exists for this unit.
@@ -172,7 +257,7 @@ def stop_unit(unit_name: str):
     _log_debug("Waiting for stop job %s for unit %s", job, unit_name)
 
     try:
-        for _ in range(_POLL_MAX):
+        for _ in range(poll_max):
             try:
                 unit_obj_path = manager.GetUnit(unit_name)
                 unit = bus.get_object(_SYSTEMD_TOP_OBJECT, str(unit_obj_path))

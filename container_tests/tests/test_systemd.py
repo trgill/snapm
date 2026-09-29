@@ -2,8 +2,10 @@ import unittest
 import logging
 import os
 import os.path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from subprocess import run
+
+import dbus
 
 from snapm import SnapmNotFoundError
 from snapm.manager._systemd import (
@@ -15,6 +17,13 @@ from snapm.manager._systemd import (
     unit_status,
     sort_units,
     _unit_dependencies,
+    _unit_job_timeout,
+    _poll_iterations,
+    _POLL_DELAY,
+    _POLL_TIMEOUT,
+    _POLL_TIMEOUT_MAX,
+    _POLL_TIMEOUT_SLACK,
+    _USEC_INFINITY,
 )
 from snapm.manager._timers import (
     TimerStatus,
@@ -424,3 +433,90 @@ class SystemdUnitDependencyTests(unittest.TestCase):
             )
         finally:
             self._remove_unit_drop_in(drop_in_dir, drop_in_file)
+
+
+class PollTimeoutTests(unittest.TestCase):
+    """
+    Tests for the derivation of D-Bus polling timeouts from the job timeouts
+    declared by a unit.
+    """
+
+    def job_timeout_for(self, value):
+        """
+        Return the job timeout derived from a ``TimeoutStopUSec`` property
+        value of ``value``, with the systemd D-Bus interfaces mocked out.
+
+        An exception instance is raised by the property lookup rather than
+        returned from it.
+        """
+        props = Mock()
+        if isinstance(value, Exception):
+            props.Get.side_effect = value
+        else:
+            props.Get.return_value = value
+
+        with patch("snapm.manager._systemd.dbus.Interface", return_value=props):
+            return _unit_job_timeout(Mock(), Mock(), "a.service", "TimeoutStopUSec")
+
+    def test_unit_job_timeout_returns_seconds(self):
+        """
+        Verify that a job timeout in microseconds is returned in seconds.
+        """
+        self.assertEqual(self.job_timeout_for(90000000), 90.0)
+
+    def test_unit_job_timeout_infinity_is_clamped(self):
+        """
+        Verify that an unbounded job timeout is reported as the maximum
+        polling timeout.
+        """
+        self.assertEqual(self.job_timeout_for(_USEC_INFINITY), _POLL_TIMEOUT_MAX)
+
+    def test_unit_job_timeout_no_property_uses_default(self):
+        """
+        Verify that a unit with no job timeout property, for example a timer
+        or target unit, takes the default polling timeout.
+        """
+        err = dbus.DBusException("No such property")
+        self.assertEqual(self.job_timeout_for(err), _POLL_TIMEOUT)
+
+    def test_unit_job_timeout_unparseable_value_uses_default(self):
+        """
+        Verify that a job timeout that is not an integer takes the default
+        polling timeout.
+        """
+        self.assertEqual(self.job_timeout_for("not a timeout"), _POLL_TIMEOUT)
+
+    def test_poll_iterations_includes_slack(self):
+        """
+        Verify that the polling iteration count allows for systemd to act on
+        a job that has exceeded its own timeout.
+        """
+        self.assertEqual(
+            _poll_iterations(10.0), int((10.0 + _POLL_TIMEOUT_SLACK) / _POLL_DELAY)
+        )
+
+    def test_poll_iterations_zero_timeout(self):
+        """
+        Verify that a unit with a zero job timeout is still waited for.
+        """
+        self.assertEqual(
+            _poll_iterations(0.0), int(_POLL_TIMEOUT_SLACK / _POLL_DELAY)
+        )
+
+    def test_poll_iterations_clamped_to_maximum(self):
+        """
+        Verify that a very long job timeout is clamped to the maximum
+        polling timeout.
+        """
+        expected = int(_POLL_TIMEOUT_MAX / _POLL_DELAY)
+        self.assertEqual(_poll_iterations(_POLL_TIMEOUT_MAX), expected)
+        self.assertEqual(_poll_iterations(86400.0), expected)
+
+    def test_poll_iterations_default_timeout(self):
+        """
+        Verify the iteration count derived from the default job timeout.
+        """
+        self.assertEqual(
+            _poll_iterations(_POLL_TIMEOUT),
+            int((_POLL_TIMEOUT + _POLL_TIMEOUT_SLACK) / _POLL_DELAY),
+        )
