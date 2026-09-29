@@ -17,7 +17,7 @@ import logging
 from time import time
 from math import floor
 from stat import S_ISBLK, S_ISDIR, S_ISLNK
-from os.path import basename, exists, ismount, join, normpath, samefile
+from os.path import exists, ismount, join, normpath, samefile
 from json import JSONDecodeError
 from typing import Dict, List, Union, TYPE_CHECKING
 from functools import wraps
@@ -970,7 +970,6 @@ class Manager:
         self.discover_snapshot_sets()
         self.scheduler = Scheduler(self, _SCHEDULE_D_PATH)
         self.mounts = Mounts(self, self._mounts_dir)
-        self.services = self._load_services()
 
     def _load_plugin_config(self, plugin_name: str) -> ConfigParser:
         """
@@ -992,38 +991,6 @@ class Manager:
             cfg.read([plugin_conf_path])
 
         return cfg
-
-    def _load_services(self):
-        """
-        Load service list from disk.
-        """
-        services = []
-        if not exists(_SERVICES_D_PATH):
-            _log_warn(
-                "Service configuration directory '%s' not found.",
-                _SERVICES_D_PATH,
-            )
-            return services
-
-        for service_file in os.listdir(_SERVICES_D_PATH):
-            if service_file.startswith("."):
-                continue
-            if not service_file.endswith(".service"):
-                _log_warn("Skipping non-service unit: '%s'", service_file)
-                continue
-
-            service = basename(service_file)
-            try:
-                status = unit_status(service)
-            except SnapmNotFoundError:
-                _log_warn("Service unit '%s' does not exist: ignoring.", service)
-                continue
-
-            if status != UnitStatus.RUNNING:
-                _log_warn("Service unit '%s' is not running: ignoring.", service)
-                continue
-            services.append(service)
-        return services
 
     def _find_and_verify_plugins(
         self,
@@ -1311,6 +1278,37 @@ class Manager:
         if name == ".":
             raise SnapmInvalidIdentifierError("Snapshot set name cannot be '.'")
 
+    def _load_services(self) -> List[str]:
+        """
+        Load service list from disk.
+        """
+        services = []
+        if not exists(_SERVICES_D_PATH):
+            _log_warn(
+                "Service configuration directory '%s' not found.",
+                _SERVICES_D_PATH,
+            )
+            return services
+
+        for service in os.listdir(_SERVICES_D_PATH):
+            if service.startswith("."):
+                continue
+            if not service.endswith(".service"):
+                _log_warn("Skipping non-service unit: '%s'", service)
+                continue
+
+            try:
+                status = unit_status(service)
+            except SnapmNotFoundError:
+                _log_warn("Service unit '%s' does not exist: ignoring.", service)
+                continue
+
+            if status != UnitStatus.RUNNING:
+                _log_warn("Service unit '%s' is not running: ignoring.", service)
+                continue
+            services.append(service)
+        return services
+
     def _stop_services(self, services: List[str]):
         """
         Stop systemd service units before snapshot creation.
@@ -1447,7 +1445,7 @@ class Manager:
             _log_debug("%s transaction size map: %s", provider.name, provider.size_map)
 
         # Stop configured services
-        services = sort_units(self.services)
+        services = sort_units(self._load_services())
         self._stop_services(services)
 
         try:
