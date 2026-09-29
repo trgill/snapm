@@ -487,6 +487,17 @@ class SnapmSystemdError(SnapmError):
     """
 
 
+class SnapmSystemdPendingError(SnapmSystemdError):
+    """
+    A systemd job was accepted but its completion could not be confirmed,
+    either because the wait for the expected unit state timed out, or because
+    the unit state could not be obtained.
+
+    The job remains queued and may complete at any time: callers that need to
+    undo the requested state change must do so even though the wait failed.
+    """
+
+
 class SnapmTimerError(SnapmError):
     """
     An error manipulating systemd timers.
@@ -2599,6 +2610,7 @@ __all__ = [
     "SnapmRecursionError",
     "SnapmArgumentError",
     "SnapmSystemdError",
+    "SnapmSystemdPendingError",
     "SnapmTimerError",
     "SnapmLimitError",
     "SnapmMountError",

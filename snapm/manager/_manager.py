@@ -46,6 +46,7 @@ from snapm import (
     SnapmRecursionError,
     SnapmArgumentError,
     SnapmSystemdError,
+    SnapmSystemdPendingError,
     SnapmTimerError,
     Selection,
     bool_to_yes_no,
@@ -1313,32 +1314,52 @@ class Manager:
         """
         Stop systemd service units before snapshot creation.
 
+        If a service unit cannot be stopped the units already stopped are
+        re-started before the error is re-raised. A unit for which systemd
+        accepted a stop job is re-started even though the stop could not be
+        confirmed: the unit may stop at any time after the wait for it is
+        abandoned.
+
         :param services: The list of service unit names to stop.
         :type services: ``List[str]``
         :raises: ``SnapmSystemdError`` if any service unit fails to stop.
         """
+        if not services:
+            return
+
         _log_info("Running service stop hooks for %s", ", ".join(services))
         stopped = []
         for service in services:
             _log_debug("Stopping service unit '%s'...", service)
             try:
                 stop_unit(service)
-                stopped.append(service)
-            except SnapmSystemdError as err:
+            except SnapmSystemdPendingError as err:
+                # systemd accepted a stop job for this unit: it may stop at
+                # any time, so include it in the set of units to re-start.
                 _log_warn("Error stopping service unit '%s': %s", service, err)
-                for restart in reversed(stopped):
-                    _log_debug("Re-starting service unit '%s'", restart)
-                    start_unit(restart)
-                raise err
+                stopped.append(service)
+                self._start_services(stopped)
+                raise
+            except SnapmSystemdError as err:
+                # The stop request was rejected: the unit was not stopped.
+                _log_warn("Error stopping service unit '%s': %s", service, err)
+                self._start_services(stopped)
+                raise
+            stopped.append(service)
 
     def _start_services(self, services: List[str]):
         """
         Start systemd service units after snapshot creation.
 
+        Failure to start an individual service unit is logged and does not
+        prevent the remaining units from being started.
+
         :param services: The list of service unit names to start.
         :type services: ``List[str]``
-        :raises: ``SnapmSystemdError`` if any service unit fails to stop.
         """
+        if not services:
+            return
+
         _log_info("Running service start hooks for %s", ", ".join(services))
         for service in reversed(services):
             try:

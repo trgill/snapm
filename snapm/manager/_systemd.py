@@ -14,7 +14,7 @@ from enum import Enum
 
 import dbus
 
-from snapm import SnapmNotFoundError, SnapmSystemdError
+from snapm import SnapmNotFoundError, SnapmSystemdError, SnapmSystemdPendingError
 
 _log = logging.getLogger(__name__)
 
@@ -51,6 +51,12 @@ _NO_UNIT_FILE_ERRORS = (
 
 # Unit LoadState value for a unit that has no corresponding unit file.
 _LOAD_STATE_NOT_FOUND = "not-found"
+
+# Unit ActiveState values for a unit that is no longer running. A unit that
+# does not shut down cleanly, including one killed by systemd after its own
+# TimeoutStopSec expires, ends up in the 'failed' state rather than
+# 'inactive': the unit is stopped in either case.
+_STOPPED_ACTIVE_STATES = ("inactive", "failed")
 
 # D-Bus polling delay in seconds
 _POLL_DELAY = 0.1
@@ -136,8 +142,16 @@ def stop_unit(unit_name: str):
     """
     Stop a unit represented by ``unit_name``.
 
+    A stop request that systemd rejects raises ``SnapmSystemdError``: the unit
+    has not been asked to stop. A stop job that systemd accepts but that
+    cannot be confirmed to have completed raises ``SnapmSystemdPendingError``:
+    the job remains queued and the unit may stop at any time. Callers that
+    must undo the stop are required to do so in the latter case.
+
     :param unit_name: A string naming the unit.
-    :raises: ``SnapmSystemdError`` if the unit could not be stopped.
+    :raises: ``SnapmSystemdError`` if the stop request was rejected.
+    :raises: ``SnapmSystemdPendingError`` if the stop job was accepted but
+             could not be confirmed to have completed.
     """
     try:
         bus = dbus.SystemBus()
@@ -147,8 +161,17 @@ def stop_unit(unit_name: str):
         )
         manager = dbus.Interface(systemd, f"{_SYSTEMD_TOP_OBJECT}.Manager")
 
-        manager.StopUnit(unit_name, "replace")
+        job = manager.StopUnit(unit_name, "replace")
+    except dbus.DBusException as err:  # pragma: no cover
+        # The request was rejected: no stop job exists for this unit.
+        _log_error("DBus error: %s", err)
+        raise SnapmSystemdError(f"DBus error: {err}") from err
 
+    # systemd has accepted a stop job for unit_name. From this point the unit
+    # may stop at any time, whether or not the wait below succeeds.
+    _log_debug("Waiting for stop job %s for unit %s", job, unit_name)
+
+    try:
         for _ in range(_POLL_MAX):
             try:
                 unit_obj_path = manager.GetUnit(unit_name)
@@ -157,8 +180,8 @@ def stop_unit(unit_name: str):
                 active_state = unit_props.Get(
                     f"{_SYSTEMD_TOP_OBJECT}.Unit", "ActiveState"
                 )
-                if active_state == "inactive":
-                    _log_info("%s has been stopped.", unit_name)
+                if active_state in _STOPPED_ACTIVE_STATES:
+                    _log_info("%s has been stopped (%s).", unit_name, active_state)
                     return
             except dbus.DBusException as err:  # pragma: no cover
                 if err.get_dbus_name() == "org.freedesktop.systemd1.NoSuchUnit":
@@ -167,13 +190,15 @@ def stop_unit(unit_name: str):
                 raise
             time.sleep(_POLL_DELAY)  # pragma: no cover
 
-        raise SnapmSystemdError(  # pragma: no cover
-            f"Timed out attempting to deactivate {unit_name}."
-        )
-
     except dbus.DBusException as err:  # pragma: no cover
         _log_error("DBus error: %s", err)
-        raise SnapmSystemdError(f"DBus error: {err}") from err
+        raise SnapmSystemdPendingError(
+            f"DBus error waiting for {unit_name} to stop: {err}"
+        ) from err
+
+    raise SnapmSystemdPendingError(  # pragma: no cover
+        f"Timed out attempting to deactivate {unit_name}."
+    )
 
 
 def disable_unit(unit_name: str):

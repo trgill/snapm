@@ -1309,3 +1309,137 @@ class SchedulerTests(unittest.TestCase):
 
         self.scheduler.gc("sched1")
         mock_sched.gc.assert_called()
+
+
+class ServiceHookTests(unittest.TestCase):
+    """
+    Tests for the Manager service start and stop hooks.
+
+    The hooks depend only on the systemd unit interfaces, which are patched
+    out here: an uninitialised Manager instance is sufficient to exercise
+    them and avoids the cost of discovering snapshot sets.
+    """
+
+    def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
+        self.manager = _manager.Manager.__new__(_manager.Manager)
+
+    def test_stop_services_stops_all_services_in_order(self):
+        """Test that each service is stopped in list order."""
+        services = ["a.service", "b.service", "c.service"]
+        with patch.object(_manager, "stop_unit") as stop:
+            with patch.object(_manager, "start_unit") as start:
+                self.manager._stop_services(services)
+        self.assertEqual([call.args[0] for call in stop.call_args_list], services)
+        start.assert_not_called()
+
+    def test_stop_services_empty_list_is_a_no_op(self):
+        """Test that stopping an empty service list does nothing."""
+        with patch.object(_manager, "stop_unit") as stop:
+            self.manager._stop_services([])
+        stop.assert_not_called()
+
+    def test_stop_services_rejected_stop_restarts_stopped_services(self):
+        """
+        Test that a rejected stop request rolls back the services already
+        stopped, and does not re-start the service that was not stopped.
+        """
+        services = ["a.service", "b.service", "c.service"]
+
+        def fake_stop(unit_name):
+            if unit_name == "b.service":
+                raise snapm.SnapmSystemdError("Rejected")
+
+        with patch.object(_manager, "stop_unit", side_effect=fake_stop):
+            with patch.object(_manager, "start_unit") as start:
+                with self.assertRaises(snapm.SnapmSystemdError):
+                    self.manager._stop_services(services)
+
+        # Only a.service was stopped: c.service was never attempted.
+        self.assertEqual([call.args[0] for call in start.call_args_list], ["a.service"])
+
+    def test_stop_services_pending_stop_restarts_pending_service(self):
+        """
+        Test that a stop job that systemd accepted but that could not be
+        confirmed is rolled back along with the services already stopped.
+
+        A pending stop may complete at any time after the wait for it is
+        abandoned: the unit must be re-started even though _stop_services()
+        never saw it reach the stopped state.
+        """
+        services = ["a.service", "b.service", "c.service"]
+
+        def fake_stop(unit_name):
+            if unit_name == "b.service":
+                raise snapm.SnapmSystemdPendingError("Timed out")
+
+        with patch.object(_manager, "stop_unit", side_effect=fake_stop):
+            with patch.object(_manager, "start_unit") as start:
+                with self.assertRaises(snapm.SnapmSystemdPendingError):
+                    self.manager._stop_services(services)
+
+        # b.service is re-started first: services start in reverse order.
+        self.assertEqual(
+            [call.args[0] for call in start.call_args_list],
+            ["b.service", "a.service"],
+        )
+
+    def test_stop_services_rollback_start_failure_preserves_stop_error(self):
+        """
+        Test that a failure to re-start a service during rollback does not
+        mask the error that caused the rollback.
+        """
+        services = ["a.service", "b.service"]
+
+        def fake_stop(unit_name):
+            if unit_name == "b.service":
+                raise snapm.SnapmSystemdPendingError("Timed out")
+
+        with patch.object(_manager, "stop_unit", side_effect=fake_stop):
+            with patch.object(
+                _manager, "start_unit", side_effect=snapm.SnapmSystemdError("Failed")
+            ) as start:
+                with self.assertRaises(snapm.SnapmSystemdPendingError) as cm:
+                    self.manager._stop_services(services)
+
+        self.assertIn("Timed out", str(cm.exception))
+        # Rollback continues after a failed start.
+        self.assertEqual(
+            [call.args[0] for call in start.call_args_list],
+            ["b.service", "a.service"],
+        )
+
+    def test_start_services_starts_in_reverse_order(self):
+        """Test that services are started in reverse list order."""
+        services = ["a.service", "b.service", "c.service"]
+        with patch.object(_manager, "start_unit") as start:
+            self.manager._start_services(services)
+        self.assertEqual(
+            [call.args[0] for call in start.call_args_list],
+            list(reversed(services)),
+        )
+
+    def test_start_services_continues_after_failure(self):
+        """
+        Test that a service that fails to start does not prevent the
+        remaining services from being started.
+        """
+        services = ["a.service", "b.service", "c.service"]
+
+        def fake_start(unit_name):
+            if unit_name == "b.service":
+                raise snapm.SnapmSystemdError("Failed")
+
+        with patch.object(_manager, "start_unit", side_effect=fake_start) as start:
+            self.manager._start_services(services)
+
+        self.assertEqual(
+            [call.args[0] for call in start.call_args_list],
+            ["c.service", "b.service", "a.service"],
+        )
+
+    def test_start_services_empty_list_is_a_no_op(self):
+        """Test that starting an empty service list does nothing."""
+        with patch.object(_manager, "start_unit") as start:
+            self.manager._start_services([])
+        start.assert_not_called()
