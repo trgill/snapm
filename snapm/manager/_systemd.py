@@ -260,7 +260,7 @@ def unit_status(unit_name: str):
             if unit_file_state is None:
                 raise SnapmNotFoundError(f"Unknown service unit: {unit_name}") from err
             _log_debug("unit(%s) state file: %s", unit_name, unit_file_state)
-            if unit_file_state == "enabled":
+            if unit_file_state in ("enabled", "enabled-runtime"):
                 return UnitStatus.ENABLED
             return UnitStatus.DISABLED
 
@@ -290,7 +290,7 @@ def unit_status(unit_name: str):
                 unit_file_state = unit_props.Get(
                     f"{_SYSTEMD_TOP_OBJECT}.Unit", "UnitFileState"
                 )
-                if unit_file_state == "enabled":
+                if unit_file_state in ("enabled", "enabled-runtime"):
                     return UnitStatus.ENABLED
                 return UnitStatus.DISABLED
         return UnitStatus.INVALID  # pragma: no cover
