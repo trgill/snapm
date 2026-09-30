@@ -85,6 +85,7 @@ rm -f doc/*.rst doc/Makefile doc/conf.py
 
 mkdir -p ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
 mkdir -p ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/schedule.d
+mkdir -p ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/services.d
 %{__install} -p -m 644 etc/%{name}/snapm.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}
 %{__install} -p -m 644 etc/%{name}/plugins.d/lvm2-cow.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
 %{__install} -p -m 644 etc/%{name}/plugins.d/lvm2-thin.conf ${RPM_BUILD_ROOT}/%{_sysconfdir}/%{name}/plugins.d
@@ -96,6 +97,7 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man5/snapm.conf.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man5/snapm-plugins.d.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 %{__install} -p -m 644 man/man5/snapm-schedule.d.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
+%{__install} -p -m 644 man/man5/snapm-services.d.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 
 mkdir -p ${RPM_BUILD_ROOT}/%{_unitdir}
 %{__install} -p -m 644 systemd/snapm-create@.service ${RPM_BUILD_ROOT}/%{_unitdir}
@@ -122,6 +124,7 @@ mkdir -p ${RPM_BUILD_ROOT}/%{_tmpfilesdir}
 %attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/snapm.conf
 %attr(644, -, -) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/plugins.d/*
 %dir %attr(755, -, -) %{_sysconfdir}/%{name}/schedule.d
+%dir %attr(755, -, -) %{_sysconfdir}/%{name}/services.d
 %attr(644, -, -) %{_unitdir}/snapm-create@.service
 %attr(644, -, -) %{_unitdir}/snapm-create@.timer
 %attr(644, -, -) %{_unitdir}/snapm-gc@.service
