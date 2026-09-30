@@ -5,6 +5,7 @@ RUN dnf -y builddep snapm
 RUN dnf clean all
 
 RUN mkdir -p /etc/snapm/schedule.d
+RUN mkdir -p /etc/snapm/services.d
 
 COPY snapm-create@.service snapm-create@.timer snapm-gc@.service snapm-gc@.timer /usr/lib/systemd/system/
 COPY snapm.conf /usr/lib/tmpfiles.d/
