@@ -1671,6 +1671,70 @@ volumes are folded back into the origin devices. Following the completion of a
 revert operation the snapshot set will no longer appear in the output of
 \fBsnapm snapset list\fP or \fBsnapm snapset show\fP commands.
 .
+.SH SERVICE HOOKS
+.
+A snapshot captures a volume exactly as it appears at the instant the snapshot
+is taken. Applications that buffer data in memory, or that write to disk
+without synchronising at well defined points, may have work in flight at that
+instant: the snapshot then records the equivalent of the state following a
+system crash. The file system itself is recoverable but application data may
+require repair, replay or roll back before it can be used again.
+.P
+To allow applications to bring their on-disk data into a consistent state
+before the snapshot is taken \fBsnapm\fP provides a service hook mechanism.
+Service units named in the \fI/etc/snapm/services.d\fP directory are stopped
+before any snapshot in the set is created and are re-started once the snapshot
+set is complete. Each service is given the opportunity to flush its state and
+shut down cleanly so that the data captured by the snapshot set is the data
+the application would find on disk following an orderly shutdown.
+.P
+A service is added to the hook set by creating an empty file named for the
+service unit, including the \fI.service\fP suffix:
+.br
+.EX
+# touch /etc/snapm/services.d/mariadb.service
+.EE
+.br
+A service is removed from the hook set by deleting the corresponding file.
+Only \fI.service\fP units are supported: files with any other suffix are
+ignored and a warning is logged.
+.P
+Service hooks are run each time a snapshot set is created, whether the
+creation was requested with \fBsnapm snapset create\fP or by a snapshot set
+schedule. Because all snapshots in a set are created while the configured
+services are stopped, the resulting snapshot set is consistent across every
+volume that it contains.
+.
+.SS Ordering and unit state
+.
+Units that are not running at the time the snapshot set is created are
+ignored: only running units are stopped and re-started. Units for which no
+unit file exists are also ignored and a warning is logged.
+.P
+The units to be stopped are sorted according to the \fBBefore\fP and
+\fBAfter\fP ordering constraints reported by \fBsystemd\fP. Units are stopped
+in dependency order, so that each unit is stopped before the units that it
+depends upon, and are re-started in the reverse order. Only ordering
+relationships between the configured units are considered: dependencies on
+units that are not named in \fIservices.d\fP do not affect the order.
+.
+.SS Error handling
+.
+If a service unit cannot be stopped then the snapshot set is not created: the
+units that were already stopped are re-started and the command fails. If
+snapshot creation itself fails after the services have been stopped the
+services are re-started as part of the roll back of the failed operation.
+.P
+Failure to re-start an individual service unit does not prevent the remaining
+units from being started and does not cause the command to fail: the failure
+is logged as a warning. Service state should be verified with
+\fBsystemctl\fP(1) if such a warning is seen.
+.P
+Services named in \fIservices.d\fP are unavailable for the duration of the
+snapshot set creation. Snapshot creation is generally fast but the total
+outage also includes the time taken for each service to shut down and start up
+again.
+.
 .SH REPORTING COMMANDS
 .
 Both the \fBsnapset list\fP and \fBsnapshot list\fP commands use a common
@@ -2184,10 +2248,13 @@ Configuration is read from the following locations:
 .br
 .I /etc/snapm/schedule.d
 .br
+.I /etc/snapm/services.d
+.br
 .PP
 The main configuration file is \fI/etc/snapm/snapm.conf\fP.
-Plugin-specific settings are stored in \fIplugins.d\fP, and snapshot schedules
-are defined in \fIschedule.d\fP.
+Plugin-specific settings are stored in \fIplugins.d\fP, snapshot schedules
+are defined in \fIschedule.d\fP, and service units to be stopped and started
+around snapshot set creation are named in \fIservices.d\fP.
 .PP
 Snapshot set mounts are created in:
 .PP
@@ -2213,7 +2280,10 @@ Bryn M. Reeves <bmr@redhat.com>
 .BR snapm.conf (5).
 .BR snapm-plugins.d (5).
 .BR snapm-schedule.d (5).
+.BR snapm-services.d (5).
+.BR systemd.service (5).
 .BR systemd.time (7).
+.BR systemctl (1).
 .BR boom (8).
 .BR lvm (8).
 .BR stratis (8).
