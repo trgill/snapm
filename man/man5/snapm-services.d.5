@@ -1,0 +1,41 @@
+.TH SNAPM 5 "Sep 30 2026" "Linux" "FILE FORMATS MANUAL"
+
+.
+.SH NAME
+.
+services.d \(em snapm service configuration files
+.
+.SH SYNOPSIS
+\fB/etc/snapm/services.d/*.service\fP
+.
+.SH DESCRIPTION
+Files in /etc/snapm/services.d are examined before creating snapshot sets.
+The names of files in this directory provide a list of service unit names
+that will be managed during the snapshot operations.
+.P
+Services listed here will be stopped before taking snapshots. This allows
+the service to make its on-disk data consistent before snapshot creation.
+Once all required snapshots have been created the services are re-started.
+.P
+To add a service to the service directory create an empty file with the
+same name as the service, including the '.service' extension. To remove a
+service delete the file from \fBservices.d\fP.
+.
+.SH ORDER
+Stopping and starting of units follows the \fBBefore\fR and \fBAfter\fP
+ordering constraints reported by \fBsystemd\fR.
+.SH AUTHORS
+.
+Bryn M. Reeves <bmr@redhat.com>
+.
+.SH SEE ALSO
+.
+.P
+.MR snapm 8 ,
+.MR systemd 1 ,
+.MR systemd.service 5 ,
+.MR systemctl 1 ,
+.
+.br
+Snapm project page: https://github.com/snapshotmanager/snapm
+.br
