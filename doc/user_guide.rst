@@ -307,6 +307,111 @@ paths using ``-s|--start-path PATH``. If no start path is given the tools
 will warn about the potential resource use. This warning can be suppressed if
 desired using ``--quiet``.
 
+Service Hooks
+=============
+
+A snapshot captures a volume exactly as it appears at the instant it is
+taken. Applications that buffer data in memory, or that write to disk
+without synchronising at well defined points, may have work in flight at
+that moment: the snapshot then records the equivalent of the state
+following a system crash. The file system itself will recover, but
+application data may need repair, replay, or roll back before it can be
+used again.
+
+Service hooks let you avoid this. Service units named in
+``/etc/snapm/services.d`` are stopped before any snapshot in the set is
+created and started again once the set is complete. Each service gets the
+chance to flush its state and shut down cleanly, so the data captured by
+the snapshot set is the data the application would find on disk after an
+orderly shutdown.
+
+Because every snapshot in the set is created while the configured services
+are stopped, this consistency holds across all of the volumes in the set,
+not just one.
+
+Configuring Service Hooks
+-------------------------
+
+To add a service to the hook set, create an empty file named for the
+service unit, including the ``.service`` suffix:
+
+.. code-block:: bash
+
+   touch /etc/snapm/services.d/mariadb.service
+
+To remove a service, delete the corresponding file:
+
+.. code-block:: bash
+
+   rm /etc/snapm/services.d/mariadb.service
+
+To see which services are currently configured, list the directory:
+
+.. code-block:: bash
+
+   ls /etc/snapm/services.d
+
+Only ``.service`` units are supported. Files with any other suffix are
+ignored and a warning is logged, so a file named ``mariadb`` rather than
+``mariadb.service`` will not take effect.
+
+Service hooks run every time a snapshot set is created, whether the
+creation was requested with ``snapm snapset create`` or by a snapshot set
+schedule. No extra command line options are needed: once a service is
+listed in ``services.d``, it is handled automatically.
+
+Ordering and Unit Selection
+---------------------------
+
+Only units that are actually running when the snapshot set is created are
+stopped and restarted. A unit that is already stopped is left alone, and a
+unit with no unit file installed is ignored with a warning. This means a
+service can be listed in ``services.d`` on every one of your systems even
+if only some of them run it.
+
+Units are stopped in the order given by the ``Before`` and ``After``
+constraints that ``systemd`` reports for them, so that each unit is
+stopped before the units it depends upon, and are restarted in the reverse
+order. Only relationships between the configured units matter: a
+dependency on a unit that is not named in ``services.d`` does not affect
+the order.
+
+In practice this means you can list a service and its database backend
+together without worrying about which order to write them in:
+
+.. code-block:: bash
+
+   touch /etc/snapm/services.d/myapp.service
+   touch /etc/snapm/services.d/mariadb.service
+
+``snapm`` will stop ``myapp`` before ``mariadb`` and start them again the
+other way round.
+
+Error Handling
+--------------
+
+If a service cannot be stopped, the snapshot set is not created. Any
+services that were already stopped are restarted and the command fails,
+leaving the system as it was found. The same applies if snapshot creation
+itself fails after the services have been stopped: restarting them is part
+of rolling back the failed operation.
+
+Failure to restart an individual service does not stop the remaining
+services from being started and does not fail the command. The failure is
+logged as a warning, so it is worth checking service state with
+``systemctl`` if you see one:
+
+.. code-block:: bash
+
+   systemctl status mariadb.service
+
+Keep in mind that services named in ``services.d`` are unavailable for as
+long as the snapshot set takes to create. Snapshot creation itself is
+fast, but the total outage also includes the time each service takes to
+shut down and start up again. It is worth listing only the services that
+genuinely need quiescing, particularly for frequently scheduled snapshot
+sets.
+
 Command Reference
 =================
 
@@ -1675,27 +1780,6 @@ Bootable snapshots can bypass some security measures:
 
 Integration Examples
 ====================
-
-With Systemd Services
----------------------
-
-Create consistent snapshots by ensuring services are in a stable state:
-
-Stop service before snapshot:
-
-.. code-block:: bash
-
-   systemctl stop myapp
-   snapm snapset create myapp-maintenance /var/lib/myapp
-   systemctl start myapp
-
-Alternatively isolate to rescue mode for system-wide consistency:
-
-.. code-block:: bash
-
-   systemctl isolate rescue.target
-   snapm snapset create system-maintenance / /var
-   systemctl isolate multi-user.target
 
 With Backup Systems
 -------------------
