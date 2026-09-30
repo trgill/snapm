@@ -44,8 +44,10 @@ jobs:
         run: >
           sudo pip install -v .
       - name: Copy configuration to /etc
-        run: >
+        run: |
+          set -euo pipefail
           sudo cp -r etc/snapm /etc
+          sudo rm -f /etc/snapm/*.d/README
       - name: Copy systemd units to /usr/lib/systemd/system
         run: |
           set -euo pipefail

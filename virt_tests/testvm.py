@@ -550,6 +550,8 @@ restorecon -R /root/.ssh || true
             f"git clone --depth=1 https://github.com/{safe_repo}.git -b {safe_ref} /tmp/snapm",
             "cd /tmp/snapm && pip install -v . ",
             "cd /tmp/snapm && cp -r etc/snapm /etc",
+            # Remove placeholder files from skeleton configuration directories
+            "rm -f /etc/snapm/*.d/README",
             "cd /tmp/snapm && cp systemd/*.service systemd/*.timer /usr/lib/systemd/system",
             "cd /tmp/snapm && cp systemd/tmpfiles.d/snapm.conf /usr/lib/tmpfiles.d",
             # Apply tmpfiles change
