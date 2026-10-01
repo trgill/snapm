@@ -360,6 +360,56 @@ creation was requested with ``snapm snapset create`` or by a snapshot set
 schedule. No extra command line options are needed: once a service is
 listed in ``services.d``, it is handled automatically.
 
+Overriding the Service List
+---------------------------
+
+The configured list describes the services that need quiescing for a
+routine snapshot of the system. An individual ``snapm snapset create``
+command sometimes needs something different: an application being upgraded
+may need stopping on this occasion only, or a service that is normally
+quiesced may be safe to leave running because the snapshot set does not
+include its data.
+
+The ``--services`` argument adjusts the list for a single command. It takes
+a comma separated list of service units to add, each optionally prefixed
+with ``-`` to remove it instead:
+
+.. code-block:: bash
+
+   snapm snapset create backup --services=myapp.service,-mariadb.service / /var
+
+This stops ``myapp.service`` in addition to the configured services, and
+leaves ``mariadb.service`` running. The files in ``/etc/snapm/services.d``
+are not touched: the change applies only to the snapshot set being created.
+Scheduled snapshot sets always use the configured list.
+
+A list that starts with a removal has to be written in the ``--services=``
+form:
+
+.. code-block:: bash
+
+   snapm snapset create backup --services=-mariadb.service / /var
+
+Written as a separate argument the leading ``-`` is read as a command line
+option and the command fails. This only affects a list whose *first* entry
+is a removal, so ``--services myapp.service,-mariadb.service`` is accepted
+either way.
+
+Units named for addition get the same treatment as configured services: one
+that is not running is skipped with a warning, because a service that was
+not running when the snapshot was taken must not be started afterwards. Two
+things differ from the configured list:
+
+* A unit named for addition that **does not exist** is an error. The
+  command fails before any snapshot is created, on the grounds that you
+  asked for something that cannot be done.
+
+* A unit named for removal that is not in the list is only a warning, for
+  the same reason that an uninstalled configured service is ignored: the
+  list varies from machine to machine.
+
+Naming the same unit for both addition and removal is an error.
+
 Ordering and Unit Selection
 ---------------------------
 
@@ -448,7 +498,7 @@ Create a new snapshot set with the provided name and list of sources
 
 .. code-block:: bash
 
-   snapm snapset create [-b|--bootable] [-r|--revert] [--size-policy policy] <name> <source> [<source> ...]
+   snapm snapset create [-b|--bootable] [-r|--revert] [--size-policy policy] [--services services] <name> <source> [<source> ...]
 
 Per-source path size policies are specified by adding a ':' and the
 required policy to the corresponding mount point path, for example:
@@ -537,6 +587,22 @@ report:
    hourly.1     2025-03-26 14:17:11            2 Active  /, /var  no       hourly           1
    hourly.2     2025-03-26 14:17:15            2 Active  /, /var  no       hourly           2
    hourly.3     2025-03-26 14:17:18            2 Active  /, /var  no       hourly           3
+
+Adjusting the service list
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``--services`` argument changes the set of services that are stopped
+and restarted while this snapshot set is created. It takes a comma
+separated list of service units to add, each optionally prefixed with
+``-`` to remove it from the list instead:
+
+.. code-block:: bash
+
+   snapm snapset create backup --services=myapp.service,-mariadb.service / /var
+
+The configured list in ``/etc/snapm/services.d`` is left unchanged. See
+`Service Hooks`_ for a full description of the facility and the rules
+applied to the units named here.
 
 snapset delete
 --------------

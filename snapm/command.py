@@ -825,7 +825,14 @@ def _do_print_type(
 
 
 def create_snapset(
-    manager, name, sources, size_policy=None, boot=False, revert=False, autoindex=False
+    manager,
+    name,
+    sources,
+    size_policy=None,
+    boot=False,
+    revert=False,
+    autoindex=False,
+    services=None,
 ):
     """
     Create a new snapshot set from a list of mount point and block device
@@ -839,6 +846,10 @@ def create_snapset(
     :param revert: Create a revert boot entry for this snapshot set.
     :param autoindex: Treat `name` as the basename of a recurring snapshot set
                       and generate and append an appropriate index value.
+    :param services: A list of modifications to the configured service list to
+                     apply to this snapshot set. Each element names a service
+                     unit to add to the list, or, when prefixed with '-', a
+                     service unit to remove from it.
     """
     return manager.create_snapshot_set(
         name,
@@ -847,6 +858,7 @@ def create_snapset(
         boot=boot,
         revert=revert,
         autoindex=autoindex,
+        services=services,
     )
 
 
@@ -1559,6 +1571,8 @@ def _create_cmd(cmd_args):
         autoindex = schedule.autoindex
         boot = schedule.boot
         revert = schedule.revert
+        # Scheduled snapshot sets use the configured service list.
+        services = None
     else:
         snapset_name = cmd_args.snapset_name
         sources = cmd_args.sources
@@ -1566,6 +1580,7 @@ def _create_cmd(cmd_args):
         boot = cmd_args.bootable
         revert = cmd_args.revert
         autoindex = cmd_args.autoindex
+        services = cmd_args.services.split(",") if cmd_args.services else None
 
     snapset = create_snapset(
         manager,
@@ -1575,6 +1590,7 @@ def _create_cmd(cmd_args):
         boot=boot,
         revert=revert,
         autoindex=autoindex,
+        services=services,
     )
     if snapset is None:
         return 1
@@ -2939,6 +2955,16 @@ def _add_snapset_subparser(type_subparser):
         "--autoindex",
         action="store_true",
         help="Automatically create a unique index for recurring snapshot sets",
+    )
+    snapset_create_parser.add_argument(
+        "--services",
+        metavar="SERVICES",
+        type=str,
+        action="store",
+        help="A comma separated list of service units to add to the service "
+        "list for this snapshot set, or, when prefixed with '-', to remove "
+        "from it. Use --services=SERVICES to pass a list beginning with a "
+        "removal",
     )
     _add_json_arg(snapset_create_parser)
 

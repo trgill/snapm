@@ -150,6 +150,8 @@ snapm \- Linux Snapshot Manager
 .  RI [-s | --size-policy\ \c
 .  IR policy] " "\c
 .  RB [-a | --autoindex] " "\c
+.  RI [--services\ \c
+.  IR services] " "\c
 .  RB [--json] " "\c
 .  IR name " "\c
 .  RI source[size_policy] ... " "\c
@@ -816,6 +818,18 @@ Output report columns as rows.
 Report field separator.
 .
 .TP 8
+\fB--services\fP \fIservices\fP
+Modify the list of service units to be stopped and re-started for this
+snapshot set. The argument is a comma separated list of service unit names:
+each name is added to the service list, or, when prefixed with '\fB-\fP',
+removed from it. See \fBSERVICE HOOKS\fP for a description of the service
+list and \fBsnapm-services.d(5)\fP for the configured service list.
+.IP
+A list beginning with a removal must be given using the
+\fB--services=\fP\fIservices\fP form so that the leading '\fB-\fP' is not
+parsed as a command line option.
+.
+.TP 8
 \fB-s | --size-policy\fP \fIsize_policy\fP
 Specify a default size policy when creating snapshot sets.
 .
@@ -1054,6 +1068,21 @@ Autoactivate:     yes
 Mounted:          no
 Bootable:         no
 .EE
+.P
+The services that are stopped and re-started while the snapshot set is
+created can be adjusted for a single command using the \fB--services\fP
+argument. The argument is a comma separated list of service unit names to add
+to the configured service list, each optionally prefixed with '\fB-\fP' to
+remove it from the list instead:
+.IP
+.EX
+# snapm snapset create backup --services=myapp.service,-mariadb.service / /var
+.EE
+.IP
+This stops \fBmyapp.service\fP in addition to the configured services and
+leaves \fBmariadb.service\fP running. The configured service list is not
+modified: the change applies only to the snapshot set being created. See
+\fBSERVICE HOOKS\fP for further details.
 .
 .TP
 .B snapm
@@ -1704,6 +1733,47 @@ creation was requested with \fBsnapm snapset create\fP or by a snapshot set
 schedule. Because all snapshots in a set are created while the configured
 services are stopped, the resulting snapshot set is consistent across every
 volume that it contains.
+.
+.SS Per-operation service lists
+.
+The configured service list describes the services that must be quiesced for
+a routine snapshot of the system. A single \fBsnapm snapset create\fP command
+may need a different list: an application that is being upgraded may need to
+be stopped on this occasion only, or a service that is normally quiesced may
+need to be left running because the snapshot set does not include its data.
+.P
+The \fB--services\fP argument modifies the configured list for one command.
+It accepts a comma separated list of service unit names, each of which is
+added to the service list, or, when prefixed with '\fB-\fP', removed from it:
+.br
+.EX
+# snapm snapset create backup --services=myapp.service,-mariadb.service / /var
+.EE
+.br
+The configured list in \fIservices.d\fP is not altered: the modifications
+apply only to the snapshot set being created. Scheduled snapshot sets always
+use the configured list.
+.P
+A list that begins with a removal must be written using the
+\fB--services=\fP\fIservices\fP form:
+.br
+.EX
+# snapm snapset create backup --services=-mariadb.service / /var
+.EE
+.br
+Written as a separate argument the leading '\fB-\fP' is parsed as a command
+line option and the command fails.
+.P
+Units named for addition are subject to the same checks as configured
+services: a unit that is not running is ignored with a warning, since a unit
+that was not running when the snapshot set was created must not be started
+once it is complete. Unlike a configured service, a unit named for addition
+that does not exist is an error and the command fails before any snapshot is
+taken. A unit named for removal that is not in the service list is ignored
+with a warning: the configured list varies from system to system and a
+request to exclude a service that this system does not run is not an error.
+.P
+It is an error to both add and remove the same unit in one command.
 .
 .SS Ordering and unit state
 .

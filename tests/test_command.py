@@ -259,6 +259,96 @@ class CommandTestsSimple(CommandTestsBase):
             command.main(args)
         self.assertEqual(cm.exception.code, 2)
 
+    def _run_create(self, create_args, debug=True, side_effect=None):
+        """
+        Run a 'snapset create' command with the Manager patched out and
+        return the status along with the keyword arguments that reached
+        ``Manager.create_snapshot_set()``.
+
+        :param create_args: Arguments to follow 'snapset create'.
+        :param debug: Run with debug enabled, so that errors propagate.
+        :param side_effect: An optional side effect for create_snapshot_set().
+        :returns: A tuple of the command status and the captured kwargs.
+        """
+        captured = {}
+
+        def fake_create(name, sources, **kwargs):
+            captured.update(kwargs)
+            if side_effect is not None:
+                raise side_effect
+            snapset = MagicMock()
+            snapset.name = name
+            snapset.nr_snapshots = len(sources)
+            return snapset
+
+        manager = MagicMock()
+        manager.create_snapshot_set.side_effect = fake_create
+
+        args = self.get_debug_main_args() if debug else self.get_main_args()
+        args += ["snapset", "create"] + create_args
+
+        with patch.object(command, "Manager", return_value=manager):
+            with patch.object(command.os, "geteuid", return_value=0):
+                status = command.main(args)
+
+        return (status, captured)
+
+    def test_main_create_without_services(self):
+        """Test that no --services argument passes services=None."""
+        (status, kwargs) = self._run_create(["testset0", "/"])
+        self.assertEqual(status, 0)
+        self.assertEqual(kwargs["services"], None)
+
+    def test_main_create_with_services(self):
+        """Test that --services is split into a list of modifications."""
+        (status, kwargs) = self._run_create(
+            ["testset0", "/", "--services=foo.service,-bar.service,quux.service"]
+        )
+        self.assertEqual(status, 0)
+        self.assertEqual(
+            kwargs["services"], ["foo.service", "-bar.service", "quux.service"]
+        )
+
+    def test_main_create_with_single_service(self):
+        """Test that a single service unit is passed as a one element list."""
+        (status, kwargs) = self._run_create(
+            ["testset0", "/", "--services=foo.service"]
+        )
+        self.assertEqual(status, 0)
+        self.assertEqual(kwargs["services"], ["foo.service"])
+
+    def test_main_create_with_leading_removal(self):
+        """
+        Test that a list beginning with a removal is accepted in the
+        '--services=SERVICES' form.
+        """
+        (status, kwargs) = self._run_create(
+            ["testset0", "/", "--services=-bar.service"]
+        )
+        self.assertEqual(status, 0)
+        self.assertEqual(kwargs["services"], ["-bar.service"])
+
+    def test_main_create_with_empty_services(self):
+        """
+        Test that an empty --services value is treated as no modifications,
+        so that an unset variable may be passed by a calling script.
+        """
+        (status, kwargs) = self._run_create(["testset0", "/", "--services="])
+        self.assertEqual(status, 0)
+        self.assertEqual(kwargs["services"], None)
+
+    def test_main_create_invalid_services_fails(self):
+        """
+        Test that a service list rejected by the manager fails the command
+        rather than raising to the caller.
+        """
+        (status, _) = self._run_create(
+            ["testset0", "/", "--services=foo"],
+            debug=False,
+            side_effect=snapm.SnapmArgumentError("Invalid service unit name"),
+        )
+        self.assertEqual(status, 1)
+
 
 @unittest.skipIf(not have_root(), "requires root privileges")
 class CommandTests(CommandTestsBase):
