@@ -1443,3 +1443,171 @@ class ServiceHookTests(unittest.TestCase):
         with patch.object(_manager, "start_unit") as start:
             self.manager._start_services([])
         start.assert_not_called()
+
+
+class ServiceModificationTests(unittest.TestCase):
+    """
+    Tests for parsing and applying command line service list modifications.
+
+    As for ``ServiceHookTests`` the systemd unit interfaces are patched out
+    and an uninitialised Manager instance is sufficient.
+    """
+
+    def setUp(self):
+        log.debug("Preparing %s", self._testMethodName)
+        self.manager = _manager.Manager.__new__(_manager.Manager)
+
+    def test_parse_service_mods_empty_list(self):
+        """Test that an empty modification list yields no modifications."""
+        self.assertEqual(_manager._parse_service_mods([]), ([], []))
+
+    def test_parse_service_mods_additions_and_removals(self):
+        """Test that additions and removals are separated."""
+        mods = ["foo.service", "-bar.service", "quux.service"]
+        self.assertEqual(
+            _manager._parse_service_mods(mods),
+            (["foo.service", "quux.service"], ["bar.service"]),
+        )
+
+    def test_parse_service_mods_strips_whitespace(self):
+        """Test that surrounding whitespace is ignored."""
+        mods = [" foo.service ", "\t-bar.service"]
+        self.assertEqual(
+            _manager._parse_service_mods(mods),
+            (["foo.service"], ["bar.service"]),
+        )
+
+    def test_parse_service_mods_discards_duplicates(self):
+        """Test that a unit named more than once is only listed once."""
+        mods = ["foo.service", "foo.service", "-bar.service", "-bar.service"]
+        self.assertEqual(
+            _manager._parse_service_mods(mods),
+            (["foo.service"], ["bar.service"]),
+        )
+
+    def test_parse_service_mods_empty_name_raises(self):
+        """Test that an empty modification is rejected."""
+        for mods in ([""], ["  "], ["foo.service", ""]):
+            with self.subTest(mods=mods):
+                with self.assertRaises(snapm.SnapmArgumentError):
+                    _manager._parse_service_mods(mods)
+
+    def test_parse_service_mods_bare_prefix_raises(self):
+        """Test that a removal prefix with no unit name is rejected."""
+        with self.assertRaises(snapm.SnapmArgumentError):
+            _manager._parse_service_mods(["-"])
+
+    def test_parse_service_mods_bad_suffix_raises(self):
+        """Test that a unit name without a '.service' suffix is rejected."""
+        for mods in (["foo"], ["foo.timer"], ["-bar"], ["-bar.mount"]):
+            with self.subTest(mods=mods):
+                with self.assertRaises(snapm.SnapmArgumentError):
+                    _manager._parse_service_mods(mods)
+
+    def test_parse_service_mods_path_raises(self):
+        """Test that a unit name including a path is rejected."""
+        with self.assertRaises(snapm.SnapmArgumentError):
+            _manager._parse_service_mods(["/etc/snapm/services.d/foo.service"])
+
+    def test_parse_service_mods_add_and_remove_raises(self):
+        """Test that adding and removing the same unit is rejected."""
+        with self.assertRaises(snapm.SnapmArgumentError) as cm:
+            _manager._parse_service_mods(["foo.service", "-foo.service"])
+        self.assertIn("foo.service", str(cm.exception))
+
+    def _patch_units(self, configured, statuses):
+        """
+        Patch _load_services() to return ``configured`` and unit_status() to
+        return the status given by the ``statuses`` mapping. A unit that is
+        absent from ``statuses`` does not exist.
+        """
+
+        def fake_status(unit_name):
+            if unit_name not in statuses:
+                raise snapm.SnapmNotFoundError(f"Unknown service unit: {unit_name}")
+            return statuses[unit_name]
+
+        return (
+            patch.object(_manager.Manager, "_load_services", return_value=configured),
+            patch.object(_manager, "unit_status", side_effect=fake_status),
+        )
+
+    def test_build_service_list_no_mods_returns_configured(self):
+        """Test that with no modifications the configured list is returned."""
+        (load, status) = self._patch_units(["a.service"], {})
+        with load, status:
+            self.assertEqual(self.manager._build_service_list([], []), ["a.service"])
+
+    def test_build_service_list_adds_running_unit(self):
+        """Test that a running unit named for addition is appended."""
+        (load, status) = self._patch_units(
+            ["a.service"], {"b.service": _manager.UnitStatus.RUNNING}
+        )
+        with load, status:
+            self.assertEqual(
+                self.manager._build_service_list(["b.service"], []),
+                ["a.service", "b.service"],
+            )
+
+    def test_build_service_list_add_ignores_unit_already_present(self):
+        """Test that adding a configured unit does not duplicate it."""
+        (load, status) = self._patch_units(
+            ["a.service"], {"a.service": _manager.UnitStatus.RUNNING}
+        )
+        with load, status:
+            self.assertEqual(
+                self.manager._build_service_list(["a.service"], []), ["a.service"]
+            )
+
+    def test_build_service_list_add_skips_unit_not_running(self):
+        """
+        Test that a unit that is not running is not added.
+
+        Stopping such a unit is a no-op but re-starting it once the snapshot
+        set is complete would start a service that was not previously running.
+        """
+        (load, status) = self._patch_units(
+            ["a.service"], {"b.service": _manager.UnitStatus.ENABLED}
+        )
+        with load, status:
+            self.assertEqual(
+                self.manager._build_service_list(["b.service"], []), ["a.service"]
+            )
+
+    def test_build_service_list_add_nonexistent_unit_raises(self):
+        """Test that adding a unit that does not exist is an error."""
+        (load, status) = self._patch_units(["a.service"], {})
+        with load, status:
+            with self.assertRaises(snapm.SnapmArgumentError) as cm:
+                self.manager._build_service_list(["b.service"], [])
+        self.assertIn("b.service", str(cm.exception))
+
+    def test_build_service_list_removes_configured_unit(self):
+        """Test that a configured unit named for removal is dropped."""
+        (load, status) = self._patch_units(["a.service", "b.service"], {})
+        with load, status:
+            self.assertEqual(
+                self.manager._build_service_list([], ["a.service"]), ["b.service"]
+            )
+
+    def test_build_service_list_remove_absent_unit_is_ignored(self):
+        """
+        Test that removing a unit that is not in the service list is not an
+        error: the configured service list varies from system to system.
+        """
+        (load, status) = self._patch_units(["a.service"], {})
+        with load, status:
+            self.assertEqual(
+                self.manager._build_service_list([], ["b.service"]), ["a.service"]
+            )
+
+    def test_build_service_list_add_and_remove_combined(self):
+        """Test that additions and removals are both applied."""
+        (load, status) = self._patch_units(
+            ["a.service", "b.service"], {"c.service": _manager.UnitStatus.RUNNING}
+        )
+        with load, status:
+            self.assertEqual(
+                self.manager._build_service_list(["c.service"], ["a.service"]),
+                ["b.service", "c.service"],
+            )

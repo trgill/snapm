@@ -19,7 +19,7 @@ from math import floor
 from stat import S_ISBLK, S_ISDIR, S_ISLNK
 from os.path import exists, ismount, join, normpath, samefile
 from json import JSONDecodeError
-from typing import Dict, List, Union, TYPE_CHECKING
+from typing import Dict, List, Tuple, Union, TYPE_CHECKING
 from functools import wraps
 import threading
 import fcntl
@@ -113,6 +113,12 @@ _SCHEDULE_D_PATH = join(_SNAPM_CFG_DIR, "schedule.d")
 
 #: Path to directory for service configuration files
 _SERVICES_D_PATH = join(_SNAPM_CFG_DIR, "services.d")
+
+#: Suffix identifying a systemd service unit name
+_SERVICE_SUFFIX = ".service"
+
+#: Prefix marking a service unit to be removed from the service list
+_SERVICE_REMOVE_PREFIX = "-"
 
 #: Path to snapm snapshot set mount directory
 _SNAPM_MOUNTS_DIR = join(SNAPM_RUNTIME_DIR, "mounts")
@@ -264,6 +270,65 @@ def _parse_source_specs(source_specs, default_size_policy):
         sources.append(source)
         size_policies[source] = policy
     return (sources, size_policies)
+
+
+def _parse_service_mods(service_mods) -> Tuple[List[str], List[str]]:
+    """
+    Parse and validate a list of service list modifications.
+
+    Each element of ``service_mods`` names a service unit to add to the
+    service list for a single operation or, when prefixed with
+    ``_SERVICE_REMOVE_PREFIX``, a service unit to remove from it. Duplicate
+    modifications are discarded: the returned lists each name a given unit
+    at most once.
+
+    The parse is purely syntactic: no attempt is made to contact systemd or
+    to determine whether the units named exist.
+
+    :param service_mods: A list of service unit modification strings.
+    :type service_mods: ``List[str]``
+    :returns: A tuple ``(add, remove)`` naming the service units to add to
+              and remove from the service list.
+    :rtype: ``Tuple(List[str], List[str])``
+    :raises: ``SnapmArgumentError`` if a modification is malformed, or if the
+             same unit is both added and removed.
+    """
+    add = []
+    remove = []
+
+    for mod in service_mods:
+        spec = mod.strip()
+        if not spec:
+            raise SnapmArgumentError("Empty service unit name in service list")
+
+        if spec.startswith(_SERVICE_REMOVE_PREFIX):
+            (unit, units) = (spec[len(_SERVICE_REMOVE_PREFIX) :], remove)
+        else:
+            (unit, units) = (spec, add)
+
+        if not unit:
+            raise SnapmArgumentError(f"Missing service unit name in '{mod}'")
+        if os.sep in unit:
+            raise SnapmArgumentError(
+                f"Invalid service unit name '{unit}': "
+                "unit names cannot include a path"
+            )
+        if not unit.endswith(_SERVICE_SUFFIX):
+            raise SnapmArgumentError(
+                f"Invalid service unit name '{unit}': "
+                f"unit names must end in '{_SERVICE_SUFFIX}'"
+            )
+
+        if unit not in units:
+            units.append(unit)
+
+    both = [unit for unit in add if unit in remove]
+    if both:
+        raise SnapmArgumentError(
+            "Service unit cannot be both added and removed: " + ", ".join(both)
+        )
+
+    return (add, remove)
 
 
 def _check_revert_snapshot_set(snapset):
@@ -1294,7 +1359,7 @@ class Manager:
         for service in os.listdir(_SERVICES_D_PATH):
             if service.startswith("."):
                 continue
-            if not service.endswith(".service"):
+            if not service.endswith(_SERVICE_SUFFIX):
                 _log_warn("Skipping non-service unit: '%s'", service)
                 continue
 
@@ -1308,6 +1373,59 @@ class Manager:
                 _log_warn("Service unit '%s' is not running: ignoring.", service)
                 continue
             services.append(service)
+        return services
+
+    def _build_service_list(self, add: List[str], remove: List[str]) -> List[str]:
+        """
+        Build the effective service list for a single snapshot set operation.
+
+        The services configured in ``_SERVICES_D_PATH`` are loaded and the
+        units named in ``add`` and ``remove`` are then applied to the result.
+
+        A unit named in ``add`` that does not exist is an error: the caller
+        asked for a unit that cannot be acted upon. A unit that exists but
+        that is not running is ignored with a warning, as for a configured
+        service: a unit that was not running when the snapshot set was
+        created must not be started once it is complete.
+
+        A unit named in ``remove`` that is not in the service list is ignored
+        with a warning. The list of configured services varies from system to
+        system and a request to exclude a service that this system does not
+        run is not an error.
+
+        :param add: A list of service unit names to add to the list.
+        :type add: ``List[str]``
+        :param remove: A list of service unit names to remove from the list.
+        :type remove: ``List[str]``
+        :returns: The list of service unit names to stop and re-start.
+        :rtype: ``List[str]``
+        :raises: ``SnapmArgumentError`` if a unit named in ``add`` does not
+                 exist.
+        """
+        services = self._load_services()
+
+        for service in add:
+            try:
+                status = unit_status(service)
+            except SnapmNotFoundError as err:
+                raise SnapmArgumentError(
+                    f"Service unit '{service}' does not exist"
+                ) from err
+
+            if status != UnitStatus.RUNNING:
+                _log_warn("Service unit '%s' is not running: ignoring.", service)
+                continue
+            if service not in services:
+                services.append(service)
+
+        for service in remove:
+            if service not in services:
+                _log_warn(
+                    "Service unit '%s' is not in the service list: ignoring.", service
+                )
+                continue
+            services.remove(service)
+
         return services
 
     def _stop_services(self, services: List[str]):
@@ -1379,6 +1497,7 @@ class Manager:
         boot=False,
         revert=False,
         autoindex=False,
+        services=None,
     ):
         """
         Create a snapshot set of the supplied mount points with the name
@@ -1392,10 +1511,21 @@ class Manager:
         :param revert: Create a revert boot entry for this snapshot set.
         :param autoindex: Treat `name` as the basename of a recurring snapshot set
                           and generate and append an appropriate index value.
-        :raises: ``SnapmExistsError`` if the name is already in use, or
-                 ``SnapmInvalidIdentifierError`` if the name fails validation.
+        :param services: A list of modifications to the configured service
+                         list to apply to this operation. Each element names
+                         a service unit to add to the list, or, when prefixed
+                         with '-', a service unit to remove from it.
+        :raises: ``SnapmExistsError`` if the name is already in use,
+                 ``SnapmInvalidIdentifierError`` if the name fails validation,
+                 or ``SnapmArgumentError`` if the service list modifications
+                 fail validation.
         """
         self._validate_snapset_name(name)
+
+        # Validate the service list modifications before carrying out any
+        # work: an invalid modification fails the command immediately.
+        (add_services, remove_services) = _parse_service_mods(services or [])
+
         if autoindex:
             index = self._find_next_index(name)
             name = f"{name}.{index}"
@@ -1407,11 +1537,13 @@ class Manager:
         )
 
         _log_debug(
-            "Create arguments: default_size_policy=%s boot=%s revert=%s autoindex=%s",
+            "Create arguments: default_size_policy=%s boot=%s revert=%s autoindex=%s "
+            "services=%s",
             default_size_policy,
             boot,
             revert,
             autoindex,
+            ",".join(services) if services else None,
         )
 
         # Parse size policies and normalise mount paths
@@ -1421,6 +1553,13 @@ class Manager:
 
         # Initialise provider mapping.
         provider_map = self._find_and_verify_plugins(sources, size_policies)
+
+        # Build the effective service list before starting the transaction:
+        # a service unit that was named on the command line but that does not
+        # exist fails the command before any provider state is changed.
+        service_units = sort_units(
+            self._build_service_list(add_services, remove_services)
+        )
 
         for provider in set(provider_map.values()):
             provider.start_transaction()
@@ -1466,14 +1605,13 @@ class Manager:
             _log_debug("%s transaction size map: %s", provider.name, provider.size_map)
 
         # Stop configured services
-        services = sort_units(self._load_services())
-        self._stop_services(services)
+        self._stop_services(service_units)
 
         try:
             _suspend_journal()
         except SnapmCalloutError:
             # Roll back service state change
-            self._start_services(services)
+            self._start_services(service_units)
             raise
 
         # 2. Create snapshots and build SnapshotSet
@@ -1497,7 +1635,7 @@ class Manager:
                 except SnapmCalloutError as err2:
                     _log_warn("Failed to resume journal: %s", err2)
                 # Roll back service state change
-                self._start_services(services)
+                self._start_services(service_units)
 
                 # Roll back snapshot creation
                 for snapshot in snapshots:
@@ -1512,7 +1650,7 @@ class Manager:
             _log_warn("Failed to resume journal: %s", err)
 
         # Re-start configured services
-        self._start_services(services)
+        self._start_services(service_units)
 
         for provider in set(provider_map.values()):
             provider.end_transaction()
