@@ -1078,10 +1078,11 @@ class Mounts:
         # explicit mount base asks for a mount at a specific path, so only a
         # mount already rooted there will do: with no mount base any mount of
         # the set is acceptable.
-        existing = self._find_mount(
-            snapset, mount_path if mount_base is not None else None
-        )
-        if existing is not None:
+        candidates = self._snapset_mounts(snapset)
+        if mount_base is not None:
+            candidates = [mount for mount in candidates if mount.root == mount_path]
+        if candidates:
+            existing = candidates[0]
             _log_info(
                 "Snapshot set %s already mounted at %s", snapset.name, existing.root
             )
