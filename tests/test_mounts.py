@@ -293,7 +293,7 @@ class MountsTests(MountsTestsBase):
         except snapm.SnapmError as e:
             self.fail(f"Mounting failed when it should have succeeded: {e}")
 
-        self.assertIs(self.mounts._find_mount(self.snapset), mount_obj)
+        self.assertIs(self.mounts._canonical_mount(self.snapset), mount_obj)
         self.assertIn(mount_obj, self.mounts._mounts)
         self.assertTrue(mount_obj.mounted)
         self.assertEqual(self.snapset.mount_root, mount_obj.root)
@@ -307,7 +307,7 @@ class MountsTests(MountsTestsBase):
         # --- Umount ---
         self.mounts.umount(self.snapset)
 
-        self.assertIsNone(self.mounts._find_mount(self.snapset))
+        self.assertIsNone(self.mounts._canonical_mount(self.snapset))
         self.assertNotIn(mount_obj, self.mounts._mounts)
         self.assertFalse(mount_obj.mounted) # Check object state
         self.assertFalse(os.path.ismount(mount_obj.root)) # Check system state
@@ -629,7 +629,7 @@ class MountsTests(MountsTestsBase):
         self.mounts.discover_mounts()
 
         # Verify the custom mount was rediscovered
-        rediscovered = self.mounts._find_mount(self.snapset)
+        rediscovered = self.mounts._canonical_mount(self.snapset)
         self.assertIsNotNone(rediscovered)
         self.assertEqual(rediscovered.root, custom_path)
         self.assertTrue(rediscovered.mounted)
@@ -1636,13 +1636,13 @@ class MountsUmountSelectionTests(unittest.TestCase):
         self.assertFalse(os.path.exists(first.root))
 
         # The canonical mount and report field fall back to the survivor
-        self.assertIs(self.mounts._find_mount(self.snapset), second)
+        self.assertIs(self.mounts._canonical_mount(self.snapset), second)
         self.assertEqual(self.snapset.mount_root, second.root)
 
         # With one mount left the mount base is no longer required
         self.mounts.umount(self.snapset)
         self.assertEqual(self.mounts._mounts, [])
-        self.assertIsNone(self.mounts._find_mount(self.snapset))
+        self.assertIsNone(self.mounts._canonical_mount(self.snapset))
         self.assertEqual(self.snapset.mount_root, "")
 
     def test_umount_prunes_a_stale_mount(self):
@@ -1659,7 +1659,7 @@ class MountsUmountSelectionTests(unittest.TestCase):
         # The stale entry and its mount point go with the unmount.
         self.assertEqual(self.mounts._mounts, [])
         self.assertFalse(os.path.exists(first.root))
-        self.assertIsNone(self.mounts._find_mount(self.snapset))
+        self.assertIsNone(self.mounts._canonical_mount(self.snapset))
         self.assertEqual(self.snapset.mount_root, "")
 
     def test_umount_stale_mount_is_not_ambiguous(self):

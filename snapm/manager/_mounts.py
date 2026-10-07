@@ -848,12 +848,9 @@ class Mounts:
         """
         return [mount for mount in self._mounts if mount.snapset.name == snapset.name]
 
-    def _find_mount(
-        self, snapset: SnapshotSet, mount_root: Optional[str] = None
-    ) -> Optional[Mount]:
+    def _canonical_mount(self, snapset: SnapshotSet) -> Optional[Mount]:
         """
-        Return the mount for ``snapset`` at ``mount_root``, or the canonical
-        mount for the set when ``mount_root`` is ``None``.
+        Return the canonical mount for ``snapset``.
 
         A snapshot set may be mounted at more than one path at a time: the
         canonical mount is the first one discovered or created, and is the
@@ -862,14 +859,10 @@ class Mounts:
         ``_prune_stale_mounts()``, which every caller runs first.
 
         :param snapset: The snapshot set to look up.
-        :param mount_root: Optional mount path selecting a specific mount.
-        :returns: A `Mount` object, or ``None`` if the set is not mounted at
-                  ``mount_root``, or not mounted at all.
+        :returns: A `Mount` object, or ``None`` if the set is not mounted.
         """
         candidates = self._snapset_mounts(snapset)
-        if mount_root is None:
-            return candidates[0] if candidates else None
-        return next((mount for mount in candidates if mount.root == mount_root), None)
+        return candidates[0] if candidates else None
 
     def _mount_path(
         self, snapset: SnapshotSet, mount_base: Optional[str] = None
@@ -894,7 +887,7 @@ class Mounts:
 
         :param snapset: The snapshot set to update.
         """
-        canonical = self._find_mount(snapset)
+        canonical = self._canonical_mount(snapset)
         snapset.mount_root = canonical.root if canonical is not None else ""
 
     def _prune_stale_mounts(self, snapset: Optional[SnapshotSet] = None) -> None:
