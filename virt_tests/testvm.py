@@ -10,6 +10,7 @@ VM Setup Module for snapm End-to-End Testing
 Handles creation of LVM2-based test VMs with proper storage layout for snapm
 """
 import os
+import platform
 import re
 import subprocess
 import time
@@ -32,14 +33,18 @@ except (TypeError, ValueError):
     err_print(f"Invalid VM_INSTALL_TIMEOUT: {os.getenv('VM_INSTALL_TIMEOUT', None)}")
     err_print(f"Using default ({VM_INSTALL_TIMEOUT}s)")
 
+FEDORA_BASE_URL = "https://dl.fedoraproject.org/pub/fedora/linux/releases"
+CENTOS_BASE_URL = "https://mirror.stream.centos.org"
+MACHINE = platform.uname().machine
+
 # Explicit install locations using CDN mirrors for reliability
 # Using official CDN endpoints instead of virt-install auto-discovery
 # to avoid network flakiness from random mirror selection in CI.
 INSTALL_LOCATIONS = {
-    "fedora43": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/",
-    "fedora44": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/",
-    "centos-stream9": "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/",
-    "centos-stream10": "https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/os/",
+    "fedora43": f"{FEDORA_BASE_URL}/43/Everything/{MACHINE}/os/",
+    "fedora44": f"{FEDORA_BASE_URL}/44/Everything/{MACHINE}/os/",
+    "centos-stream9": f"{CENTOS_BASE_URL}/9-stream/BaseOS/{MACHINE}/os/",
+    "centos-stream10": f"{CENTOS_BASE_URL}/10-stream/BaseOS/{MACHINE}/os/",
 }
 
 
