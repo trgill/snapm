@@ -1907,7 +1907,9 @@ def _exec_cmd(cmd_args):
         ret = 1
     finally:
         if did_mount:
-            manager.mounts.umount(snapset)
+            # Select the mount we made by path: a snapshot set may be
+            # mounted at more than one, and umount() refuses to guess.
+            manager.mounts.umount(snapset, mount_base=os.path.dirname(mount.root))
 
     if ret:
         _log_error(

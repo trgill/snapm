@@ -440,6 +440,54 @@ class CommandTestsSimple(CommandTestsBase):
         with self.assertRaises(snapm.SnapmNotFoundError):
             command._umount_cmd(args)
 
+    @patch("snapm.command.Manager")
+    def test_exec_cmd_umounts_the_mount_it_made(self, MockManager):
+        """Test that exec unmounts by path rather than by snapshot set."""
+        mock_manager = MockManager.return_value
+        mock_snapset = MagicMock()
+        mock_snapset.name = "testset0"
+        mock_manager.find_snapshot_sets.return_value = [mock_snapset]
+
+        # Nothing is mounted, so exec mounts the set and must clean up.
+        mock_manager.mounts.find_mounts.return_value = []
+        mock_mount = MagicMock()
+        mock_mount.root = "/run/snapm/mounts/testset0"
+        mock_mount.exec.return_value = 0
+        mock_manager.mounts.mount.return_value = mock_mount
+
+        args = MockArgs()
+        args.name = "testset0"
+        args.command = ["true"]
+
+        self.assertEqual(command._exec_cmd(args), 0)
+        mock_manager.mounts.umount.assert_called_once_with(
+            mock_snapset,
+            mount_base="/run/snapm/mounts",
+        )
+
+    @patch("snapm.command.Manager")
+    def test_exec_cmd_leaves_a_pre_existing_mount(self, MockManager):
+        """Test that exec does not unmount a set that was already mounted."""
+        mock_manager = MockManager.return_value
+        mock_snapset = MagicMock()
+        mock_snapset.name = "testset0"
+        mock_manager.find_snapshot_sets.return_value = [mock_snapset]
+
+        pre_existing = MagicMock()
+        pre_existing.mounted = True
+        mock_manager.mounts.find_mounts.return_value = [pre_existing]
+        mock_mount = MagicMock()
+        mock_mount.root = "/srv/rescue/testset0"
+        mock_mount.exec.return_value = 0
+        mock_manager.mounts.mount.return_value = mock_mount
+
+        args = MockArgs()
+        args.name = "testset0"
+        args.command = ["true"]
+
+        self.assertEqual(command._exec_cmd(args), 0)
+        mock_manager.mounts.umount.assert_not_called()
+
 
 @unittest.skipIf(not have_root(), "requires root privileges")
 class CommandTests(CommandTestsBase):
