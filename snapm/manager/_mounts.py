@@ -871,6 +871,22 @@ class Mounts:
             return candidates[0] if candidates else None
         return next((mount for mount in candidates if mount.root == mount_root), None)
 
+    def _mount_path(
+        self, snapset: SnapshotSet, mount_base: Optional[str] = None
+    ) -> str:
+        """
+        Return the path at which ``snapset`` is mounted beneath ``mount_base``,
+        or beneath the default mounts directory when ``mount_base`` is
+        ``None``.
+
+        :param snapset: The snapshot set to build a mount path for.
+        :param mount_base: Optional base directory in place of the default
+                           mounts directory.
+        :returns: The absolute mount path for the snapshot set.
+        """
+        base = self._root if mount_base is None else os.path.abspath(mount_base)
+        return os.path.join(base, snapset.name)
+
     def _update_mount_root(self, snapset: SnapshotSet) -> None:
         """
         Point the snapshot set's reported mount root at its canonical mount,
@@ -1045,15 +1061,13 @@ class Mounts:
                            The snapshot set root is mounted at
                            ``<mount_base>/<snapset name>``.
         """
+        mount_path = self._mount_path(snapset, mount_base)
         if mount_base is not None:
-            mount_base = os.path.abspath(mount_base)
-            if not os.path.isdir(mount_base):
+            base = os.path.dirname(mount_path)
+            if not os.path.isdir(base):
                 raise SnapmPathError(
-                    f"Mount base path does not exist or is not a directory: {mount_base}"
+                    f"Mount base path does not exist or is not a directory: {base}"
                 )
-            mount_path = os.path.join(mount_base, snapset.name)
-        else:
-            mount_path = os.path.join(self._root, snapset.name)
 
         # Discard any entry for a path that is no longer mounted, along with
         # the mount point it names, so that the set can be mounted there
@@ -1123,8 +1137,8 @@ class Mounts:
 
         candidates = self._snapset_mounts(snapset)
         if mount_base is not None:
-            wanted = os.path.join(os.path.abspath(mount_base), snapset.name)
-            candidates = [m for m in candidates if m.root == wanted]
+            mount_path = self._mount_path(snapset, mount_base)
+            candidates = [mount for mount in candidates if mount.root == mount_path]
 
         if not candidates:
             raise SnapmNotFoundError(f"Mount for snapshot set {snapset.name} not found")
