@@ -13,6 +13,7 @@ import unittest
 import unittest.mock
 import logging
 import tempfile
+import shutil
 import os.path
 import pytest
 import os
@@ -27,7 +28,12 @@ import snapm.manager
 from snapm.manager.plugins import format_snapshot_name, encode_mount_point
 
 from tests import have_root, is_redhat, in_rh_ci
-from ._util import LoopBackDevices, LvmLoopBacked, _VG_NAME
+from ._util import (
+    LoopBackDevices,
+    LvmLoopBacked,
+    rmtree_one_file_system,
+    _VG_NAME,
+)
 
 ETC_FSTAB = "/etc/fstab"
 
@@ -218,6 +224,37 @@ class MountsTestsBase(unittest.TestCase):
                         f"(rc={err.returncode}: {err.stderr})"
                     )
 
+    def _umount_mount_base(self, mount_base):
+        """
+        Unmount the snapshot set from ``mount_base``, if it is mounted.
+
+        Failures are logged rather than raised: the removal of the mount
+        base reports anything still mounted beneath it.
+        """
+        mount_path = os.path.join(mount_base, self.snapset_name)
+        if not os.path.ismount(mount_path):
+            return
+        try:
+            self.mounts.umount(self.snapset, mount_base=mount_base)
+        except snapm.SnapmError as err:
+            log.warning("Cleanup unmount failed for %s: %s", mount_path, err)
+            run(["umount", "-R", mount_path], check=False, capture_output=True)
+
+    def make_mount_base(self, prefix="snapm_custom_root_"):
+        """
+        Return a temporary directory to mount a snapshot set beneath.
+
+        Cleanups run in reverse order of registration, so the unmount is
+        registered after the removal in order to run before it.
+
+        :param prefix: Prefix for the temporary directory name.
+        :returns: The path to the new directory.
+        """
+        mount_base = tempfile.mkdtemp(prefix=prefix)
+        self.addCleanup(rmtree_one_file_system, mount_base)
+        self.addCleanup(self._umount_mount_base, mount_base)
+        return mount_base
+
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)
 
@@ -255,9 +292,12 @@ class MountsTestsBase(unittest.TestCase):
             )
 
         # 5. Setup temp directory for mounts
-        self._mounts_root_dir_obj = tempfile.TemporaryDirectory(prefix="snapm_mnt_")
-        self.mounts_root_dir = self._mounts_root_dir_obj.name
-        self.addCleanup(self._mounts_root_dir_obj.cleanup)
+        #
+        # Removed with rmtree_one_file_system() rather than through a
+        # TemporaryDirectory: that would remove the tree from its finaliser
+        # at garbage collection time even if the cleanup below declined to.
+        self.mounts_root_dir = tempfile.mkdtemp(prefix="snapm_mnt_")
+        self.addCleanup(rmtree_one_file_system, self.mounts_root_dir)
 
         # 6. Setup Manager and find the SnapshotSet
         self.manager = snapm.manager.Manager()
@@ -267,8 +307,10 @@ class MountsTestsBase(unittest.TestCase):
         # 7. Initialize the Mounts object
         self.mounts = mounts.Mounts(self.manager, self.mounts_root_dir)
 
-        # 8. Cleanup mounts - this MUST be executed before _mounts_root_dir_obj.cleanup
-        # or very bad things will happen (rm -rf /dev/* /run/*)
+        # 8. Cleanup mounts - registered last so that it runs first, before
+        # the mount root is removed. rmtree_one_file_system() refuses to
+        # remove a tree that is still mounted, so getting this wrong now
+        # fails the test rather than running rm -rf over /dev and /run.
         self.addCleanup(self.cleanup_mounts)
 
     def tearDown(self):
@@ -566,12 +608,11 @@ class MountsTests(MountsTestsBase):
         Tests that a custom mount_root places the mount tree
         under mount_root/<snapset_name> instead of the default.
         """
-        custom_root_obj = tempfile.TemporaryDirectory(prefix="snapm_custom_root_")
-        self.addCleanup(custom_root_obj.cleanup)
+        custom_root = self.make_mount_base()
 
-        mount_obj = self.mounts.mount(self.snapset, mount_base=custom_root_obj.name)
+        mount_obj = self.mounts.mount(self.snapset, mount_base=custom_root)
 
-        expected_path = os.path.join(custom_root_obj.name, self.snapset_name)
+        expected_path = os.path.join(custom_root, self.snapset_name)
         self.assertEqual(mount_obj.root, expected_path)
         self.assertTrue(mount_obj.mounted)
         self.assertTrue(os.path.ismount(expected_path))
@@ -582,10 +623,9 @@ class MountsTests(MountsTestsBase):
         """
         Tests that a non-existent mount_root directory raises SnapmPathError.
         """
-        custom_root_obj = tempfile.TemporaryDirectory(prefix="snapm_custom_root_")
-        self.addCleanup(custom_root_obj.cleanup)
+        custom_root = self.make_mount_base()
 
-        new_root = os.path.join(custom_root_obj.name, "nested", "mount_root")
+        new_root = os.path.join(custom_root, "nested", "mount_root")
         self.assertFalse(os.path.exists(new_root))
 
         with self.assertRaisesRegex(
@@ -608,12 +648,11 @@ class MountsTests(MountsTestsBase):
         Tests that discover_mounts() finds mounts created with custom mount_root
         by checking each snapset's mount_root attribute.
         """
-        custom_root_obj = tempfile.TemporaryDirectory(prefix="snapm_custom_root_")
-        self.addCleanup(custom_root_obj.cleanup)
+        custom_root = self.make_mount_base()
 
         # Mount with custom root
-        mount_obj = self.mounts.mount(self.snapset, mount_base=custom_root_obj.name)
-        custom_path = os.path.join(custom_root_obj.name, self.snapset_name)
+        mount_obj = self.mounts.mount(self.snapset, mount_base=custom_root)
+        custom_path = os.path.join(custom_root, self.snapset_name)
         self.assertEqual(mount_obj.root, custom_path)
         self.assertTrue(mount_obj.mounted)
 
@@ -703,6 +742,51 @@ class MountsTestsExec(MountsTestsBase):
         self.assertEqual(retcode, 0)
 
         self.mounts.umount(self.snapset)
+
+
+class RmtreeOneFileSystemTests(unittest.TestCase):
+    """
+    Tests for the mount-aware directory removal used by the mount tests.
+    """
+
+    def _tree(self):
+        """Build a small directory tree and return its path."""
+        top = tempfile.mkdtemp(prefix="snapm_rmtree_")
+        self.addCleanup(shutil.rmtree, top, True)
+        os.makedirs(os.path.join(top, "sub", "deeper"))
+        with open(os.path.join(top, "sub", "file"), "w", encoding="utf8"):
+            pass
+        return top
+
+    def test_rmtree_removes_an_unmounted_tree(self):
+        """Test that a tree with nothing mounted in it is removed."""
+        top = self._tree()
+        rmtree_one_file_system(top)
+        self.assertFalse(os.path.exists(top))
+
+    def test_rmtree_ignores_a_missing_path(self):
+        """Test that removing a path that does not exist is not an error."""
+        rmtree_one_file_system(os.path.join(self._tree(), "no", "such", "path"))
+
+    def test_rmtree_refuses_to_cross_a_mount_point(self):
+        """Test that a tree with something mounted in it is left alone."""
+        top = self._tree()
+        mounted_dir = os.path.join(top, "sub", "deeper")
+
+        # Stand in for a mount point: the test suite cannot mount anything
+        # without root, and st_dev is identical throughout a temporary tree.
+        real_ismount = os.path.ismount
+
+        def fake_ismount(path):
+            return path == mounted_dir or real_ismount(path)
+
+        with unittest.mock.patch("os.path.ismount", side_effect=fake_ismount):
+            with self.assertRaisesRegex(AssertionError, "still mounted"):
+                rmtree_one_file_system(top)
+
+        # Nothing was removed, including the parts above the mount point.
+        self.assertTrue(os.path.exists(mounted_dir))
+        self.assertTrue(os.path.exists(os.path.join(top, "sub", "file")))
 
 
 class SysMountTests(unittest.TestCase):
