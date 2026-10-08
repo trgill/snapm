@@ -1151,10 +1151,12 @@ class Mounts:
         if not candidates:
             raise SnapmNotFoundError(f"Mount for snapshot set {snapset.name} not found")
         if len(candidates) > 1:
+            # Name the mount bases rather than the mount paths: these are
+            # the values that select one of them when passed back in.
+            bases = ", ".join(os.path.dirname(mount.root) for mount in candidates)
             raise SnapmArgumentError(
-                f"Snapshot set {snapset.name} is mounted at multiple paths "
-                f"({', '.join(m.root for m in candidates)}): use --mount-root "
-                "to select one."
+                f"Snapshot set {snapset.name} is mounted at multiple paths: "
+                f"use --mount-root to select one of ({bases})."
             )
 
         # Unmount and clean up root first

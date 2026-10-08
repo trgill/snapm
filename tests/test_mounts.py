@@ -1756,13 +1756,22 @@ class MountsUmountSelectionTests(unittest.TestCase):
         with self.assertRaises(snapm.SnapmArgumentError) as ctx:
             self.mounts.umount(self.snapset)
 
-        # The error names both paths so the user can pick one.
-        self.assertIn(first.root, str(ctx.exception))
-        self.assertIn(second.root, str(ctx.exception))
-        self.assertIn("--mount-root", str(ctx.exception))
+        # The error names the mount base of each, so that the values it
+        # prints can be passed straight back in as --mount-root.
+        message = str(ctx.exception)
+        self.assertIn(os.path.dirname(first.root), message)
+        self.assertIn(os.path.dirname(second.root), message)
+        self.assertIn("--mount-root", message)
+        self.assertNotIn(first.root, message)
+        self.assertNotIn(second.root, message)
 
         # Nothing was unmounted
         self.assertEqual(len(self.mounts._mounts), 2)
+
+        # Each value it printed selects one of the mounts
+        for mount in (first, second):
+            self.mounts.umount(self.snapset, mount_base=os.path.dirname(mount.root))
+            self.assertNotIn(mount, self.mounts._mounts)
 
     def test_umount_mount_base_disambiguates(self):
         """Test that a mount base selects one of several mounts."""
