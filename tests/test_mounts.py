@@ -228,8 +228,10 @@ class MountsTestsBase(unittest.TestCase):
         """
         Unmount the snapshot set from ``mount_base``, if it is mounted.
 
-        Failures are logged rather than raised: the removal of the mount
-        base reports anything still mounted beneath it.
+        Leaving it mounted is not recoverable: the cleanups that follow
+        remove the mount base and then detach the volume group out from
+        under whatever is still mounted on it, so give up on the run
+        instead of letting them proceed.
         """
         mount_path = os.path.join(mount_base, self.snapset_name)
         if not os.path.ismount(mount_path):
@@ -238,7 +240,18 @@ class MountsTestsBase(unittest.TestCase):
             self.mounts.umount(self.snapset, mount_base=mount_base)
         except snapm.SnapmError as err:
             log.warning("Cleanup unmount failed for %s: %s", mount_path, err)
-            run(["umount", "-R", mount_path], check=False, capture_output=True)
+            try:
+                run(
+                    ["umount", "-R", mount_path],
+                    check=True,
+                    capture_output=True,
+                    encoding="utf8",
+                )
+            except CalledProcessError as err:
+                pytest.exit(
+                    f"Emergency shutdown: mount cleanup failed for mount path "
+                    f"{mount_path}: (rc={err.returncode}: {err.stderr})"
+                )
 
     def make_mount_base(self, prefix="snapm_custom_root_"):
         """
