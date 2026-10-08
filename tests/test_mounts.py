@@ -1654,15 +1654,57 @@ class MountsMountSelectionTests(unittest.TestCase):
         self.assertEqual(self.mounts._mounts, [])
         self.assertEqual(self.snapset.mount_root, "")
 
+    def test_mount_reuses_a_leftover_mount_point(self):
+        """Test that a mount point left by an outside unmount is re-used."""
+        base = self._mount_base()
+        mount_path = os.path.join(base, self.snapset.name)
+
+        # 'umount -R <path>' outside snapm leaves the mount point behind
+        # with nothing mounted on it and nothing in the mount table.
+        os.mkdir(mount_path)
+        self.assertEqual(self.mounts._mounts, [])
+
+        mount_obj = self._mount(mount_base=base)
+
+        self.assertEqual(mount_obj.root, mount_path)
+        self.assertTrue(os.path.isdir(mount_path))
+
     def test_mount_point_in_use_raises_path_error(self):
         """Test that an occupied mount point fails with a SnapmError."""
         base = self._mount_base()
-        os.mkdir(os.path.join(base, self.snapset.name))
+        mount_path = os.path.join(base, self.snapset.name)
+        os.mkdir(mount_path)
+        occupant = os.path.join(mount_path, "occupant")
+        with open(occupant, "w", encoding="utf8"):
+            pass
 
         with self.assertRaisesRegex(
-            snapm.SnapmPathError, "Could not create mount point"
+            snapm.SnapmPathError, "is not an empty directory"
         ):
             self._mount(mount_base=base)
+
+        # A directory that is not empty is not snapm's to re-use.
+        self.assertTrue(os.path.exists(occupant))
+
+    def test_mount_point_symlink_raises_path_error(self):
+        """Test that a symbolic link cannot redirect the mount."""
+        base = self._mount_base()
+        target = self._mount_base()
+        mount_path = os.path.join(base, self.snapset.name)
+
+        # A link to an empty directory: refused for being a link, not for
+        # what it happens to point at.
+        os.symlink(target, mount_path)
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "is not an empty directory"
+        ):
+            self._mount(mount_base=base)
+
+        # Neither the link nor what it points at is touched.
+        self.assertTrue(os.path.islink(mount_path))
+        self.assertTrue(os.path.isdir(target))
+        self.assertEqual(os.listdir(target), [])
 
     def test_mount_reports_canonical_mount_root(self):
         """Test that a second mount leaves the reported mount root alone."""

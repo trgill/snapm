@@ -1084,11 +1084,25 @@ class Mounts:
         # Ensure the snapshot set's volumes are active
         snapset.activate()
 
-        # Create the mount point without re-using an existing path: this
-        # prevents a user with write access to the mount base from
-        # redirecting the mount with a symbolic link planted there first.
+        # Create the mount point. An unmount performed outside snapm leaves
+        # the mount point behind with nothing mounted on it and no entry in
+        # the mount table to prune, so re-use an empty directory found here
+        # rather than refusing to mount the set ever again. Anything else,
+        # a symbolic link above all, is left alone and refused: that is
+        # what stops a user with write access to the mount base from
+        # redirecting the mount by planting one here first.
         try:
-            os.makedirs(mount_path, exist_ok=False)
+            os.mkdir(mount_path)
+        except FileExistsError as err:
+            if (
+                os.path.islink(mount_path)
+                or not os.path.isdir(mount_path)
+                or os.listdir(mount_path)
+            ):
+                raise SnapmPathError(
+                    f"Mount point {mount_path} is not an empty directory"
+                ) from err
+            _log_info("Re-using leftover mount point '%s'", mount_path)
         except OSError as err:
             raise SnapmPathError(
                 f"Could not create mount point {mount_path}: {err}"
