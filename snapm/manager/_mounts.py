@@ -11,7 +11,7 @@ Mount integration for snapshot manager
 from subprocess import run, CalledProcessError, TimeoutExpired
 from typing import Dict, Iterable, List, Optional, Union
 from abc import ABC, abstractmethod
-from stat import S_ISBLK, S_ISDIR
+from stat import S_ISBLK, S_ISDIR, S_ISLNK
 import collections
 import logging
 import shlex
@@ -864,32 +864,58 @@ class Mounts:
         candidates = self._snapset_mounts(snapset)
         return candidates[0] if candidates else None
 
-    def _mount_path(
-        self, snapset: SnapshotSet, mount_base: Optional[str] = None
-    ) -> str:
+    def _default_mount_path(self, snapset: SnapshotSet) -> str:
         """
-        Return the path at which ``snapset`` is mounted beneath ``mount_base``,
-        or beneath the default mounts directory when ``mount_base`` is
-        ``None``.
+        Return the path at which ``snapset`` is mounted beneath the default
+        mounts directory.
 
         :param snapset: The snapshot set to build a mount path for.
-        :param mount_base: Optional base directory in place of the default
-                           mounts directory.
         :returns: The absolute mount path for the snapshot set.
         :raises SnapmPathError: If the set name does not name a path directly
-                                beneath the mount base.
+                                beneath the mounts directory.
         """
-        base = self._root if mount_base is None else os.path.abspath(mount_base)
-        path = os.path.normpath(os.path.join(base, snapset.name))
+        path = os.path.normpath(os.path.join(self._root, snapset.name))
 
         # The set name has to contribute exactly one path component: '..' and
         # the empty name both resolve back to the base or above it (#1026).
-        if os.path.dirname(path) != base:
+        if os.path.dirname(path) != self._root:
             raise SnapmPathError(
                 f"Snapshot set name '{snapset.name}' does not name a mount "
-                f"point beneath {base}"
+                f"point beneath {self._root}"
             )
         return path
+
+    def _owns_mount_point(self, path: str) -> bool:
+        """
+        Test whether ``path`` is a mount point snapm created, and may
+        therefore remove.
+
+        Only paths beneath the mounts directory are snapm's to create and
+        remove. A mount point nominated with ``--mount-root`` belongs to
+        whoever made it.
+
+        :param path: The mount point to test.
+        :returns: ``True`` if snapm created ``path``, or ``False`` otherwise.
+        """
+        return os.path.dirname(path) == self._root
+
+    @staticmethod
+    def _check_mount_point(path: str) -> None:
+        """
+        Validate a mount point nominated in place of the default.
+
+        :param path: The mount point to validate.
+        :raises SnapmPathError: If ``path`` is not an existing directory, or
+                                is a symbolic link.
+        """
+        try:
+            st = os.lstat(path)
+        except OSError as err:
+            raise SnapmPathError(f"Mount point does not exist: {path}") from err
+        if S_ISLNK(st.st_mode):
+            raise SnapmPathError(f"Mount point is a symbolic link: {path}")
+        if not S_ISDIR(st.st_mode):
+            raise SnapmPathError(f"Mount point is not a directory: {path}")
 
     @staticmethod
     def _reusable_mount_point(path: str) -> bool:
@@ -936,8 +962,9 @@ class Mounts:
         blocks mounting the set there again, and it counts towards the
         ambiguity check in ``umount()``.
 
-        The mount point goes with the entry, since the path is one that snapm
-        created and nothing is mounted on it any more.
+        The mount point goes with the entry when snapm created it and
+        nothing is mounted on it any more. A nominated mount root is left
+        alone: it belongs to whoever made it.
 
         :param snapset: Optional snapshot set to limit pruning to. All
                         snapshot sets are pruned when it is ``None``.
@@ -953,12 +980,13 @@ class Mounts:
                 "Discarding stale mount for %s at '%s'", mount.snapset.name, mount.root
             )
             self._mounts.remove(mount)
-            try:
-                os.rmdir(mount.root)
-            except OSError as err:
-                _log_warn(
-                    "Could not remove stale mount point '%s': %s", mount.root, err
-                )
+            if self._owns_mount_point(mount.root):
+                try:
+                    os.rmdir(mount.root)
+                except OSError as err:
+                    _log_warn(
+                        "Could not remove stale mount point '%s': %s", mount.root, err
+                    )
             # The discarded entry may have been the one reported for the set.
             self._update_mount_root(mount.snapset)
 
@@ -1078,24 +1106,23 @@ class Mounts:
     def mount(
         self,
         snapset: SnapshotSet,
-        mount_base: Optional[str] = None,
+        mount_root: Optional[str] = None,
     ) -> Mount:
         """
         Mount the snapshot set `snapset`.
 
         :param snapset: The snapshot set to operate on.
-        :param mount_base: Optional base directory to mount the snapshot set
-                           beneath, in place of the default mounts directory.
-                           The snapshot set root is mounted at
-                           ``<mount_base>/<snapset name>``.
+        :param mount_root: Optional path to mount the snapshot set at, in
+                           place of the default mount point beneath the
+                           mounts directory. The directory must already
+                           exist: snapm neither creates it nor removes it
+                           when the set is unmounted.
         """
-        mount_path = self._mount_path(snapset, mount_base)
-        if mount_base is not None:
-            base = os.path.dirname(mount_path)
-            if not os.path.isdir(base):
-                raise SnapmPathError(
-                    f"Mount base path does not exist or is not a directory: {base}"
-                )
+        if mount_root is None:
+            mount_path = self._default_mount_path(snapset)
+        else:
+            mount_path = os.path.abspath(mount_root)
+            self._check_mount_point(mount_path)
 
         # Discard any entry for a path that is no longer mounted, along with
         # the mount point it names, so that the set can be mounted there
@@ -1103,11 +1130,11 @@ class Mounts:
         self._prune_stale_mounts(snapset)
 
         # A snapshot set may be mounted at more than one path at a time. An
-        # explicit mount base asks for a mount at a specific path, so only a
-        # mount already rooted there will do: with no mount base any mount of
+        # explicit mount root asks for a mount at a specific path, so only a
+        # mount already rooted there will do: with no mount root any mount of
         # the set is acceptable.
         candidates = self._snapset_mounts(snapset)
-        if mount_base is not None:
+        if mount_root is not None:
             candidates = [mount for mount in candidates if mount.root == mount_path]
         if candidates:
             existing = candidates[0]
@@ -1119,34 +1146,36 @@ class Mounts:
         # Ensure the snapshot set's volumes are active
         snapset.activate()
 
-        # Create the mount point. An unmount performed outside snapm leaves
-        # the mount point behind with nothing mounted on it and no entry in
-        # the mount table to prune, so re-use an empty directory found here
+        # Create the default mount point. An unmount performed outside snapm
+        # leaves it behind with nothing mounted on it and no entry in the
+        # mount table to prune, so re-use an empty directory found here
         # rather than refusing to mount the set ever again. A symbolic link
         # is refused, which stops one planted here in advance from
         # redirecting the mount; a link swapped in after this check still
         # wins, since mount(8) resolves the path again.
-        try:
-            os.mkdir(mount_path)
-        except FileExistsError as err:
-            if not self._reusable_mount_point(mount_path):
+        if mount_root is None:
+            try:
+                os.mkdir(mount_path)
+            except FileExistsError as err:
+                if not self._reusable_mount_point(mount_path):
+                    raise SnapmPathError(
+                        f"Mount point {mount_path} is not an empty directory"
+                    ) from err
+                _log_info("Re-using leftover mount point '%s'", mount_path)
+            except OSError as err:
                 raise SnapmPathError(
-                    f"Mount point {mount_path} is not an empty directory"
+                    f"Could not create mount point {mount_path}: {err}"
                 ) from err
-            _log_info("Re-using leftover mount point '%s'", mount_path)
-        except OSError as err:
-            raise SnapmPathError(
-                f"Could not create mount point {mount_path}: {err}"
-            ) from err
 
         mount = Mount(snapset, mount_path)
         try:
             mount.mount()
         except (SnapmError, ValueError):
-            try:
-                os.rmdir(mount_path)
-            except OSError:
-                pass  # pragma: no cover
+            if self._owns_mount_point(mount_path):
+                try:
+                    os.rmdir(mount_path)
+                except OSError:
+                    pass  # pragma: no cover
             raise
 
         self._mounts.append(mount)
@@ -1157,17 +1186,17 @@ class Mounts:
 
         return mount
 
-    def umount(self, snapset: SnapshotSet, mount_base: Optional[str] = None):
+    def umount(self, snapset: SnapshotSet, mount_root: Optional[str] = None):
         """
         Unmount the snapshot set `snapset`.
 
         :param snapset: The snapshot set to operate on.
-        :param mount_base: Optional base directory to select the mount to
+        :param mount_root: Optional mount point selecting the mount to
                            unmount. Only required when ``snapset`` is mounted
                            at more than one path.
         :raises SnapmNotFoundError: If no matching mount is found.
         :raises SnapmArgumentError: If ``snapset`` is mounted at more than one
-                                    path and ``mount_base`` does not select
+                                    path and ``mount_root`` does not select
                                     exactly one of them.
         """
         # Only the paths the set is still mounted at are candidates, and only
@@ -1175,25 +1204,24 @@ class Mounts:
         self._prune_stale_mounts(snapset)
 
         candidates = self._snapset_mounts(snapset)
-        if mount_base is not None:
-            mount_path = self._mount_path(snapset, mount_base)
+        if mount_root is not None:
+            mount_path = os.path.abspath(mount_root)
             candidates = [mount for mount in candidates if mount.root == mount_path]
 
         if not candidates:
             raise SnapmNotFoundError(f"Mount for snapshot set {snapset.name} not found")
         if len(candidates) > 1:
-            # Name the mount bases rather than the mount paths: these are
-            # the values that select one of them when passed back in.
-            bases = ", ".join(os.path.dirname(mount.root) for mount in candidates)
+            roots = ", ".join(mount.root for mount in candidates)
             raise SnapmArgumentError(
                 f"Snapshot set {snapset.name} is mounted at multiple paths: "
-                f"use --mount-root to select one of ({bases})."
+                f"use --mount-root to select one of ({roots})."
             )
 
         # Unmount and clean up root first
         mount = candidates[0]
         mount.umount()
-        os.rmdir(mount.root)
+        if self._owns_mount_point(mount.root):
+            os.rmdir(mount.root)
 
         # Update the mount table on success
         self._mounts.remove(mount)

@@ -224,20 +224,19 @@ class MountsTestsBase(unittest.TestCase):
                         f"(rc={err.returncode}: {err.stderr})"
                     )
 
-    def _umount_mount_base(self, mount_base):
+    def _umount_mount_point(self, mount_path):
         """
-        Unmount the snapshot set from ``mount_base``, if it is mounted.
+        Unmount the snapshot set from ``mount_path``, if it is mounted.
 
         Leaving it mounted is not recoverable: the cleanups that follow
-        remove the mount base and then detach the volume group out from
+        remove the mount point and then detach the volume group out from
         under whatever is still mounted on it, so give up on the run
         instead of letting them proceed.
         """
-        mount_path = os.path.join(mount_base, self.snapset_name)
         if not os.path.ismount(mount_path):
             return
         try:
-            self.mounts.umount(self.snapset, mount_base=mount_base)
+            self.mounts.umount(self.snapset, mount_root=mount_path)
         except snapm.SnapmError as err:
             log.warning("Cleanup unmount failed for %s: %s", mount_path, err)
             try:
@@ -253,9 +252,9 @@ class MountsTestsBase(unittest.TestCase):
                     f"{mount_path}: (rc={err.returncode}: {err.stderr})"
                 )
 
-    def make_mount_base(self, prefix="snapm_custom_root_"):
+    def make_mount_point(self, prefix="snapm_custom_root_"):
         """
-        Return a temporary directory to mount a snapshot set beneath.
+        Return a temporary directory to mount a snapshot set at.
 
         Cleanups run in reverse order of registration, so the unmount is
         registered after the removal in order to run before it.
@@ -263,10 +262,10 @@ class MountsTestsBase(unittest.TestCase):
         :param prefix: Prefix for the temporary directory name.
         :returns: The path to the new directory.
         """
-        mount_base = tempfile.mkdtemp(prefix=prefix)
-        self.addCleanup(rmtree_one_file_system, mount_base)
-        self.addCleanup(self._umount_mount_base, mount_base)
-        return mount_base
+        mount_point = tempfile.mkdtemp(prefix=prefix)
+        self.addCleanup(rmtree_one_file_system, mount_point)
+        self.addCleanup(self._umount_mount_point, mount_point)
+        return mount_point
 
     def setUp(self):
         log.debug("Preparing %s", self._testMethodName)
@@ -618,33 +617,37 @@ class MountsTests(MountsTestsBase):
 
     def test_mount_with_custom_mount_root(self):
         """
-        Tests that a custom mount_root places the mount tree
-        under mount_root/<snapset_name> instead of the default.
+        Tests that a custom mount_root places the mount tree at that path
+        instead of beneath the default mounts directory.
         """
-        custom_root = self.make_mount_base()
+        custom_root = self.make_mount_point()
 
-        mount_obj = self.mounts.mount(self.snapset, mount_base=custom_root)
+        mount_obj = self.mounts.mount(self.snapset, mount_root=custom_root)
 
-        expected_path = os.path.join(custom_root, self.snapset_name)
-        self.assertEqual(mount_obj.root, expected_path)
+        self.assertEqual(mount_obj.root, custom_root)
         self.assertTrue(mount_obj.mounted)
-        self.assertTrue(os.path.ismount(expected_path))
+        self.assertTrue(os.path.ismount(custom_root))
 
         self.mounts.umount(self.snapset)
+
+        # The mount point was not snapm's to create, so it is still here.
+        self.assertFalse(os.path.ismount(custom_root))
+        self.assertTrue(os.path.isdir(custom_root))
 
     def test_mount_with_custom_mount_root_nonexistent(self):
         """
         Tests that a non-existent mount_root directory raises SnapmPathError.
         """
-        custom_root = self.make_mount_base()
+        custom_root = self.make_mount_point()
 
         new_root = os.path.join(custom_root, "nested", "mount_root")
         self.assertFalse(os.path.exists(new_root))
 
-        with self.assertRaisesRegex(
-            snapm.SnapmPathError, "does not exist or is not a directory"
-        ):
-            self.mounts.mount(self.snapset, mount_base=new_root)
+        with self.assertRaisesRegex(snapm.SnapmPathError, "does not exist"):
+            self.mounts.mount(self.snapset, mount_root=new_root)
+
+        # snapm does not create a mount point it was handed.
+        self.assertFalse(os.path.exists(new_root))
 
     def test_mount_with_mount_root_not_a_dir(self):
         """
@@ -654,18 +657,17 @@ class MountsTests(MountsTestsBase):
             with self.assertRaisesRegex(
                 snapm.SnapmPathError, "not a directory"
             ):
-                self.mounts.mount(self.snapset, mount_base=tmp.name)
+                self.mounts.mount(self.snapset, mount_root=tmp.name)
 
     def test_discover_mounts_with_custom_root(self):
         """
         Tests that discover_mounts() finds mounts created with custom mount_root
         by checking each snapset's mount_root attribute.
         """
-        custom_root = self.make_mount_base()
+        custom_path = self.make_mount_point()
 
-        # Mount with custom root
-        mount_obj = self.mounts.mount(self.snapset, mount_base=custom_root)
-        custom_path = os.path.join(custom_root, self.snapset_name)
+        # Mount at the custom mount point
+        mount_obj = self.mounts.mount(self.snapset, mount_root=custom_path)
         self.assertEqual(mount_obj.root, custom_path)
         self.assertTrue(mount_obj.mounted)
 
@@ -1547,16 +1549,25 @@ class MountsMountSelectionTests(unittest.TestCase):
 
     def setUp(self):
         manager = SimpleNamespace(snapshot_sets=[])
-        self.mounts = mounts.Mounts(manager, "/run/snapm/mounts")
+        self.root = self._tmpdir("snapm_mount_root_")
+        self.mounts = mounts.Mounts(manager, self.root)
         self.snapset = SimpleNamespace(
             name="testset0", mount_root="", activate=lambda: None
         )
 
-    def _mount_base(self):
-        """Return the path to a new, empty mount base directory."""
-        base_obj = tempfile.TemporaryDirectory(prefix="snapm_mount_sel_")
-        self.addCleanup(base_obj.cleanup)
-        return base_obj.name
+    def _tmpdir(self, prefix):
+        """Return the path to a new, empty directory."""
+        dir_obj = tempfile.TemporaryDirectory(prefix=prefix)
+        self.addCleanup(dir_obj.cleanup)
+        return dir_obj.name
+
+    def _mount_point(self):
+        """Return a new, empty directory to nominate as a mount point."""
+        return self._tmpdir("snapm_mount_point_")
+
+    def _default_path(self):
+        """Return the default mount point path for the test snapshot set."""
+        return os.path.join(self.root, self.snapset.name)
 
     @staticmethod
     def _stub_mount(snapset, root, discover=False):
@@ -1565,63 +1576,125 @@ class MountsMountSelectionTests(unittest.TestCase):
             snapset=snapset, root=root, mounted=True, mount=lambda: None
         )
 
-    def _mount(self, mount_base=None):
+    def _mount(self, mount_root=None):
         """Call Mounts.mount() without mounting anything."""
         with unittest.mock.patch.object(mounts, "Mount", self._stub_mount):
-            return self.mounts.mount(self.snapset, mount_base=mount_base)
+            return self.mounts.mount(self.snapset, mount_root=mount_root)
 
-    def test_mount_second_base_creates_second_mount(self):
-        """Test that an explicit mount base mounts a set already mounted."""
-        base_one = self._mount_base()
-        base_two = self._mount_base()
+    def test_mount_creates_the_default_mount_point(self):
+        """Test that snapm creates the default mount point itself."""
+        mount_obj = self._mount()
 
-        first = self._mount(mount_base=base_one)
-        second = self._mount(mount_base=base_two)
+        self.assertEqual(mount_obj.root, self._default_path())
+        self.assertTrue(os.path.isdir(mount_obj.root))
+
+    def test_mount_second_root_creates_second_mount(self):
+        """Test that a nominated mount point mounts a set already mounted."""
+        one = self._mount_point()
+        two = self._mount_point()
+
+        first = self._mount(mount_root=one)
+        second = self._mount(mount_root=two)
 
         self.assertIsNot(first, second)
-        self.assertEqual(first.root, os.path.join(base_one, self.snapset.name))
-        self.assertEqual(second.root, os.path.join(base_two, self.snapset.name))
+        self.assertEqual(first.root, one)
+        self.assertEqual(second.root, two)
         self.assertEqual(self.mounts._mounts, [first, second])
 
-    def test_mount_same_base_returns_existing(self):
-        """Test that re-mounting at the same base returns the same mount."""
-        base = self._mount_base()
+    def test_mount_same_root_returns_existing(self):
+        """Test that re-mounting at one mount point returns the same mount."""
+        point = self._mount_point()
 
-        first = self._mount(mount_base=base)
-        again = self._mount(mount_base=base)
+        first = self._mount(mount_root=point)
+        again = self._mount(mount_root=point)
 
         self.assertIs(again, first)
         self.assertEqual(self.mounts._mounts, [first])
 
-    def test_mount_without_base_returns_existing(self):
-        """Test that mount() with no mount base accepts any existing mount."""
-        first = self._mount(mount_base=self._mount_base())
+    def test_mount_without_root_returns_existing(self):
+        """Test that mount() with no mount root accepts any existing mount."""
+        first = self._mount(mount_root=self._mount_point())
         again = self._mount()
 
         self.assertIs(again, first)
         self.assertEqual(self.mounts._mounts, [first])
 
-    def test_mount_replaces_stale_mount_point(self):
-        """Test that a stale mount point is discarded and re-created."""
-        base = self._mount_base()
-        first = self._mount(mount_base=base)
+    def test_mount_does_not_create_a_nominated_mount_point(self):
+        """Test that a mount point that does not exist is refused."""
+        missing = os.path.join(self._mount_point(), "nosuchdir")
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "Mount point does not exist"
+        ):
+            self._mount(mount_root=missing)
+
+        self.assertFalse(os.path.exists(missing))
+        self.assertEqual(self.mounts._mounts, [])
+
+    def test_mount_nominated_mount_point_not_a_directory(self):
+        """Test that a mount point that is not a directory is refused."""
+        path = os.path.join(self._mount_point(), "file")
+        with open(path, "w", encoding="utf8"):
+            pass
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "Mount point is not a directory"
+        ):
+            self._mount(mount_root=path)
+
+    def test_mount_nominated_mount_point_symlink(self):
+        """Test that a mount point that is a symbolic link is refused."""
+        link = os.path.join(self._mount_point(), "link")
+        os.symlink(self._mount_point(), link)
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "Mount point is a symbolic link"
+        ):
+            self._mount(mount_root=link)
+
+    def test_mount_nominated_mount_point_need_not_be_empty(self):
+        """Test that a nominated mount point may have contents to shadow."""
+        point = self._mount_point()
+        with open(os.path.join(point, "shadowed"), "w", encoding="utf8"):
+            pass
+
+        mount_obj = self._mount(mount_root=point)
+
+        self.assertEqual(mount_obj.root, point)
+
+    def test_mount_replaces_stale_default_mount_point(self):
+        """Test that a stale default mount point is discarded and remade."""
+        first = self._mount()
         self.assertTrue(os.path.isdir(first.root))
 
         # The set is unmounted behind snapm's back: the mount table entry
         # goes stale, but the mount point is left behind.
         first.mounted = False
 
-        second = self._mount(mount_base=base)
+        second = self._mount()
 
         self.assertIsNot(second, first)
         self.assertEqual(second.root, first.root)
         self.assertEqual(self.mounts._mounts, [second])
         self.assertTrue(os.path.isdir(second.root))
 
+    def test_mount_keeps_a_stale_nominated_mount_point(self):
+        """Test that pruning leaves a nominated mount point in place."""
+        point = self._mount_point()
+        first = self._mount(mount_root=point)
+
+        first.mounted = False
+        second = self._mount(mount_root=point)
+
+        # The entry is replaced, but the directory is not snapm's to remove.
+        self.assertIsNot(second, first)
+        self.assertEqual(self.mounts._mounts, [second])
+        self.assertTrue(os.path.isdir(point))
+
     def test_mount_prefers_live_mount_to_stale_entry(self):
         """Test that a live mount is used when an earlier entry is stale."""
-        first = self._mount(mount_base=self._mount_base())
-        second = self._mount(mount_base=self._mount_base())
+        first = self._mount(mount_root=self._mount_point())
+        second = self._mount(mount_root=self._mount_point())
 
         # The first mount goes away behind snapm's back, leaving the second
         # mount live but no longer the first entry recorded for the set.
@@ -1631,15 +1704,16 @@ class MountsMountSelectionTests(unittest.TestCase):
 
         self.assertIs(again, second)
         self.assertEqual(self.mounts._mounts, [second])
-        self.assertFalse(os.path.exists(first.root))
+
+        # The pruned mount point was nominated, so it is left in place.
+        self.assertTrue(os.path.isdir(first.root))
 
         # The pruned mount is no longer the one reported for the set
         self.assertEqual(self.snapset.mount_root, second.root)
 
     def test_mount_clears_mount_root_when_remount_fails(self):
         """Test that a failed re-mount does not leave a stale mount root."""
-        base = self._mount_base()
-        first = self._mount(mount_base=base)
+        first = self._mount()
         self.assertEqual(self.snapset.mount_root, first.root)
 
         # The mount goes away behind snapm's back, and something is left in
@@ -1649,30 +1723,28 @@ class MountsMountSelectionTests(unittest.TestCase):
             pass
 
         with self.assertRaises(snapm.SnapmPathError):
-            self._mount(mount_base=base)
+            self._mount()
 
         self.assertEqual(self.mounts._mounts, [])
         self.assertEqual(self.snapset.mount_root, "")
 
     def test_mount_reuses_a_leftover_mount_point(self):
         """Test that a mount point left by an outside unmount is re-used."""
-        base = self._mount_base()
-        mount_path = os.path.join(base, self.snapset.name)
+        mount_path = self._default_path()
 
         # 'umount -R <path>' outside snapm leaves the mount point behind
         # with nothing mounted on it and nothing in the mount table.
         os.mkdir(mount_path)
         self.assertEqual(self.mounts._mounts, [])
 
-        mount_obj = self._mount(mount_base=base)
+        mount_obj = self._mount()
 
         self.assertEqual(mount_obj.root, mount_path)
         self.assertTrue(os.path.isdir(mount_path))
 
     def test_mount_point_in_use_raises_path_error(self):
         """Test that an occupied mount point fails with a SnapmError."""
-        base = self._mount_base()
-        mount_path = os.path.join(base, self.snapset.name)
+        mount_path = self._default_path()
         os.mkdir(mount_path)
         occupant = os.path.join(mount_path, "occupant")
         with open(occupant, "w", encoding="utf8"):
@@ -1681,16 +1753,15 @@ class MountsMountSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(
             snapm.SnapmPathError, "is not an empty directory"
         ):
-            self._mount(mount_base=base)
+            self._mount()
 
         # A directory that is not empty is not snapm's to re-use.
         self.assertTrue(os.path.exists(occupant))
 
     def test_mount_point_symlink_raises_path_error(self):
         """Test that a symbolic link cannot redirect the mount."""
-        base = self._mount_base()
-        target = self._mount_base()
-        mount_path = os.path.join(base, self.snapset.name)
+        target = self._mount_point()
+        mount_path = self._default_path()
 
         # A link to an empty directory: refused for being a link, not for
         # what it happens to point at.
@@ -1699,7 +1770,7 @@ class MountsMountSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(
             snapm.SnapmPathError, "is not an empty directory"
         ):
-            self._mount(mount_base=base)
+            self._mount()
 
         # Neither the link nor what it points at is touched.
         self.assertTrue(os.path.islink(mount_path))
@@ -1708,8 +1779,7 @@ class MountsMountSelectionTests(unittest.TestCase):
 
     def test_mount_point_already_mounted_raises_path_error(self):
         """Test that a directory with a file system on it is not re-used."""
-        base = self._mount_base()
-        mount_path = os.path.join(base, self.snapset.name)
+        mount_path = self._default_path()
         os.mkdir(mount_path)
 
         # An empty file system mounted here reads as an empty directory,
@@ -1720,14 +1790,15 @@ class MountsMountSelectionTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 snapm.SnapmPathError, "is not an empty directory"
             ):
-                self._mount(mount_base=base)
+                self._mount()
 
         self.assertEqual(self.mounts._mounts, [])
 
-    def test_mount_point_outside_base_raises_path_error(self):
+    def test_mount_point_outside_default_root_raises_path_error(self):
         """Test that a set name that is not a path component is refused."""
-        base = self._mount_base()
-
+        # An empty name joins to the mounts directory, which is an empty
+        # directory whenever no set is mounted: without the containment
+        # check it is re-used and later removed.
         for name in ("", ".", ".."):
             with self.subTest(name=name):
                 self.snapset.name = name
@@ -1735,30 +1806,16 @@ class MountsMountSelectionTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                     snapm.SnapmPathError, "does not name a mount point"
                 ):
-                    self._mount(mount_base=base)
+                    self._mount()
 
-                # The base itself is never the mount point, and nothing is
-                # created in it.
-                self.assertEqual(os.listdir(base), [])
-
-    def test_mount_point_outside_default_root_raises_path_error(self):
-        """Test that the mounts directory itself cannot become a mount point."""
-        # An empty name joins to the mounts directory, which is an empty
-        # directory whenever no set is mounted: without the containment
-        # check it is re-used and later removed.
-        self.snapset.name = ""
-
-        with self.assertRaisesRegex(
-            snapm.SnapmPathError, "does not name a mount point"
-        ):
-            self._mount()
+                self.assertEqual(os.listdir(self.root), [])
 
     def test_mount_reports_canonical_mount_root(self):
         """Test that a second mount leaves the reported mount root alone."""
-        first = self._mount(mount_base=self._mount_base())
+        first = self._mount(mount_root=self._mount_point())
         self.assertEqual(self.snapset.mount_root, first.root)
 
-        self._mount(mount_base=self._mount_base())
+        self._mount(mount_root=self._mount_point())
         self.assertEqual(self.snapset.mount_root, first.root)
 
 
@@ -1769,14 +1826,20 @@ class MountsUmountSelectionTests(unittest.TestCase):
 
     def setUp(self):
         manager = SimpleNamespace(snapshot_sets=[])
-        self.mounts = mounts.Mounts(manager, "/run/snapm/mounts")
+        root_obj = tempfile.TemporaryDirectory(prefix="snapm_umount_root_")
+        self.addCleanup(root_obj.cleanup)
+        self.root = root_obj.name
+        self.mounts = mounts.Mounts(manager, self.root)
         self.snapset = SimpleNamespace(name="testset0", mount_root="")
 
-    def _add_mount(self, base):
-        """Register a stub mount for self.snapset beneath a real directory."""
-        base_obj = tempfile.TemporaryDirectory(prefix="snapm_umount_sel_")
-        self.addCleanup(base_obj.cleanup)
-        root = os.path.join(base_obj.name, base, self.snapset.name)
+    def _add_mount(self, name=None, default_root=False):
+        """Register a stub mount for self.snapset at a real directory."""
+        if default_root:
+            root = os.path.join(self.root, self.snapset.name)
+        else:
+            dir_obj = tempfile.TemporaryDirectory(prefix="snapm_umount_sel_")
+            self.addCleanup(dir_obj.cleanup)
+            root = os.path.join(dir_obj.name, name)
         os.makedirs(root)
         mount = SimpleNamespace(
             snapset=self.snapset, root=root, mounted=True, umount=lambda: None
@@ -1789,67 +1852,75 @@ class MountsUmountSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(snapm.SnapmNotFoundError, "not found"):
             self.mounts.umount(self.snapset)
 
-    def test_umount_mount_base_selects_nothing(self):
-        """Test that a mount base matching no mount fails."""
+    def test_umount_mount_root_selects_nothing(self):
+        """Test that a mount root matching no mount fails."""
         self._add_mount("one")
         with self.assertRaisesRegex(snapm.SnapmNotFoundError, "not found"):
-            self.mounts.umount(self.snapset, mount_base="/no/such/base")
+            self.mounts.umount(self.snapset, mount_root="/no/such/path")
 
-    def test_umount_ambiguous_without_mount_base(self):
-        """Test that unmounting a set mounted twice needs a mount base."""
+    def test_umount_ambiguous_without_mount_root(self):
+        """Test that unmounting a set mounted twice needs a mount root."""
         first = self._add_mount("one")
         second = self._add_mount("two")
 
         with self.assertRaises(snapm.SnapmArgumentError) as ctx:
             self.mounts.umount(self.snapset)
 
-        # The error names the mount base of each, so that the values it
+        # The error names the mount point of each, so that the values it
         # prints can be passed straight back in as --mount-root.
         message = str(ctx.exception)
-        self.assertIn(os.path.dirname(first.root), message)
-        self.assertIn(os.path.dirname(second.root), message)
+        self.assertIn(first.root, message)
+        self.assertIn(second.root, message)
         self.assertIn("--mount-root", message)
-        self.assertNotIn(first.root, message)
-        self.assertNotIn(second.root, message)
 
         # Nothing was unmounted
         self.assertEqual(len(self.mounts._mounts), 2)
 
         # Each value it printed selects one of the mounts
         for mount in (first, second):
-            self.mounts.umount(self.snapset, mount_base=os.path.dirname(mount.root))
+            self.mounts.umount(self.snapset, mount_root=mount.root)
             self.assertNotIn(mount, self.mounts._mounts)
 
-    def test_umount_mount_base_disambiguates(self):
-        """Test that a mount base selects one of several mounts."""
+    def test_umount_mount_root_disambiguates(self):
+        """Test that a mount root selects one of several mounts."""
         first = self._add_mount("one")
         second = self._add_mount("two")
 
-        self.mounts.umount(self.snapset, mount_base=os.path.dirname(first.root))
+        self.mounts.umount(self.snapset, mount_root=first.root)
 
         self.assertEqual(self.mounts._mounts, [second])
-        self.assertFalse(os.path.exists(first.root))
 
         # The canonical mount and report field fall back to the survivor
         self.assertIs(self.mounts._canonical_mount(self.snapset), second)
         self.assertEqual(self.snapset.mount_root, second.root)
 
-        # With one mount left the mount base is no longer required
+        # With one mount left the mount root is no longer required
         self.mounts.umount(self.snapset)
         self.assertEqual(self.mounts._mounts, [])
         self.assertIsNone(self.mounts._canonical_mount(self.snapset))
         self.assertEqual(self.snapset.mount_root, "")
 
+    def test_umount_removes_only_mount_points_snapm_created(self):
+        """Test that a nominated mount point survives the unmount."""
+        default = self._add_mount(default_root=True)
+        nominated = self._add_mount("one")
+
+        self.mounts.umount(self.snapset, mount_root=default.root)
+        self.assertFalse(os.path.exists(default.root))
+
+        self.mounts.umount(self.snapset, mount_root=nominated.root)
+        self.assertTrue(os.path.isdir(nominated.root))
+
     def test_umount_prunes_a_stale_mount(self):
         """Test that a stale mount is discarded when unmounting."""
-        first = self._add_mount("one")
+        first = self._add_mount(default_root=True)
         second = self._add_mount("two")
 
         # The first mount goes away behind snapm's back, and is still
         # recorded when the second one is unmounted.
         first.mounted = False
 
-        self.mounts.umount(self.snapset, mount_base=os.path.dirname(second.root))
+        self.mounts.umount(self.snapset, mount_root=second.root)
 
         # The stale entry and its mount point go with the unmount.
         self.assertEqual(self.mounts._mounts, [])
@@ -1859,23 +1930,23 @@ class MountsUmountSelectionTests(unittest.TestCase):
 
     def test_umount_stale_mount_is_not_ambiguous(self):
         """Test that a stale mount does not make an unmount ambiguous."""
-        first = self._add_mount("one")
+        first = self._add_mount(default_root=True)
         second = self._add_mount("two")
 
         # The first mount goes away behind snapm's back, leaving one path
-        # the set is still mounted at: no mount base should be needed.
+        # the set is still mounted at: no mount root should be needed.
         first.mounted = False
 
         self.mounts.umount(self.snapset)
 
         self.assertEqual(self.mounts._mounts, [])
         self.assertFalse(os.path.exists(first.root))
-        self.assertFalse(os.path.exists(second.root))
+        self.assertTrue(os.path.isdir(second.root))
         self.assertEqual(self.snapset.mount_root, "")
 
     def test_find_mounts_prunes_a_stale_mount(self):
         """Test that a stale mount is discarded when listing mounts."""
-        first = self._add_mount("one")
+        first = self._add_mount(default_root=True)
         second = self._add_mount("two")
 
         first.mounted = False

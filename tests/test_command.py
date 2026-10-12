@@ -351,7 +351,7 @@ class CommandTestsSimple(CommandTestsBase):
         self.assertEqual(status, 1)
 
     @patch("snapm.command.Manager")
-    def test_mount_cmd_no_mount_base_passes_none(self, MockManager):
+    def test_mount_cmd_no_mount_root_passes_none(self, MockManager):
         """Test that omitting --mount-root passes None to mounts.mount()."""
         mock_manager = MockManager.return_value
         mock_snapset = MagicMock()
@@ -364,7 +364,7 @@ class CommandTestsSimple(CommandTestsBase):
         command._mount_cmd(args)
         mock_manager.mounts.mount.assert_called_once_with(
             mock_snapset,
-            mount_base=None,
+            mount_root=None,
         )
 
     @patch("snapm.command.Manager")
@@ -381,7 +381,7 @@ class CommandTestsSimple(CommandTestsBase):
         command._mount_cmd(args)
         mock_manager.mounts.mount.assert_called_once_with(
             mock_snapset,
-            mount_base="/custom/root",
+            mount_root="/custom/root",
         )
 
     @patch("snapm.command.Manager")
@@ -400,7 +400,7 @@ class CommandTestsSimple(CommandTestsBase):
         self.assertEqual(ret, 0)
         mock_manager.mounts.umount.assert_called_once_with(
             mock_snapset,
-            mount_base=None,
+            mount_root=None,
         )
 
     @patch("snapm.command.Manager")
@@ -419,7 +419,7 @@ class CommandTestsSimple(CommandTestsBase):
         self.assertEqual(ret, 0)
         mock_manager.mounts.umount.assert_called_once_with(
             mock_snapset,
-            mount_base="/custom/root",
+            mount_root="/custom/root",
         )
 
     @patch("snapm.command.Manager")
@@ -462,7 +462,7 @@ class CommandTestsSimple(CommandTestsBase):
         self.assertEqual(command._exec_cmd(args), 0)
         mock_manager.mounts.umount.assert_called_once_with(
             mock_snapset,
-            mount_base="/run/snapm/mounts",
+            mount_root="/run/snapm/mounts/testset0",
         )
 
     @patch("snapm.command.Manager")

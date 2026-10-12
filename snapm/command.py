@@ -1845,7 +1845,7 @@ def _mount_cmd(cmd_args):
         return 1
     snapset = matches[0]
 
-    manager.mounts.mount(snapset, mount_base=cmd_args.mount_root)
+    manager.mounts.mount(snapset, mount_root=cmd_args.mount_root)
     return 0
 
 
@@ -1868,7 +1868,7 @@ def _umount_cmd(cmd_args):
         return 1
     snapset = matches[0]
 
-    manager.mounts.umount(snapset, mount_base=cmd_args.mount_root)
+    manager.mounts.umount(snapset, mount_root=cmd_args.mount_root)
     return 0
 
 
@@ -1909,7 +1909,7 @@ def _exec_cmd(cmd_args):
         if did_mount:
             # Select the mount we made by path: a snapshot set may be
             # mounted at more than one, and umount() refuses to guess.
-            manager.mounts.umount(snapset, mount_base=os.path.dirname(mount.root))
+            manager.mounts.umount(snapset, mount_root=mount.root)
 
     if ret:
         _log_error(
@@ -3144,7 +3144,11 @@ def _add_snapset_subparser(type_subparser):
         metavar="PATH",
         type=str,
         default=None,
-        help="Custom root directory for the snapshot set mount tree",
+        help=(
+            "Directory to mount the snapshot set at, in place of the "
+            "default. It must already exist: snapm does not create it, "
+            "and does not remove it on unmount"
+        ),
     )
     snapset_mount_parser.set_defaults(func=_mount_cmd)
 
