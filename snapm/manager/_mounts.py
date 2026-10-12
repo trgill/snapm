@@ -876,9 +876,20 @@ class Mounts:
         :param mount_base: Optional base directory in place of the default
                            mounts directory.
         :returns: The absolute mount path for the snapshot set.
+        :raises SnapmPathError: If the set name does not name a path directly
+                                beneath the mount base.
         """
         base = self._root if mount_base is None else os.path.abspath(mount_base)
-        return os.path.join(base, snapset.name)
+        path = os.path.normpath(os.path.join(base, snapset.name))
+
+        # The set name has to contribute exactly one path component: '..' and
+        # the empty name both resolve back to the base or above it (#1026).
+        if os.path.dirname(path) != base:
+            raise SnapmPathError(
+                f"Snapshot set name '{snapset.name}' does not name a mount "
+                f"point beneath {base}"
+            )
+        return path
 
     def _update_mount_root(self, snapset: SnapshotSet) -> None:
         """

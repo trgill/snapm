@@ -1706,6 +1706,35 @@ class MountsMountSelectionTests(unittest.TestCase):
         self.assertTrue(os.path.isdir(target))
         self.assertEqual(os.listdir(target), [])
 
+    def test_mount_point_outside_base_raises_path_error(self):
+        """Test that a set name that is not a path component is refused."""
+        base = self._mount_base()
+
+        for name in ("", ".", ".."):
+            with self.subTest(name=name):
+                self.snapset.name = name
+
+                with self.assertRaisesRegex(
+                    snapm.SnapmPathError, "does not name a mount point"
+                ):
+                    self._mount(mount_base=base)
+
+                # The base itself is never the mount point, and nothing is
+                # created in it.
+                self.assertEqual(os.listdir(base), [])
+
+    def test_mount_point_outside_default_root_raises_path_error(self):
+        """Test that the mounts directory itself cannot become a mount point."""
+        # An empty name joins to the mounts directory, which is an empty
+        # directory whenever no set is mounted: without the containment
+        # check it is re-used and later removed.
+        self.snapset.name = ""
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "does not name a mount point"
+        ):
+            self._mount()
+
     def test_mount_reports_canonical_mount_root(self):
         """Test that a second mount leaves the reported mount root alone."""
         first = self._mount(mount_base=self._mount_base())
