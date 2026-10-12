@@ -1349,9 +1349,14 @@ Mount the members of the specified snapshot set. By default, the root volume
 is mounted at \fI/run/snapm/mounts/<name>\fP. Bind mounts for API and runtime
 file systems are created automatically.
 .sp
-The \fB--mount-root\fP option specifies an alternative base directory for the
-mount tree. The directory must exist and have appropriate permissions set by
-the administrator before mounting.
+The \fB--mount-root\fP option gives the directory to mount the snapshot set
+at, in place of the default. The snapshot set root is mounted at exactly that
+path: the set name is not appended to it.
+.sp
+The directory must already exist, and must not be a symbolic link. \fBsnapm\fP
+does not create it, and does not remove it when the snapshot set is unmounted.
+Its permissions are the administrator's to set, and any contents it has are
+shadowed while the snapshot set is mounted.
 .
 .TP
 .B snapm
@@ -1365,7 +1370,11 @@ name that location again.
 The \fB--mount-root\fP option selects which mount to unmount, and is only
 required when the snapshot set is mounted at more than one path. An
 ambiguous \fBumount\fP reports the paths the snapshot set is mounted at and
-makes no changes.
+makes no changes; each path it reports selects that mount when given to
+\fB--mount-root\fP.
+.sp
+A mount point given with \fB--mount-root\fP is left in place: only the
+default mount points beneath \fI/run/snapm/mounts\fP are removed.
 .
 .TP
 .B snapm
