@@ -1706,6 +1706,24 @@ class MountsMountSelectionTests(unittest.TestCase):
         self.assertTrue(os.path.isdir(target))
         self.assertEqual(os.listdir(target), [])
 
+    def test_mount_point_already_mounted_raises_path_error(self):
+        """Test that a directory with a file system on it is not re-used."""
+        base = self._mount_base()
+        mount_path = os.path.join(base, self.snapset.name)
+        os.mkdir(mount_path)
+
+        # An empty file system mounted here reads as an empty directory,
+        # and re-using it would stack a second mount on top.
+        with unittest.mock.patch.object(
+            os.path, "ismount", lambda path: path == mount_path
+        ):
+            with self.assertRaisesRegex(
+                snapm.SnapmPathError, "is not an empty directory"
+            ):
+                self._mount(mount_base=base)
+
+        self.assertEqual(self.mounts._mounts, [])
+
     def test_mount_point_outside_base_raises_path_error(self):
         """Test that a set name that is not a path component is refused."""
         base = self._mount_base()

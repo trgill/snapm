@@ -895,7 +895,8 @@ class Mounts:
     def _reusable_mount_point(path: str) -> bool:
         """
         Test whether ``path`` is a leftover mount point that snapm may
-        re-use: an empty directory, and not a symbolic link.
+        re-use: an empty directory, with nothing mounted on it, that is not
+        a symbolic link.
 
         :param path: The path to test.
         :returns: ``True`` if ``path`` may be re-used as a mount point, or
@@ -908,6 +909,9 @@ class Mounts:
         except OSError:  # pragma: no cover
             return False
         if not S_ISDIR(st.st_mode):
+            return False
+        # An empty file system mounted here reads as an empty directory.
+        if os.path.ismount(path):
             return False
         return not os.listdir(path)
 
