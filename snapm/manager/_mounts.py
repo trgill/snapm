@@ -11,7 +11,7 @@ Mount integration for snapshot manager
 from subprocess import run, CalledProcessError, TimeoutExpired
 from typing import Dict, Iterable, List, Optional, Union
 from abc import ABC, abstractmethod
-from stat import S_ISBLK
+from stat import S_ISBLK, S_ISDIR
 import collections
 import logging
 import shlex
@@ -891,6 +891,26 @@ class Mounts:
             )
         return path
 
+    @staticmethod
+    def _reusable_mount_point(path: str) -> bool:
+        """
+        Test whether ``path`` is a leftover mount point that snapm may
+        re-use: an empty directory, and not a symbolic link.
+
+        :param path: The path to test.
+        :returns: ``True`` if ``path`` may be re-used as a mount point, or
+                  ``False`` otherwise.
+        """
+        # One lstat() answers both questions: a symbolic link is not
+        # S_ISDIR, so it is refused without following it.
+        try:
+            st = os.lstat(path)
+        except OSError:  # pragma: no cover
+            return False
+        if not S_ISDIR(st.st_mode):
+            return False
+        return not os.listdir(path)
+
     def _update_mount_root(self, snapset: SnapshotSet) -> None:
         """
         Point the snapshot set's reported mount root at its canonical mount,
@@ -1105,11 +1125,7 @@ class Mounts:
         try:
             os.mkdir(mount_path)
         except FileExistsError as err:
-            if (
-                os.path.islink(mount_path)
-                or not os.path.isdir(mount_path)
-                or os.listdir(mount_path)
-            ):
+            if not self._reusable_mount_point(mount_path):
                 raise SnapmPathError(
                     f"Mount point {mount_path} is not an empty directory"
                 ) from err
