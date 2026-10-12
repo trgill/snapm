@@ -1122,10 +1122,10 @@ class Mounts:
         # Create the mount point. An unmount performed outside snapm leaves
         # the mount point behind with nothing mounted on it and no entry in
         # the mount table to prune, so re-use an empty directory found here
-        # rather than refusing to mount the set ever again. Anything else,
-        # a symbolic link above all, is left alone and refused: that is
-        # what stops a user with write access to the mount base from
-        # redirecting the mount by planting one here first.
+        # rather than refusing to mount the set ever again. A symbolic link
+        # is refused, which stops one planted here in advance from
+        # redirecting the mount; a link swapped in after this check still
+        # wins, since mount(8) resolves the path again.
         try:
             os.mkdir(mount_path)
         except FileExistsError as err:
