@@ -1794,6 +1794,17 @@ class MountsMountSelectionTests(unittest.TestCase):
 
         self.assertEqual(self.mounts._mounts, [])
 
+    def test_mount_refuses_a_writable_mounts_directory(self):
+        """Test that a mounts directory other users can write to is refused."""
+        os.chmod(self.root, 0o777)
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "writable by other users"
+        ):
+            self._mount()
+
+        self.assertEqual(os.listdir(self.root), [])
+
     def test_mount_point_outside_default_root_raises_path_error(self):
         """Test that a set name that is not a path component is refused."""
         # An empty name joins to the mounts directory, which is an empty

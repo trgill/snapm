@@ -11,7 +11,7 @@ Mount integration for snapshot manager
 from subprocess import run, CalledProcessError, TimeoutExpired
 from typing import Dict, Iterable, List, Optional, Union
 from abc import ABC, abstractmethod
-from stat import S_ISBLK, S_ISDIR, S_ISLNK
+from stat import S_ISBLK, S_ISDIR, S_ISLNK, S_IWGRP, S_IWOTH
 import collections
 import logging
 import shlex
@@ -885,6 +885,35 @@ class Mounts:
             )
         return path
 
+    def _check_mounts_dir(self) -> None:
+        """
+        Check the mounts directory before creating a mount point in it.
+
+        Mount points created here are verified by name and then mounted by
+        name, so the directory holding them has to be one that no other
+        user can write to.
+
+        :raises SnapmPathError: If the mounts directory is not a directory
+                                owned by this process and writable by its
+                                owner alone.
+        """
+        try:
+            st = os.lstat(self._root)
+        except OSError as err:
+            raise SnapmPathError(
+                f"Mounts directory is not accessible: {self._root}"
+            ) from err
+        if not S_ISDIR(st.st_mode):
+            raise SnapmPathError(f"Mounts directory is not a directory: {self._root}")
+        if st.st_uid != os.geteuid():
+            raise SnapmPathError(
+                f"Mounts directory is not owned by uid {os.geteuid()}: {self._root}"
+            )
+        if st.st_mode & (S_IWGRP | S_IWOTH):
+            raise SnapmPathError(
+                f"Mounts directory is writable by other users: {self._root}"
+            )
+
     def _owns_mount_point(self, path: str) -> bool:
         """
         Test whether ``path`` is a mount point snapm created, and may
@@ -1119,6 +1148,7 @@ class Mounts:
                            when the set is unmounted.
         """
         if mount_root is None:
+            self._check_mounts_dir()
             mount_path = self._default_mount_path(snapset)
         else:
             mount_path = os.path.abspath(mount_root)
