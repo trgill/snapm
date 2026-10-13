@@ -1182,6 +1182,9 @@ class Mounts:
             )
             return existing
 
+        if mount_root is not None and os.path.ismount(mount_path):
+            raise SnapmPathError(f"Mount point is already mounted: {mount_path}")
+
         # Ensure the snapshot set's volumes are active
         snapset.activate()
 
