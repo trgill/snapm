@@ -1794,6 +1794,21 @@ class MountsMountSelectionTests(unittest.TestCase):
 
         self.assertEqual(self.mounts._mounts, [])
 
+    def test_mount_refuses_a_mount_point_in_the_mounts_directory(self):
+        """Test that --mount-root may not name a path snapm manages."""
+        nested = os.path.join(self.root, "a", "b")
+        os.makedirs(nested)
+
+        for path in (self.root, os.path.join(self.root, "a"), nested):
+            with self.subTest(path=path):
+                with self.assertRaisesRegex(
+                    snapm.SnapmPathError, "within the snapm mounts directory"
+                ):
+                    self._mount(mount_root=path)
+
+        self.assertEqual(self.mounts._mounts, [])
+        self.assertTrue(os.path.isdir(nested))
+
     def test_mount_refuses_a_writable_mounts_directory(self):
         """Test that a mounts directory other users can write to is refused."""
         os.chmod(self.root, 0o777)
@@ -1916,6 +1931,8 @@ class MountsUmountSelectionTests(unittest.TestCase):
         default = self._add_mount(default_root=True)
         nominated = self._add_mount("one")
 
+        # A path inside the mounts directory selects a mount here, even
+        # though mount() refuses one: it is the path mount() reported.
         self.mounts.umount(self.snapset, mount_root=default.root)
         self.assertFalse(os.path.exists(default.root))
 

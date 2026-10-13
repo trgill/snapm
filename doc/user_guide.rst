@@ -220,9 +220,15 @@ exactly that path: the set name is not appended to it.
    # Unmount when finished
    sudo snapm snapset umount backup
 
-The mount point must already exist, and must not be a symbolic link.
+The mount point must already exist and must not be a symbolic link.
 ``snapm`` does not create it, and does not remove it when the snapshot
 set is unmounted: a directory it did not make is not its to delete.
+
+It must also lie outside ``/run/snapm/mounts``. Mount points there are
+``snapm``'s own, created and removed along with the mount, and a
+nominated one is neither; omit ``--mount-root`` to mount beneath the
+default location. ``snapset umount`` does accept a path there, since
+that is what ``snapset mount`` reports for a default mount.
 Any contents the directory has are shadowed while the snapshot set is
 mounted, and reappear when it is unmounted.
 

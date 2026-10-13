@@ -1353,8 +1353,10 @@ The \fB--mount-root\fP option gives the directory to mount the snapshot set
 at, in place of the default. The snapshot set root is mounted at exactly that
 path: the set name is not appended to it.
 .sp
-The directory must already exist, and must not be a symbolic link. \fBsnapm\fP
-does not create it, and does not remove it when the snapshot set is unmounted.
+The directory must already exist, must not be a symbolic link, and must lie
+outside \fI/run/snapm/mounts\fP: mount points there are \fBsnapm\fP's own, so
+omit \fB--mount-root\fP to mount beneath it. \fBsnapm\fP does not create the
+directory, and does not remove it when the snapshot set is unmounted.
 Its permissions are the administrator's to set, and any contents it has are
 shadowed while the snapshot set is mounted.
 .

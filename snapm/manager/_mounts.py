@@ -921,22 +921,31 @@ class Mounts:
 
         Only paths beneath the mounts directory are snapm's to create and
         remove. A mount point nominated with ``--mount-root`` belongs to
-        whoever made it.
+        whoever made it, and is refused if it is in the mounts directory,
+        so the two cannot be confused here.
 
         :param path: The mount point to test.
         :returns: ``True`` if snapm created ``path``, or ``False`` otherwise.
         """
         return os.path.dirname(path) == self._root
 
-    @staticmethod
-    def _check_mount_point(path: str) -> None:
+    def _check_mount_point(self, path: str) -> None:
         """
         Validate a mount point nominated in place of the default.
 
         :param path: The mount point to validate.
-        :raises SnapmPathError: If ``path`` is not an existing directory, or
-                                is a symbolic link.
+        :raises SnapmPathError: If ``path`` is within the mounts directory,
+                                is not an existing directory, or is a
+                                symbolic link.
         """
+        # Mount points in the mounts directory are snapm's own, created and
+        # removed with the mount: a nominated one is neither. Allowing both
+        # kinds there makes _owns_mount_point() ambiguous (#1025).
+        if path == self._root or path.startswith(self._root + os.sep):
+            raise SnapmPathError(
+                f"Mount point is within the snapm mounts directory "
+                f"{self._root}: omit --mount-root to mount there"
+            )
         try:
             st = os.lstat(path)
         except OSError as err:
