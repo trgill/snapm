@@ -37,6 +37,9 @@ def rmtree_one_file_system(path):
                 dirnames.remove(name)
                 found.append(child)
 
+    if os.path.ismount(path):
+        raise AssertionError(f"Refusing to remove {path}: still mounted")
+
     if found:
         raise AssertionError(
             f"Refusing to remove {path}: still mounted: {', '.join(found)}"
