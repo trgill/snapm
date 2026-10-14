@@ -1652,6 +1652,36 @@ class MountsMountSelectionTests(unittest.TestCase):
         ):
             self._mount(mount_root=link)
 
+    def test_mount_resolves_a_link_in_the_nominated_mount_point_path(self):
+        """Test that a link leading to a mount point is resolved."""
+        # mount(8) follows the link and the kernel reports the resolved
+        # path: a mount recorded at the unresolved one is never found
+        # again (#1029).
+        parent = self._mount_point()
+        point = os.path.join(parent, "point")
+        os.mkdir(point)
+        link = os.path.join(self._mount_point(), "link")
+        os.symlink(parent, link)
+
+        mount_obj = self._mount(mount_root=os.path.join(link, "point"))
+
+        self.assertEqual(mount_obj.root, point)
+        self.assertEqual(self.snapset.mount_root, point)
+
+    def test_mount_refuses_a_link_into_the_mounts_directory(self):
+        """Test that a link may not redirect --mount-root into the mounts dir."""
+        nested = os.path.join(self.root, "a")
+        os.mkdir(nested)
+        link = os.path.join(self._mount_point(), "link")
+        os.symlink(nested, link)
+
+        with self.assertRaisesRegex(
+            snapm.SnapmPathError, "within the snapm mounts directory"
+        ):
+            self._mount(mount_root=link)
+
+        self.assertEqual(self.mounts._mounts, [])
+
     def test_mount_nominated_mount_point_need_not_be_empty(self):
         """Test that a nominated mount point may have contents to shadow."""
         point = self._mount_point()
@@ -1883,6 +1913,18 @@ class MountsUmountSelectionTests(unittest.TestCase):
         self._add_mount("one")
         with self.assertRaisesRegex(snapm.SnapmNotFoundError, "not found"):
             self.mounts.umount(self.snapset, mount_root="/no/such/path")
+
+    def test_umount_mount_root_resolves_symlinks(self):
+        """Test that a link leading to a mount point selects the mount."""
+        # The mount is recorded at the path mount(8) resolved it to, so a
+        # link naming the same mount point has to select it (#1029).
+        mount = self._add_mount("one")
+        link = os.path.join(self.root, "link")
+        os.symlink(os.path.dirname(mount.root), link)
+
+        self.mounts.umount(self.snapset, mount_root=os.path.join(link, "one"))
+
+        self.assertEqual(self.mounts._mounts, [])
 
     def test_umount_ambiguous_without_mount_root(self):
         """Test that unmounting a set mounted twice needs a mount root."""

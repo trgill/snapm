@@ -834,7 +834,10 @@ class Mounts:
         :param mounts_dir: The directory under which mounts are managed.
         """
         self._manager = manager
-        self._root = mounts_dir
+        # Every mount lookup is a string comparison against a path the
+        # kernel reported, and the kernel reports resolved paths: canonicalise
+        # the base once here so that the paths built from it match (#1029).
+        self._root = os.path.realpath(mounts_dir)
         self._mounts = []
         self._sys_mount = SysMount()
         self.discover_mounts()
@@ -874,6 +877,10 @@ class Mounts:
         :raises SnapmPathError: If the set name does not name a path directly
                                 beneath the mounts directory.
         """
+        # The mounts directory is already canonical, and the final component
+        # is deliberately left unresolved: it is the path to be created, and
+        # a symbolic link planted there is refused by the mount point checks
+        # in mount(), not treated as a malformed set name.
         path = os.path.normpath(os.path.join(self._root, snapset.name))
 
         # The set name has to contribute exactly one path component: '..' and
@@ -929,19 +936,31 @@ class Mounts:
         """
         return os.path.dirname(path) == self._root
 
-    def _check_mount_point(self, path: str) -> None:
+    def _check_mount_point(self, path: str) -> str:
         """
-        Validate a mount point nominated in place of the default.
+        Validate a mount point nominated in place of the default and return
+        the resolved path to mount the snapshot set at.
+
+        A symbolic link in a leading component is resolved: mount(8) follows
+        it, and the kernel then reports the resolved path, so a mount rooted
+        at an unresolved one can never be found again (#1029). A link as the
+        final component is refused rather than resolved, since that is the
+        component nominating the mount point.
 
         :param path: The mount point to validate.
+        :returns: The resolved mount point path.
         :raises SnapmPathError: If ``path`` is within the mounts directory,
                                 is not an existing directory, or is a
                                 symbolic link.
         """
+        real_path = os.path.realpath(path)
+
         # Mount points in the mounts directory are snapm's own, created and
         # removed with the mount: a nominated one is neither. Allowing both
-        # kinds there makes _owns_mount_point() ambiguous (#1025).
-        if path == self._root or path.startswith(self._root + os.sep):
+        # kinds there makes _owns_mount_point() ambiguous (#1025). The test
+        # is made against the resolved path so that a link to a path in the
+        # mounts directory does not slip past it.
+        if real_path == self._root or real_path.startswith(self._root + os.sep):
             raise SnapmPathError(
                 f"Mount point is within the snapm mounts directory "
                 f"{self._root}: omit --mount-root to mount there"
@@ -954,6 +973,7 @@ class Mounts:
             raise SnapmPathError(f"Mount point is a symbolic link: {path}")
         if not S_ISDIR(st.st_mode):
             raise SnapmPathError(f"Mount point is not a directory: {path}")
+        return real_path
 
     @staticmethod
     def _reusable_mount_point(path: str) -> bool:
@@ -1160,8 +1180,7 @@ class Mounts:
             self._check_mounts_dir()
             mount_path = self._default_mount_path(snapset)
         else:
-            mount_path = os.path.abspath(mount_root)
-            self._check_mount_point(mount_path)
+            mount_path = self._check_mount_point(os.path.abspath(mount_root))
 
         # Discard any entry for a path that is no longer mounted, along with
         # the mount point it names, so that the set can be mounted there
@@ -1247,7 +1266,9 @@ class Mounts:
 
         candidates = self._snapset_mounts(snapset)
         if mount_root is not None:
-            mount_path = os.path.abspath(mount_root)
+            # Mounts are recorded at the path mount(8) resolved them to, so
+            # match the resolved path here too (#1029).
+            mount_path = os.path.realpath(mount_root)
             candidates = [mount for mount in candidates if mount.root == mount_path]
 
         if not candidates:
