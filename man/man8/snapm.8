@@ -1214,9 +1214,9 @@ This command supports standard reporting arguments including \fB--options\fP,
 Rename an existing snapshot set. The snapshot set to be renamed is specified as
 \fBold_name\fP and the new name is given as \fBnew_name\fP.
 .IP
-A mounted snapshot set cannot be renamed: the mount point paths include the
-snapshot set name. Unmount the snapshot set with '\fBsnapm snapset umount\fP'
-before renaming it.
+A mounted snapshot set cannot be renamed because the mount table records its
+member device names at mount time. Unmount the snapshot set with
+'\fBsnapm snapset umount\fP' before renaming it.
 .
 .TP
 .B snapm

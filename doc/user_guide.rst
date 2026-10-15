@@ -869,9 +869,9 @@ Rename an existing snapset.
 
    snapm snapset rename <old_name> <new_name>
 
-A mounted snapshot set cannot be renamed: the mount point paths include
-the snapshot set name. Unmount the set with ``snapm snapset umount``
-before renaming it.
+A mounted snapshot set cannot be renamed because the mount table records
+its member device names at mount time. Unmount the set with
+``snapm snapset umount`` before renaming it.
 
 snapset revert
 --------------
